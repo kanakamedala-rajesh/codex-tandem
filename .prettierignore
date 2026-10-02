@@ -1,0 +1,14 @@
+# Generated artifacts and local tool state.
+node_modules/
+dist/
+.worktrees/
+.npm-cache/
+.runtime/
+.scratch/
+*.tgz
+# Approved baseline and byte-qualified historical records: preserve original bytes.
+docs/requirements/
+docs/fixtures/accounting/
+docs/evidence/ct03/
+docs/qualification/ct05/
+docs/validation/ct02/

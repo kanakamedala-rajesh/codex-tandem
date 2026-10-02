@@ -12,6 +12,7 @@ Show sessions with mixed identities, expandable attempts/children and honest evi
 ## Blocked by
 
 CT-21 ([GitLab #28](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/28)), CT-26 ([GitLab #33](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/33)).
+
 - [CT-26](26-serve-authenticated-local-reports-through-a-restricted-api.md) — Serve authenticated local reports through a restricted API
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

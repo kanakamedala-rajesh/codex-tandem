@@ -9,7 +9,9 @@ const bytes = (path) => readFileSync(new URL(path, root));
 const json = (path) => JSON.parse(bytes(path).toString('utf8'));
 const fixture = json('docs/fixtures/accounting/golden.json');
 const provenance = json('docs/fixtures/accounting/provenance.json');
-const register = json('docs/requirements/Codex-Tandem-Requirements-Register.json');
+const register = json(
+  'docs/requirements/Codex-Tandem-Requirements-Register.json',
+);
 const requirements = new Set(register.requirements.map(({ id }) => id));
 const tests = new Set(register.requirements.flatMap((r) => r.acceptance_tests));
 const pin = '516a1d6306559d8a607de84c4d76529160349ac8';
@@ -24,16 +26,21 @@ for (const scenario of fixture.cases) {
   ids.add(scenario.id);
   assert(['donor', 'srs-extension'].includes(scenario.basis));
   assert(scenario.requirements.length && scenario.tests.length);
-  for (const id of scenario.requirements) assert(requirements.has(id), `unknown requirement ${id}`);
+  for (const id of scenario.requirements)
+    assert(requirements.has(id), `unknown requirement ${id}`);
   for (const id of scenario.tests) assert(tests.has(id), `unknown test ${id}`);
   assert(scenario.sources.length && Object.keys(scenario.expected).length);
   for (const source of scenario.sources) {
-    assert(source.length && fixture.records[source[0]]?.type === 'session_meta');
-    for (const name of source) assert(Object.hasOwn(fixture.records, name), `unknown record ${name}`);
+    assert(
+      source.length && fixture.records[source[0]]?.type === 'session_meta',
+    );
+    for (const name of source)
+      assert(Object.hasOwn(fixture.records, name), `unknown record ${name}`);
   }
   for (const order of scenario.replayOrders ?? []) {
     assert(order.length);
-    for (const index of order) assert(Number.isInteger(index) && scenario.sources[index]);
+    for (const index of order)
+      assert(Number.isInteger(index) && scenario.sources[index]);
   }
   for (const key of ['vector', 'unresolvedVector']) {
     if (scenario.expected[key]) {
@@ -44,11 +51,34 @@ for (const scenario of fixture.cases) {
 }
 // A narrow metadata allowlist catches accidental addition of raw content fields.
 const allowedKeys = new Set([
-  'type', 'timestamp', 'payload', 'ordinal', 'id', 'source', 'parent_thread_id',
-  'subagent_history_start_ordinal', 'turn_id', 'model', 'service_tier', 'thread_id',
-  'response_id', 'usage', 'input_tokens', 'cached_input_tokens', 'cache_write_input_tokens',
-  'output_tokens', 'reasoning_output_tokens', 'info', 'total_token_usage', 'last_token_usage',
-  'rate_limits', 'limit_id', 'primary', 'window_minutes', 'used_percent', 'resets_at',
+  'type',
+  'timestamp',
+  'payload',
+  'ordinal',
+  'id',
+  'source',
+  'parent_thread_id',
+  'subagent_history_start_ordinal',
+  'turn_id',
+  'model',
+  'service_tier',
+  'thread_id',
+  'response_id',
+  'usage',
+  'input_tokens',
+  'cached_input_tokens',
+  'cache_write_input_tokens',
+  'output_tokens',
+  'reasoning_output_tokens',
+  'info',
+  'total_token_usage',
+  'last_token_usage',
+  'rate_limits',
+  'limit_id',
+  'primary',
+  'window_minutes',
+  'used_percent',
+  'resets_at',
 ]);
 function inspectRecord(value) {
   if (!value || typeof value !== 'object') return;
@@ -60,16 +90,35 @@ function inspectRecord(value) {
 for (const record of Object.values(fixture.records)) inspectRecord(record);
 for (const file of provenance.files) {
   assert(/^[a-f0-9]{64}$/.test(file.sha256));
-  assert.equal(file.url, `https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/${pin}/${file.path}`);
+  assert.equal(
+    file.url,
+    `https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/${pin}/${file.path}`,
+  );
 }
 const license = provenance.files.find(({ path }) => path === 'LICENSE');
 assert(license);
-assert.equal(createHash('sha256').update(bytes(provenance.notice)).digest('hex'), license.sha256);
-console.log(JSON.stringify({
-  result: 'PASS', scope: 'fixture definitions and license integrity only; product T01/T09/T26/T43 NOT EXECUTED',
-  cases: ids.size, records: Object.keys(fixture.records).length,
-  node: process.version, platform: process.platform, arch: process.arch,
-  fixtureSha256: createHash('sha256').update(bytes('docs/fixtures/accounting/golden.json')).digest('hex'),
-  command: 'node tools/verify-accounting-fixtures.mjs',
-  root: fileURLToPath(root),
-}, null, 2));
+assert.equal(
+  createHash('sha256').update(bytes(provenance.notice)).digest('hex'),
+  license.sha256,
+);
+console.log(
+  JSON.stringify(
+    {
+      result: 'PASS',
+      scope:
+        'fixture definitions and license integrity only; product T01/T09/T26/T43 NOT EXECUTED',
+      cases: ids.size,
+      records: Object.keys(fixture.records).length,
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      fixtureSha256: createHash('sha256')
+        .update(bytes('docs/fixtures/accounting/golden.json'))
+        .digest('hex'),
+      command: 'node tools/verify-accounting-fixtures.mjs',
+      root: fileURLToPath(root),
+    },
+    null,
+    2,
+  ),
+);

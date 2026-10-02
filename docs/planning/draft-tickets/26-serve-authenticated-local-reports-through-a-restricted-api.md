@@ -12,6 +12,7 @@ Let an authenticated local browser read the same reports as the CLI while denyin
 ## Blocked by
 
 CT-24 ([GitLab #31](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/31)), CT-25 ([GitLab #32](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/32)).
+
 - [CT-25](25-run-one-recoverable-collector-without-delaying-launch.md) — Run one recoverable collector without delaying launch
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

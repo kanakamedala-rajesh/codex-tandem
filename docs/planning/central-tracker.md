@@ -20,13 +20,13 @@ or authorize package publication.
 - [ ] G3 — Accounting and dashboard. [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6).
 - [ ] G4 — Hardening, migration and release qualification. [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7).
 
-| Gate | Planned tickets | Required outcome | Qualification focus |
-| --- | --- | --- | --- |
-| G0 | CT-01–CT-08 | Packed JavaScript CLI, host diagnostics, selector/passthrough, safe target discovery, bounded metadata/A-to-B experiments and compatibility decision. | T01–T05, T13–T14, initial T44, plus partial attribution feasibility evidence. |
-| G1 | CT-09–CT-15 | Stable profiles, guarded scopes, refresh-safe activation/recovery, scoped process stopping, local/container launch and measured overhead. | T06–T12, T15–T18. |
-| G2 | CT-16–CT-21 | Durable capture and replay, observation/attempt/child ownership, visible uncertainty and actual installed-Codex qualification. | T19–T24, T29, T45. |
-| G3 | CT-22–CT-29 | Bounded source collection, deterministic totals, transparent estimates/quotas, shared reports and authenticated accessible dashboard. | T25–T35. |
-| G4 | CT-30–CT-38 | Previewed migration, backup/restore, diagnostics/retention, safe cleanup, privacy, final artifact and evidence-backed release decision. | T36–T44 and all prior required tests, including final T45 coverage. |
+| Gate | Planned tickets | Required outcome                                                                                                                                      | Qualification focus                                                           |
+| ---- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| G0   | CT-01–CT-08     | Packed JavaScript CLI, host diagnostics, selector/passthrough, safe target discovery, bounded metadata/A-to-B experiments and compatibility decision. | T01–T05, T13–T14, initial T44, plus partial attribution feasibility evidence. |
+| G1   | CT-09–CT-15     | Stable profiles, guarded scopes, refresh-safe activation/recovery, scoped process stopping, local/container launch and measured overhead.             | T06–T12, T15–T18.                                                             |
+| G2   | CT-16–CT-21     | Durable capture and replay, observation/attempt/child ownership, visible uncertainty and actual installed-Codex qualification.                        | T19–T24, T29, T45.                                                            |
+| G3   | CT-22–CT-29     | Bounded source collection, deterministic totals, transparent estimates/quotas, shared reports and authenticated accessible dashboard.                 | T25–T35.                                                                      |
+| G4   | CT-30–CT-38     | Previewed migration, backup/restore, diagnostics/retention, safe cleanup, privacy, final artifact and evidence-backed release decision.               | T36–T44 and all prior required tests, including final T45 coverage.           |
 
 ## Agreed implementation direction
 

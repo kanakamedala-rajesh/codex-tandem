@@ -12,6 +12,7 @@ Uninstall Tandem integration without erasing user changes, credentials or analyt
 ## Blocked by
 
 CT-31 ([GitLab #38](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/38)), CT-32 ([GitLab #39](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/39)).
+
 - [CT-32](32-diagnose-and-bound-retained-operational-data.md) — Diagnose and bound retained operational data
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

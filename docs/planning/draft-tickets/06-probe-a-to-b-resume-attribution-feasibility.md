@@ -12,6 +12,7 @@ Demonstrate whether the installed Codex can expose trustworthy launch/attempt bo
 ## Blocked by
 
 CT-04 ([GitLab #11](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/11)), CT-05 ([GitLab #12](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/12)).
+
 - [CT-05](05-qualify-a-minimal-metadata-bridge-on-the-legacy-target.md) — Qualify a minimal metadata bridge on the legacy target
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

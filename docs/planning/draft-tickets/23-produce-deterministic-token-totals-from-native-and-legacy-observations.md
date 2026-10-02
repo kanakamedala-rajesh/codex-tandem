@@ -12,6 +12,7 @@ Generate stable nonnegative accounting totals without counting inherited, cached
 ## Blocked by
 
 CT-22 ([GitLab #29](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/29)), CT-20 ([GitLab #27](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/27)).
+
 - [CT-20](20-expose-unknown-imported-and-conflicting-attribution.md) — Expose unknown, imported and conflicting attribution
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

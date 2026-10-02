@@ -3,8 +3,8 @@
 Requires trusted host Node >=22.15.0, including built-in SQLite and Zstandard.
 Newer compatible Node majors are allowed; use a maintained, patched release.
 
-Development: `npm ci --ignore-scripts`, `npm run build`, `npm test`.
-The compiler and Node type definitions are exact locked development dependencies.
+Development: `npm ci --ignore-scripts --engine-strict`, `npm run validate`, then `npm run verify:installed`. See [CONTRIBUTING.md](CONTRIBUTING.md) for formatting, linting and CI.
+The compiler, Node type definitions, formatter and linter are exact locked development dependencies.
 There are no production dependencies or installation lifecycle scripts.
 
 Build before `npm pack --ignore-scripts`. Install the resulting tarball with
