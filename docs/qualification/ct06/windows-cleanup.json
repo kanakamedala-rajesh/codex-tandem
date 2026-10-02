@@ -1,0 +1,16 @@
+{
+  "reusableCopiesUnchanged": true,
+  "platform": "win32",
+  "cacheAccess": "user-only ACL; root and cache independently protected",
+  "postRunAdditionalReadAceObserved": true,
+  "retainedCredentialFiles": [
+    "C:/Users/kanak/codex-tandem-ct06-qualification-20261002/validation-auth/personal.json",
+    "C:/Users/kanak/codex-tandem-ct06-qualification-20261002/validation-auth/personal-free.json"
+  ],
+  "cacheAclVerified": true,
+  "runtimeStateRemoved": true,
+  "personalFreeUnchanged": true,
+  "personalUnchanged": true,
+  "privateHashCheckpointRemoved": true,
+  "additionalReadAceRemoved": true
+}
