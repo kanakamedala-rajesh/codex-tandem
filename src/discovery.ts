@@ -1,12 +1,13 @@
 import { access, readFile, realpath, stat } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { homedir, userInfo } from 'node:os';
-import { delimiter, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { delimiter, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 export type DiscoveryOptions = { target: 'local' | 'docker'; container?: string; dockerContext?: string; expectedGeneration?: string; user?: string; projectRoot?: string; project?: string; codexHome?: string; codexExecutable?: string };
 type Paths = { home: string; codexHome: string; codexHomeExists: boolean; projectRoot: string; project: string; executable: string };
 export type DiscoveryReport = { schemaVersion: 1; ok: boolean; target: string; fullTracking: false; trust: 'unverified'; bridge: { jsonProjection: string; durableCapture: string }; diagnostics: string[]; user?: string; paths?: Paths; context?: string; generation?: string; credentialScope?: string };
 const initial = (target: string): DiscoveryReport => ({schemaVersion:1,ok:false,target,fullTracking:false,trust:'unverified',bridge:{jsonProjection:'unverified',durableCapture:'unverified'},diagnostics:[]});
+const boundedText = (value: unknown, limit: number): value is string => typeof value==='string' && value.length>0 && value.length<=limit && !/[\x00-\x1f\x7f]/.test(value);
 async function physical(path: string): Promise<string> {
  try { return await realpath(path); }
  catch (error) {
@@ -16,9 +17,14 @@ async function physical(path: string): Promise<string> {
 }
 async function executable(requested?: string): Promise<string> {
  const name = requested ?? 'codex';
- const candidates = isAbsolute(name) || name.includes('/') || name.includes('\\') ? [resolve(name)] : (process.env.PATH ?? '').split(delimiter).flatMap(dir => process.platform === 'win32' ? ['',...(process.env.PATHEXT ?? '.EXE;.CMD;.BAT').split(';')].map(ext => join(dir,name+ext)) : [join(dir,name)]);
+ const explicitPath=isAbsolute(name) || name.includes('/') || name.includes('\\');
+ const supportedWindows=['.exe','.com','.cmd','.bat'];
+ const extension=extname(name).toLowerCase();
+ if(process.platform==='win32' && extension && !supportedWindows.includes(extension)) throw new Error('EXECUTABLE_UNAVAILABLE');
+ const suffixes=process.platform!=='win32' || extension ? [''] : (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(ext=>supportedWindows.includes(ext.toLowerCase()));
+ const candidates=(explicitPath ? [resolve(name)] : (process.env.PATH ?? '').split(delimiter).filter(Boolean).map(dir=>join(dir,name))).flatMap(path=>suffixes.map(ext=>path+ext));
  for (const path of candidates) {
-  try { if (!(await stat(path)).isFile()) continue; await access(path, process.platform === 'win32' ? constants.R_OK : constants.X_OK); return await realpath(path); } catch { /* Search next PATH entry without exposing errors. */ }
+  try { if (!(await stat(path)).isFile()) continue; await access(path, process.platform === 'win32' ? constants.R_OK : constants.X_OK); const canonical=await realpath(path); if(process.platform==='win32' && !supportedWindows.includes(extname(canonical).toLowerCase())) continue; return canonical; } catch { /* Search next PATH entry without exposing errors. */ }
  }
  throw new Error('EXECUTABLE_UNAVAILABLE');
 }
@@ -71,7 +77,7 @@ async function discoverDocker(options: DiscoveryOptions, run: DockerRead): Promi
  try {
   if (!options.container || options.container.startsWith('-') || /[\x00-\x1f]/.test(options.container)) throw new Error('CONTAINER_REQUIRED');
   const context=options.dockerContext ?? (await run(['context','show'])).trim();
-  if (!context || /[\x00-\x1f]/.test(context)) throw new Error('DOCKER_CONTEXT_INVALID');
+  if (!boundedText(context,256)) throw new Error('DOCKER_CONTEXT_INVALID');
   report.context=context;
   const args=['--context',context];
   const endpoint=JSON.parse(await run(['context','inspect','--format','{{json .Endpoints.docker.Host}}',context]));
@@ -79,7 +85,7 @@ async function discoverDocker(options: DiscoveryOptions, run: DockerRead): Promi
   const daemon=JSON.parse(await run([...args,'info','--format','{{json .ID}}']));
   if(typeof daemon!=='string' || !/^[a-zA-Z0-9:_-]{8,200}$/.test(daemon)) throw new Error('DOCKER_DAEMON_ID_UNAVAILABLE');
   const instance=JSON.parse(await run([...args,'inspect','--type','container','--format',inspectFormat,options.container]));
-  if (!/^[a-f0-9]{64}$/.test(instance.id)) throw new Error('CONTAINER_METADATA_INVALID');
+  if (typeof instance.id!=='string' || !/^[a-f0-9]{64}$/.test(instance.id) || typeof instance.running!=='boolean' || typeof instance.paused!=='boolean') throw new Error('CONTAINER_METADATA_INVALID');
   report.generation=instance.id;
   if(options.expectedGeneration && options.expectedGeneration!==instance.id) throw new Error('CONTAINER_REPLACED_REVALIDATE');
   if(instance.paused) throw new Error('CONTAINER_PAUSED');
@@ -88,14 +94,15 @@ async function discoverDocker(options: DiscoveryOptions, run: DockerRead): Promi
   let interpreter: string;
   try { interpreter=(await run([...execArgs,'sh','-c','command -v python3 || command -v python'])).trim(); }
   catch { throw new Error('BRIDGE_UNAVAILABLE'); }
-  if(!/^\/[^\r\n\x00]+$/.test(interpreter)) throw new Error('BRIDGE_UNAVAILABLE');
-  const data=JSON.parse(await run([...execArgs,interpreter,'-B','-c',projection,options.projectRoot ?? '',options.project ?? '',options.codexHome ?? '',options.codexExecutable ?? '']));
+  if(!boundedText(interpreter,4096) || !interpreter.startsWith('/')) throw new Error('BRIDGE_UNAVAILABLE');
+  const data=JSON.parse(await run([...execArgs,interpreter,'-E','-s','-S','-B','-c',projection,options.projectRoot ?? '',options.project ?? '',options.codexHome ?? '',options.codexExecutable ?? '']));
   const safeErrors=['HOME_USER_MISMATCH','PROJECT_UNAVAILABLE','PROJECT_OUTSIDE_REGISTERED_ROOT','PROJECT_MOUNT_REQUIRES_REGISTERED_ROOT','EXECUTABLE_UNAVAILABLE','CODEX_HOME_NOT_DIRECTORY','PATH_OR_USER_INACCESSIBLE'];
   if(data.error) { report.diagnostics.push(safeErrors.includes(data.error) ? data.error : 'TARGET_PROJECTION_INVALID'); return report; }
-  if(typeof data.user !== 'string' || !data.paths || !['home','codexHome','projectRoot','project','executable'].every(k=>typeof data.paths[k]==='string' && data.paths[k].startsWith('/') && !/[\x00-\x1f]/.test(data.paths[k])) || typeof data.paths.codexHomeExists!=='boolean' || typeof data.permissions?.projectReadable!=='boolean' || typeof data.permissions?.codexHomeWritable!=='boolean') throw new Error('TARGET_PROJECTION_INVALID');
+  if(!boundedText(data.user,256) || !data.paths || !['home','codexHome','projectRoot','project','executable'].every(k=>boundedText(data.paths[k],4096) && data.paths[k].startsWith('/')) || typeof data.paths.codexHomeExists!=='boolean' || typeof data.permissions?.projectReadable!=='boolean' || typeof data.permissions?.codexHomeWritable!=='boolean') throw new Error('TARGET_PROJECTION_INVALID');
   const after=JSON.parse(await run([...args,'inspect','--type','container','--format',inspectFormat,options.container]));
   if(after.id!==instance.id || !after.running || after.paused) throw new Error('CONTAINER_CHANGED_DURING_DISCOVERY');
-  report.paths=data.paths;
+  const {home,codexHome,codexHomeExists,projectRoot,project,executable}=data.paths;
+  report.paths={home,codexHome,codexHomeExists,projectRoot,project,executable};
   report.user=data.user;
   report.credentialScope=`docker:${daemon}:${instance.id}:${data.paths.codexHome}`;
   report.bridge.jsonProjection=data.jsonProjection===true ? 'verified' : 'unavailable';
@@ -112,7 +119,15 @@ async function discoverDocker(options: DiscoveryOptions, run: DockerRead): Promi
 
 // Python 2.7/3 compatible; no writes, environment enumeration or Codex execution.
 const projection = String.raw`
-import os, sys, json, pwd, re
+import sys
+# Do not import even os/json until cwd, PYTHONPATH and site paths are excluded.
+# sys is built in; the interpreter's own prefix defines its trusted stdlib.
+prefix = getattr(sys, 'base_prefix', sys.prefix).rstrip('/')
+version = '%d.%d' % sys.version_info[:2]
+stdlib = [prefix + '/lib/python' + version, prefix + '/lib64/python' + version]
+safe_paths = stdlib + [path + '/lib-dynload' for path in stdlib] + [prefix + '/lib/python%d%d.zip' % sys.version_info[:2]]
+sys.path[:] = [path for path in sys.path if path.startswith('/') and path in safe_paths]
+import os, json, pwd, re
 try:
  root_arg, project_arg, codex_arg, exe_arg = sys.argv[1:]
  identity = pwd.getpwuid(os.geteuid())

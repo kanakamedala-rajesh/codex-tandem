@@ -76,3 +76,13 @@ access observations, not Windows credential ACL qualification.
 `npm run verify:discovery` packs, installs offline, and tests discovery through the
 installed CLI using temporary fixture paths. Add `-- --target local` or the Docker
 options above to record a real installed-package target discovery as well.
+
+Discovery probes isolate Python with `-E -s -S -B`, then retain only the
+interpreter-prefix standard-library paths before importing filesystem or JSON
+modules. Project/PYTHONPATH modules, user sites, `.pth`, and startup customizations
+cannot enter that probe. An unsupported interpreter layout fails closed; it is
+not repaired. Projection outputs retain only named bounded metadata fields.
+Windows discovery honors recognized `.exe`, `.com`, `.cmd`, `.bat` candidates in
+PATHEXT order, excludes extensionless POSIX npm scripts and unsupported files,
+and reports `.cmd`/`.bat` paths without executing them or claiming native launch
+compatibility. The launcher must use the command processor for those shims.

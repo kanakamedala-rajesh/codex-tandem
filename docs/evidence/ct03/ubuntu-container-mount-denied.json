@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "platform": "linux",
   "node": "v24.18.0",
-  "packageSha256": "412eba508928bd1eace8389491dc57c5d50875e471a23b9cfb432e63ecd377b0",
-  "command": "installed codex-tandem doctor --json --target local --project-root /tmp/tandem-discovery-package-cROlij --codex-home /tmp/tandem-discovery-package-cROlij/not-created --codex-executable /home/vs-workspace/.nvm/versions/node/v24.18.0/bin/node",
+  "packageSha256": "d1d66a86f19f0d153ee0eb065ac50fdce9f45e3a110a3a97be3869bd64ae653f",
+  "command": "installed codex-tandem doctor --json --target local --project-root /tmp/tandem-discovery-package-uuOEzF --codex-home /tmp/tandem-discovery-package-uuOEzF/not-created --codex-executable /home/vs-workspace/.nvm/versions/node/v24.18.0/bin/node",
   "result": {
     "schemaVersion": 1,
     "command": "doctor",
@@ -48,14 +48,14 @@
       ],
       "paths": {
         "home": "/home/vs-workspace",
-        "codexHome": "/tmp/tandem-discovery-package-cROlij/not-created",
+        "codexHome": "/tmp/tandem-discovery-package-uuOEzF/not-created",
         "codexHomeExists": false,
-        "projectRoot": "/tmp/tandem-discovery-package-cROlij",
-        "project": "/tmp/tandem-discovery-package-cROlij",
+        "projectRoot": "/tmp/tandem-discovery-package-uuOEzF",
+        "project": "/tmp/tandem-discovery-package-uuOEzF",
         "executable": "/home/vs-workspace/.nvm/versions/node/v24.18.0/bin/node"
       },
       "user": "vs-workspace",
-      "credentialScope": "linux:local:/tmp/tandem-discovery-package-cROlij/not-created"
+      "credentialScope": "linux:local:/tmp/tandem-discovery-package-uuOEzF/not-created"
     }
   },
   "actualCommand": "installed codex-tandem doctor --json --target docker --container codex-tandem-g0-linux --docker-context default --user validation --project-root /proc --project /proc/sys --codex-executable /tmp/codex-tandem-validation-codex",

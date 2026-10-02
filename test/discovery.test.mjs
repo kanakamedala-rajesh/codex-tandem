@@ -151,3 +151,70 @@ test('Linux mount boundaries under an explicit root are rejected even on the sam
  assert.deepEqual(result.diagnostics,['PROJECT_MOUNT_REQUIRES_REGISTERED_ROOT']);
 });
 
+
+test('Docker projection rejects unbounded scalar metadata and excludes unknown payload fields',async()=>{
+ const projection={user:'worker',paths:{home:'/home/worker',codexHome:'/home/worker/.codex',codexHomeExists:true,projectRoot:'/work',project:'/work',executable:'/usr/bin/codex',rawPrompt:'secret-prompt'},jsonProjection:true,durableFacility:true,permissions:{projectReadable:true,codexHomeWritable:true},rawPrompt:'secret-prompt'};
+ const run=async args=>{
+  if(args[0]==='context') return JSON.stringify('unix:///var/run/docker.sock');
+  if(args.includes('info')) return JSON.stringify('daemon-fixture');
+  if(args.includes('inspect')) return JSON.stringify({id:'a'.repeat(64),running:true,paused:false});
+  if(args.at(-1)==='command -v python3 || command -v python') return '/usr/bin/python3';
+  return JSON.stringify(projection);
+ };
+ const options={target:'docker',container:'alias',dockerContext:'test'};
+ const report=await discoverTarget(options,run);
+ assert.equal(report.ok,true);
+ assert.doesNotMatch(JSON.stringify(report),/rawPrompt|secret-prompt/);
+ for(const user of ['worker\nsecret', 'x'.repeat(257)]) {
+  projection.user=user;
+  assert.deepEqual((await discoverTarget(options,run)).diagnostics,['TARGET_PROJECTION_INVALID']);
+ }
+});
+
+test('Windows resolves the npm command shim before its adjacent POSIX script', {skip:process.platform!=='win32'},async()=>{
+ const {writeFile}=await import('node:fs/promises');
+ const root=await mkdtemp(join(tmpdir(),'tandem-win-executable-'));
+ const oldPath=process.env.PATH, oldExt=process.env.PATHEXT;
+ try {
+  await writeFile(join(root,'codex'),'untrusted POSIX fixture, never execute');
+  await writeFile(join(root,'codex.cmd'),'untrusted command fixture, never execute');
+  await writeFile(join(root,'unsupported.txt'),'not executable');
+  process.env.PATH=root;process.env.PATHEXT='.EXE;.CMD';
+  const report=await discoverTarget({target:'local',projectRoot:root});
+  assert.equal(report.ok,true);
+  assert.equal(report.paths.executable.toLowerCase(),join(root,'codex.cmd').toLowerCase());
+  const invalid=await discoverTarget({target:'local',projectRoot:root,codexExecutable:join(root,'unsupported.txt')});
+  assert.deepEqual(invalid.diagnostics,['EXECUTABLE_UNAVAILABLE']);
+ } finally {
+  if(oldPath===undefined) delete process.env.PATH;else process.env.PATH=oldPath;
+  if(oldExt===undefined) delete process.env.PATHEXT;else process.env.PATHEXT=oldExt;
+  await rm(root,{recursive:true,force:true});
+ }
+});
+
+test('Python discovery ignores project imports, PYTHONPATH, user site, and startup hooks', {skip:process.platform!=='linux'}, async()=>{
+ const {writeFile,readFile}=await import('node:fs/promises');
+ const {execFileSync}=await import('node:child_process');
+ const root=await mkdtemp(join(tmpdir(),'tandem-python-isolation-'));
+ const sentinel=join(root,'sentinel');
+ const poison=`open(${JSON.stringify(sentinel)},'w').write('executed')\n`;
+ try {
+  await writeFile(sentinel,'untouched');
+  await writeFile(join(root,'json.py'),poison+"raise RuntimeError('project json imported')\n");
+  await writeFile(join(root,'sitecustomize.py'),poison);
+  const version=execFileSync('/usr/bin/python3',['-E','-s','-S','-B','-c','import sys; print("%d.%d" % sys.version_info[:2])'],{encoding:'utf8'}).trim();
+  const userSite=join(root,'lib','python'+version,'site-packages');
+  await mkdir(userSite,{recursive:true});
+  await writeFile(join(userSite,'fixture.pth'),`import builtins; builtins.open(${JSON.stringify(sentinel)},'w').write('executed')\n`);
+  const run=async args=>{
+   if(args[0]==='context') return JSON.stringify('unix:///var/run/docker.sock');
+   if(args.includes('info')) return JSON.stringify('daemon-fixture');
+   if(args.includes('inspect')) return JSON.stringify({id:'a'.repeat(64),running:true,paused:false});
+   if(args.at(-1)==='command -v python3 || command -v python') return '/usr/bin/python3';
+   return execFileSync('/usr/bin/python3',args.slice(args.indexOf('/usr/bin/python3')+1),{cwd:root,env:{...process.env,PYTHONPATH:root,PYTHONUSERBASE:root},encoding:'utf8'});
+  };
+  const report=await discoverTarget({target:'docker',container:'alias',dockerContext:'test',projectRoot:root,codexExecutable:'/usr/bin/python3'},run);
+  assert.equal(await readFile(sentinel,'utf8'),'untouched');
+  assert.equal(report.ok,true,JSON.stringify(report));
+ } finally {await rm(root,{recursive:true,force:true});}
+});

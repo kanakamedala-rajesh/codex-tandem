@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "platform": "win32",
   "node": "v24.15.0",
-  "packageSha256": "4cef0afbb011f906af2b32a2692f5ffa10a0022781e956ec2dabb6a37441d3ef",
-  "command": "installed codex-tandem doctor --json --target local --project-root C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-0ImhLW --codex-home C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-0ImhLW\\not-created --codex-executable C:\\Program Files\\nodejs\\node.exe",
+  "packageSha256": "f48d84b97672da857e3755adaa1b15d564e50b1feda3015397b17ecb1670845d",
+  "command": "installed codex-tandem doctor --json --target local --project-root C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-ZnXeNu --codex-home C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-ZnXeNu\\not-created --codex-executable C:\\Program Files\\nodejs\\node.exe",
   "result": {
     "schemaVersion": 1,
     "command": "doctor",
@@ -48,14 +48,14 @@
       ],
       "paths": {
         "home": "C:\\Users\\kanak",
-        "codexHome": "C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-0ImhLW\\not-created",
+        "codexHome": "C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-ZnXeNu\\not-created",
         "codexHomeExists": false,
-        "projectRoot": "C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-0ImhLW",
-        "project": "C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-0ImhLW",
+        "projectRoot": "C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-ZnXeNu",
+        "project": "C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-ZnXeNu",
         "executable": "C:\\Program Files\\nodejs\\node.exe"
       },
       "user": "kanak",
-      "credentialScope": "win32:local:C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-0ImhLW\\not-created"
+      "credentialScope": "win32:local:C:\\Users\\kanak\\AppData\\Local\\Temp\\tandem-discovery-package-ZnXeNu\\not-created"
     }
   },
   "actualCommand": "installed codex-tandem doctor --json --target local",

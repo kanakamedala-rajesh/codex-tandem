@@ -67,3 +67,31 @@ checking device IDs alone would incorrectly accept it. No mounts were changed.
 
 Both native Windows and Ubuntu installed-package checks also ran the pre-existing
 runtime/package smoke suite; no SQLite/compression regressions were observed.
+
+## Review-fix validation
+
+The follow-up #10 fix commit is the implementation for the refreshed Windows,
+Ubuntu local, Ubuntu container, and mount-denial manifests. Each file includes
+the new package checksum. Earlier exploratory-clone output is historical only.
+
+All three Spec findings received failing regression tests before their fixes:
+
+- A synthetic Docker projection included unknown `rawPrompt` fields. The result
+  now reconstructs only the six named path fields and rejects control characters
+  and excessive lengths in scalar metadata (user: 256, paths: 4096 characters).
+- Windows fixtures placed an unexecuted POSIX `codex` script beside `codex.cmd`.
+  Discovery selected the wrong file before the fix. It now follows recognized
+  Windows PATHEXT suffixes; explicit unsupported `.txt` files fail.
+- A disposable Ubuntu project supplied `json.py`, `sitecustomize.py`, a user-site
+  `.pth`, and PYTHONPATH/PYTHONUSERBASE overrides. The pre-fix probe changed a
+  sentinel to `executed`; isolated startup now leaves it `untouched` and returns
+  a successful discovery. Preparation and cleanup affect only that temporary
+  fixture. No production target, Python installation, or container was modified.
+
+Final native Windows Node 24.15.0 and Ubuntu Node 24.18.0: typecheck passed and
+18 tests ran on each, with 16 passes and 2 explicitly inapplicable/unavailable
+platform fixtures skipped. Windows exercises the PATHEXT case; Ubuntu exercises
+actual interpreter contamination. Installed actual local discovery passed on
+both. Installed new-container discovery and same-device mount rejection passed
+again with isolated Python startup. Legacy Python compatibility remains a syntax
+contract rather than an execution qualification of the excluded old environment.
