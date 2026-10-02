@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "platform": "linux",
+  "node": "v24.18.0",
+  "packageSha256": "412eba508928bd1eace8389491dc57c5d50875e471a23b9cfb432e63ecd377b0",
+  "command": "installed codex-tandem doctor --json --target local --project-root /tmp/tandem-discovery-package-GudhPr --codex-home /tmp/tandem-discovery-package-GudhPr/not-created --codex-executable /home/vs-workspace/.nvm/versions/node/v24.18.0/bin/node",
+  "result": {
+    "schemaVersion": 1,
+    "command": "doctor",
+    "runtime": {
+      "node": "24.18.0",
+      "platform": "linux",
+      "arch": "x64"
+    },
+    "ok": true,
+    "checks": [
+      {
+        "capability": "node",
+        "status": "pass"
+      },
+      {
+        "capability": "sqlite",
+        "status": "pass"
+      },
+      {
+        "capability": "gzip",
+        "status": "pass"
+      },
+      {
+        "capability": "zstandard",
+        "status": "pass"
+      }
+    ],
+    "targetDiscovery": {
+      "schemaVersion": 1,
+      "ok": true,
+      "target": "local",
+      "fullTracking": false,
+      "trust": "unverified",
+      "bridge": {
+        "jsonProjection": "host-built-in",
+        "durableCapture": "unverified"
+      },
+      "diagnostics": [
+        "HOOK_TRUST_UNVERIFIED",
+        "DURABLE_CAPTURE_UNVERIFIED",
+        "LIFECYCLE_UNQUALIFIED"
+      ],
+      "paths": {
+        "home": "/home/vs-workspace",
+        "codexHome": "/tmp/tandem-discovery-package-GudhPr/not-created",
+        "codexHomeExists": false,
+        "projectRoot": "/tmp/tandem-discovery-package-GudhPr",
+        "project": "/tmp/tandem-discovery-package-GudhPr",
+        "executable": "/home/vs-workspace/.nvm/versions/node/v24.18.0/bin/node"
+      },
+      "user": "vs-workspace",
+      "credentialScope": "linux:local:/tmp/tandem-discovery-package-GudhPr/not-created"
+    }
+  },
+  "actualCommand": "installed codex-tandem doctor --json --target docker --container codex-tandem-g0-linux --docker-context default --user validation --project-root /home/validation --codex-executable /tmp/codex-tandem-validation-codex",
+  "actual": {
+    "schemaVersion": 1,
+    "command": "doctor",
+    "runtime": {
+      "node": "24.18.0",
+      "platform": "linux",
+      "arch": "x64"
+    },
+    "ok": true,
+    "checks": [
+      {
+        "capability": "node",
+        "status": "pass"
+      },
+      {
+        "capability": "sqlite",
+        "status": "pass"
+      },
+      {
+        "capability": "gzip",
+        "status": "pass"
+      },
+      {
+        "capability": "zstandard",
+        "status": "pass"
+      }
+    ],
+    "targetDiscovery": {
+      "schemaVersion": 1,
+      "ok": true,
+      "target": "docker",
+      "fullTracking": false,
+      "trust": "unverified",
+      "bridge": {
+        "jsonProjection": "verified",
+        "durableCapture": "facility-present-unverified"
+      },
+      "diagnostics": [
+        "HOOK_TRUST_UNVERIFIED",
+        "DURABLE_CAPTURE_UNVERIFIED",
+        "LIFECYCLE_UNQUALIFIED"
+      ],
+      "context": "default",
+      "generation": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf",
+      "paths": {
+        "home": "/home/validation",
+        "codexHome": "/home/validation/.codex",
+        "codexHomeExists": true,
+        "projectRoot": "/home/validation",
+        "project": "/home/validation",
+        "executable": "/tmp/codex-tandem-validation-codex"
+      },
+      "user": "validation",
+      "credentialScope": "docker:c27d660c-6f84-4ec6-9cce-8492ed0d3e74:b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf:/home/validation/.codex"
+    }
+  }
+}

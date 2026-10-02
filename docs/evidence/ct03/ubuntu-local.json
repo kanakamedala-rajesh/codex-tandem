@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "platform": "linux",
+  "node": "v24.18.0",
+  "packageSha256": "412eba508928bd1eace8389491dc57c5d50875e471a23b9cfb432e63ecd377b0",
+  "command": "installed codex-tandem doctor --json --target local --project-root /tmp/tandem-discovery-package-sD4Uax --codex-home /tmp/tandem-discovery-package-sD4Uax/not-created --codex-executable /home/vs-workspace/.nvm/versions/node/v24.18.0/bin/node",
+  "result": {
+    "schemaVersion": 1,
+    "command": "doctor",
+    "runtime": {
+      "node": "24.18.0",
+      "platform": "linux",
+      "arch": "x64"
+    },
+    "ok": true,
+    "checks": [
+      {
+        "capability": "node",
+        "status": "pass"
+      },
+      {
+        "capability": "sqlite",
+        "status": "pass"
+      },
+      {
+        "capability": "gzip",
+        "status": "pass"
+      },
+      {
+        "capability": "zstandard",
+        "status": "pass"
+      }
+    ],
+    "targetDiscovery": {
+      "schemaVersion": 1,
+      "ok": true,
+      "target": "local",
+      "fullTracking": false,
+      "trust": "unverified",
+      "bridge": {
+        "jsonProjection": "host-built-in",
+        "durableCapture": "unverified"
+      },
+      "diagnostics": [
+        "HOOK_TRUST_UNVERIFIED",
+        "DURABLE_CAPTURE_UNVERIFIED",
+        "LIFECYCLE_UNQUALIFIED"
+      ],
+      "paths": {
+        "home": "/home/vs-workspace",
+        "codexHome": "/tmp/tandem-discovery-package-sD4Uax/not-created",
+        "codexHomeExists": false,
+        "projectRoot": "/tmp/tandem-discovery-package-sD4Uax",
+        "project": "/tmp/tandem-discovery-package-sD4Uax",
+        "executable": "/home/vs-workspace/.nvm/versions/node/v24.18.0/bin/node"
+      },
+      "user": "vs-workspace",
+      "credentialScope": "linux:local:/tmp/tandem-discovery-package-sD4Uax/not-created"
+    }
+  },
+  "actualCommand": "installed codex-tandem doctor --json --target local",
+  "actual": {
+    "schemaVersion": 1,
+    "command": "doctor",
+    "runtime": {
+      "node": "24.18.0",
+      "platform": "linux",
+      "arch": "x64"
+    },
+    "ok": true,
+    "checks": [
+      {
+        "capability": "node",
+        "status": "pass"
+      },
+      {
+        "capability": "sqlite",
+        "status": "pass"
+      },
+      {
+        "capability": "gzip",
+        "status": "pass"
+      },
+      {
+        "capability": "zstandard",
+        "status": "pass"
+      }
+    ],
+    "targetDiscovery": {
+      "schemaVersion": 1,
+      "ok": true,
+      "target": "local",
+      "fullTracking": false,
+      "trust": "unverified",
+      "bridge": {
+        "jsonProjection": "host-built-in",
+        "durableCapture": "unverified"
+      },
+      "diagnostics": [
+        "HOOK_TRUST_UNVERIFIED",
+        "DURABLE_CAPTURE_UNVERIFIED",
+        "LIFECYCLE_UNQUALIFIED"
+      ],
+      "paths": {
+        "home": "/home/vs-workspace",
+        "codexHome": "/home/vs-workspace/.codex",
+        "codexHomeExists": true,
+        "projectRoot": "/mnt/c/Users/kanak/windows_workspace/Codex-Projects/codex-tandem/.worktrees/ct03",
+        "project": "/mnt/c/Users/kanak/windows_workspace/Codex-Projects/codex-tandem/.worktrees/ct03",
+        "executable": "/home/vs-workspace/.codex/packages/standalone/releases/0.160.0-x86_64-unknown-linux-musl/bin/codex"
+      },
+      "user": "vs-workspace",
+      "credentialScope": "linux:local:/home/vs-workspace/.codex"
+    }
+  }
+}

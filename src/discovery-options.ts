@@ -1,0 +1,17 @@
+import type { DiscoveryOptions } from './discovery.js';
+/** Read-only doctor options; no persisted target registration is performed. */
+export function parseDiscoveryOptions(args: string[]): DiscoveryOptions | undefined {
+ const options: Partial<DiscoveryOptions>={};
+ const names: Record<string,keyof DiscoveryOptions>={'--target':'target','--container':'container','--docker-context':'dockerContext','--expected-generation':'expectedGeneration','--user':'user','--project-root':'projectRoot','--project':'project','--codex-home':'codexHome','--codex-executable':'codexExecutable'};
+ for(let i=0;i<args.length;i++) {
+  if(args[i]==='--json') continue;
+  const key=names[args[i]], value=args[++i];
+  if(!key || !value || value.startsWith('--') || /[\x00-\x1f]/.test(value) || key in options) throw new Error('INVALID_ARGUMENTS');
+  Object.assign(options,{[key]:value});
+ }
+ if(Object.keys(options).length===0) return undefined;
+ if(!options.target) options.target=options.container ? 'docker' : 'local';
+ if(options.target!=='local' && options.target!=='docker') throw new Error('INVALID_ARGUMENTS');
+ if(options.target==='local' && (options.container || options.dockerContext || options.expectedGeneration || options.user)) throw new Error('INVALID_ARGUMENTS');
+ return options as DiscoveryOptions;
+}
