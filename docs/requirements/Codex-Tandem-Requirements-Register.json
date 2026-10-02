@@ -1,0 +1,1626 @@
+{
+  "product": "Codex Tandem",
+  "specificationVersion": "1.0",
+  "date": "2026-09-30",
+  "softwareImplementationStatus": "NOT IMPLEMENTED OR VALIDATED IN THIS TASK",
+  "requirements": [
+    {
+      "id": "SCP-001",
+      "title": "Single focused application",
+      "requirement": "The implementation SHALL ship as one application package with a foreground launcher role and a background collector/dashboard role. It SHALL NOT introduce a generic plugin platform, microservice deployment, message broker, or separate database server.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T01",
+        "T43"
+      ]
+    },
+    {
+      "id": "SCP-002",
+      "title": "Authorized identities only",
+      "requirement": "Profiles SHALL represent accounts the operator is authorized to use. Tandem SHALL preserve organizational authentication, hook, sandbox, and configuration policy and SHALL NOT imply that a subscription permits credential sharing.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T06",
+        "T37"
+      ]
+    },
+    {
+      "id": "SCP-003",
+      "title": "Evidence boundaries",
+      "requirement": "The product SHALL distinguish supported-and-tested, capability-unverified, degraded, and unsupported target states. Successful codex --version output SHALL NOT be treated as proof of hooks, attribution, or background-server isolation.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T02",
+        "T14",
+        "T45"
+      ]
+    },
+    {
+      "id": "ENV-001",
+      "title": "Host execution boundary",
+      "requirement": "Tandem SHALL execute Node-based launch management, database work, reporting, and dashboard service outside the Ubuntu 14.04 container. The existing in-container Codex executable and project toolchain SHALL remain the execution environment for agent build/test commands.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T03",
+        "T13"
+      ]
+    },
+    {
+      "id": "ENV-002",
+      "title": "Minimum and newer runtimes",
+      "requirement": "The build SHALL execute on the documented minimum host Node capability level and maintained compatible newer releases. No artificial maximum major version SHALL be imposed merely to match the development machine.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T02",
+        "T43"
+      ]
+    },
+    {
+      "id": "ENV-003",
+      "title": "No implicit system modifications",
+      "requirement": "Setup SHALL NOT replace glibc, upgrade the container OS, install a compiler, modify Windows application-control policy, enable developer mode, grant Docker permissions, or recreate/start/stop a container without an explicitly scoped separate user action.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T13",
+        "T37",
+        "T44"
+      ]
+    },
+    {
+      "id": "ENV-004",
+      "title": "Bridge capability gate",
+      "requirement": "Container setup SHALL detect a safe existing mechanism for metadata-only JSON projection and durable capture. A Python-compatible bridge is a recommended implementation, not an assumption that Python exists. Without a verified mechanism, fully tracked container mode SHALL remain unavailable with a precise diagnostic; no silent raw-payload logging or inaccurate attribution is allowed.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T14",
+        "T37",
+        "T45"
+      ]
+    },
+    {
+      "id": "ARC-001",
+      "title": "Minimal fast-path dependency graph",
+      "requirement": "The selection and launch modules SHALL load only the code required for configuration, credentials, locking, target execution, and the launch journal. SQLite, compression, collectors, large pricing tables, and web assets SHALL be loaded lazily outside that path.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18",
+        "T43"
+      ]
+    },
+    {
+      "id": "ARC-002",
+      "title": "Single source of accounting logic",
+      "requirement": "CLI and browser totals SHALL be produced from the same normalized usage and evidence model. The container bridge SHALL transport metadata rather than implement a second set of accounting rules.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T26",
+        "T32"
+      ]
+    },
+    {
+      "id": "ARC-003",
+      "title": "Independent operating environments",
+      "requirement": "Native Windows and WSL installations SHALL keep independent application stores and CODEX_HOME state. Tandem SHALL detect and reject an accidentally shared live analytics database. Docker capture is a local target integration, not cross-device synchronization.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T12",
+        "T36"
+      ]
+    },
+    {
+      "id": "CLI-001",
+      "title": "Arrow-key selector",
+      "requirement": "The interactive selector SHALL use Up/Down and Enter as the primary interaction. It SHALL NOT require numeric option entry. It SHALL restore raw mode, cursor visibility, and terminal state on cancellation, error, or launch handoff.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T04"
+      ]
+    },
+    {
+      "id": "CLI-002",
+      "title": "Explicit noninteractive behavior",
+      "requirement": "When no usable TTY exists, the command SHALL require an explicit --identity and target resolution or return a concise actionable error. It SHALL not wait for input, choose the first identity, or perform a destructive confirmation implicitly.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T05"
+      ]
+    },
+    {
+      "id": "CLI-003",
+      "title": "Identity and Codex profile distinction",
+      "requirement": "Use --identity for Tandem authentication selection and --target for execution placement. Arguments after -- SHALL pass to Codex unchanged; Codex configuration profiles and its -p/--profile flags SHALL not be consumed as Tandem identities.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T05",
+        "T17"
+      ]
+    },
+    {
+      "id": "CLI-004",
+      "title": "Project-aware resume",
+      "requirement": "The launcher SHALL support explicit session resume and an opt-in last-session lookup scoped to target and canonical project directory. It SHALL not silently resume a session from another project, target, or unavailable path.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T17",
+        "T25"
+      ]
+    },
+    {
+      "id": "CLI-005",
+      "title": "No selector network calls",
+      "requirement": "The selector SHALL render local saved identity labels without quota lookups, token refresh requests, registry checks, or network calls. Cached health may be shown with its age but SHALL not hold up selection.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18"
+      ]
+    },
+    {
+      "id": "CLI-006",
+      "title": "Useful account scale",
+      "requirement": "Profile storage and UI SHALL support zero, one, two, and multiple identities without a two-profile hard limit. Duplicate display names SHALL be rejected or disambiguated; selection SHALL resolve a stable ID rather than a mutable row number.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T04",
+        "T06"
+      ]
+    },
+    {
+      "id": "PRO-001",
+      "title": "Profile CRUD",
+      "requirement": "The CLI SHALL provide add/import, list/show, rename/update display metadata, reauthenticate, and delete operations, through commands and the management screen. Secret token values SHALL never be printed. Creation and login require explicit user initiation.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T06",
+        "T07"
+      ]
+    },
+    {
+      "id": "PRO-002",
+      "title": "Stable history",
+      "requirement": "Every profile SHALL have an immutable profile ID. Credential/account bindings SHALL have separate stable IDs. Rename SHALL preserve history; deletion SHALL remove selected local credentials after confirmation while retaining a non-secret historical identity record and analytics.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T07",
+        "T30"
+      ]
+    },
+    {
+      "id": "PRO-003",
+      "title": "Reauthentication versus replacement",
+      "requirement": "Reauthentication of the same provider account SHALL preserve its identity binding. A different account or organization selected during login SHALL require an explicit new binding; it SHALL NOT retroactively change ownership of previous usage.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T07",
+        "T23"
+      ]
+    },
+    {
+      "id": "PRO-004",
+      "title": "Login isolation",
+      "requirement": "Profile addition or reauthentication SHALL use the existing Codex login flow in a temporary, restricted staging home when supported, or a recoverable guarded activation flow. It SHALL not destroy the currently valid profile when login is canceled or fails.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T06",
+        "T08"
+      ]
+    },
+    {
+      "id": "PRO-005",
+      "title": "Direct Codex compatibility",
+      "requirement": "The chosen identity SHALL remain active in the target CODEX_HOME after exit, matching the simple codex-as workflow. Subsequent plain Codex use SHALL remain possible. Tandem SHALL preserve detected refreshed credentials before switching, but SHALL not promise exact attribution for external launches.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T08",
+        "T29"
+      ]
+    },
+    {
+      "id": "AUTH-001",
+      "title": "File mode with policy consent",
+      "requirement": "Setup SHALL detect the effective credential storage mode and policy. Any proposed change to file mode SHALL be previewed and approved, with a recoverable configuration backup. If policy prohibits file-backed switching, the target SHALL be blocked rather than silently overridden.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T06",
+        "T37"
+      ]
+    },
+    {
+      "id": "AUTH-002",
+      "title": "Outgoing refresh preservation",
+      "requirement": "Before activating a different identity, Tandem SHALL save the current target credentials to the verified outgoing binding. It SHALL also attempt this after process exit. A missing or mismatched binding SHALL lead to recovery, not copying credentials into whichever profile label is current.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T08",
+        "T09"
+      ]
+    },
+    {
+      "id": "AUTH-003",
+      "title": "Recoverable replacement",
+      "requirement": "Credential activation SHALL use restricted staging, validation, same-filesystem replacement where available, and a phase journal. A crash at any phase SHALL preserve at least one recoverable valid credential version and SHALL never yield a false successful launch record.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T09"
+      ]
+    },
+    {
+      "id": "AUTH-004",
+      "title": "Immutable launch binding",
+      "requirement": "Before the child can execute, Tandem SHALL durably write a launch ID bound to identity-binding ID, profile ID, target generation, project path, effective CODEX_HOME, intended Codex executable, and tracked/untracked mode. The credential bytes or token-derived fingerprints SHALL not enter the analytics journal.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T09",
+        "T19",
+        "T37"
+      ]
+    },
+    {
+      "id": "AUTH-005",
+      "title": "Scope locking",
+      "requirement": "Activation and launch SHALL be serialized for a canonical physical CODEX_HOME and for a shared mutable credential binding. Aliased target paths SHALL not bypass the same-home lock. The MVP SHALL expose only one active managed launch per Tandem installation.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T10",
+        "T12"
+      ]
+    },
+    {
+      "id": "AUTH-006",
+      "title": "Lock ownership proof",
+      "requirement": "Locks SHALL contain a nonce and process identity evidence including creation identity where available. Stale-lock recovery SHALL require evidence that the owner is gone; PID existence alone SHALL not justify deletion or process termination.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T10",
+        "T11"
+      ]
+    },
+    {
+      "id": "AUTH-007",
+      "title": "External authentication changes",
+      "requirement": "If external login, a workspace change, or another process changes the active identity during a managed launch, Tandem SHALL flag the affected evidence range and avoid assigning later usage from a stale launch identity. It SHALL not retroactively relabel previously verified observations.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T23",
+        "T29"
+      ]
+    },
+    {
+      "id": "AUTH-008",
+      "title": "No auto-restore of obsolete tokens",
+      "requirement": "Rollback, uninstall, and migration SHALL not blindly restore an old authentication snapshot after Codex has refreshed it. Recovery SHALL prefer the most recent validated matching binding and explain unresolved alternatives without showing secrets.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T08",
+        "T09",
+        "T40"
+      ]
+    },
+    {
+      "id": "PROC-001",
+      "title": "Scoped inventory",
+      "requirement": "The launch guard SHALL inspect relevant foreground, worker, and background Codex processes within the selected target and credential scope. It SHALL identify known managed processes and distinguish unrelated or ownership-unknown processes.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T10",
+        "T11",
+        "T15"
+      ]
+    },
+    {
+      "id": "PROC-002",
+      "title": "Explicit stop consent",
+      "requirement": "Tandem SHALL not terminate a process without a displayed, scoped confirmation. Consent SHALL identify the process set and consequences. Choosing leave/cancel SHALL leave both those processes and the selected target credentials unchanged.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T11"
+      ]
+    },
+    {
+      "id": "PROC-003",
+      "title": "Graceful before forced stop",
+      "requirement": "Prefer a verified graceful shutdown mechanism or normal signal for the owned process scope. Forced termination SHALL require a second explicit approval and a fresh identity check. Never use an indiscriminate process-name kill, terminate Docker PID 1, or stop/restart the container as a shortcut.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T11",
+        "T15"
+      ]
+    },
+    {
+      "id": "PROC-004",
+      "title": "Do not trust stale PID lists",
+      "requirement": "Immediately before stopping or switching, revalidate process creation identity, target generation, and ownership. A PID reused by an unrelated process SHALL not be terminated. An inaccessible/ambiguous owner SHALL block unsafe switching with an explanation.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T10",
+        "T11"
+      ]
+    },
+    {
+      "id": "PROC-005",
+      "title": "Verify remote termination",
+      "requirement": "For Docker launches, losing or killing the host docker exec client SHALL not be treated as proof that Codex or its children stopped. Validate in-container process state and retained server processes before releasing the credential scope.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T15",
+        "T28"
+      ]
+    },
+    {
+      "id": "PROC-006",
+      "title": "No stale server context",
+      "requirement": "A new tracked launch SHALL not reuse a background server that retains an unverified prior identity or launch context. Reuse is allowed only when a version-tested adapter proves correct per-launch context; otherwise the user must approve stopping the conflict or cancel.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T11",
+        "T20"
+      ]
+    },
+    {
+      "id": "PROC-007",
+      "title": "Collector is a separate process role",
+      "requirement": "Stopping the Tandem collector SHALL not stop Codex. Stopping Codex SHALL not delete or reset analytics. Idle Tandem collection SHALL not itself be considered a credential-switch conflict.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T28",
+        "T39"
+      ]
+    },
+    {
+      "id": "DCK-001",
+      "title": "Separate identity and target selection",
+      "requirement": "A Docker target SHALL be a named execution configuration independent of an identity. Selection SHALL not alter the build image or toolchain. Target setup SHALL pin the resolved container instance for each launch and revalidate changes before activation.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T13",
+        "T16"
+      ]
+    },
+    {
+      "id": "DCK-002",
+      "title": "Correct user and build environment",
+      "requirement": "Codex SHALL run under the configured user, HOME, CODEX_HOME, working directory, and approved build environment. The same representative build/test command that works from the existing container terminal SHALL work when invoked by Codex through Tandem.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T13",
+        "T17"
+      ]
+    },
+    {
+      "id": "DCK-003",
+      "title": "Preserve terminal semantics",
+      "requirement": "The adapter SHALL preserve interactive input, resize, Unicode, cancellation, paste, and exit status. Use a Docker TTY only for a real interactive terminal; noninteractive passthrough SHALL not unconditionally allocate -t.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T05",
+        "T13",
+        "T17"
+      ]
+    },
+    {
+      "id": "DCK-004",
+      "title": "Safe credential transport",
+      "requirement": "Only the selected credentials and recoverable outgoing refresh state may cross the host-container boundary. Transfer SHALL avoid secret command-line/environment values, preserve restricted ownership and mode, and commit atomically within the target filesystem. The whole credential vault SHALL not be mounted into the container.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T08",
+        "T13",
+        "T37"
+      ]
+    },
+    {
+      "id": "DCK-005",
+      "title": "No modern Node inside container",
+      "requirement": "Container hook and launch helper code SHALL not invoke the broken Node/npm installation or depend on a modern shared C library. It SHALL use only verified existing compatible facilities; helper deployment changes SHALL be previewed and reversible.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T03",
+        "T14"
+      ]
+    },
+    {
+      "id": "DCK-006",
+      "title": "Durable capture with collector absent",
+      "requirement": "Both mounted and no-mount container modes SHALL capture launch/turn/child metadata while the host collector is stopped. Events SHALL be committed individually with bounded size and replayed without duplication after collection resumes.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T14",
+        "T19",
+        "T28"
+      ]
+    },
+    {
+      "id": "DCK-007",
+      "title": "Background-only collection transport",
+      "requirement": "Reading event spools, fetching rollout ranges, decompressing history, and reconciling analytics SHALL happen after Codex starts or in an already-running collector. Container setup SHALL not recur in full on each launch.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18",
+        "T27"
+      ]
+    },
+    {
+      "id": "DCK-008",
+      "title": "Container lifecycle boundaries",
+      "requirement": "A stopped, paused, replaced, inaccessible, or wrong-context container SHALL produce a precise error without automatic restart. A replacement container using the same name SHALL require identity/path revalidation before receiving credentials.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T16"
+      ]
+    },
+    {
+      "id": "DCK-009",
+      "title": "No broad infrastructure privileges",
+      "requirement": "The adapter SHALL use existing operator access. It SHALL NOT mount the Docker socket inside the container, add privileged mode, change group membership, expose a LAN API, or request root merely to simplify collection.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T13",
+        "T37"
+      ]
+    },
+    {
+      "id": "DCK-010",
+      "title": "Physical path mapping",
+      "requirement": "Host and container paths SHALL be mapped through explicit registered roots with canonical containment checks. Case, symlinks, mount boundaries, worktrees, and paths with spaces SHALL not cause source escape or cross-project session selection.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T12",
+        "T17",
+        "T36"
+      ]
+    },
+    {
+      "id": "ATT-001",
+      "title": "Observation-level ownership",
+      "requirement": "Every observed usage record SHALL carry an identity binding or an explicit unresolved/conflicted state with provenance. Ownership SHALL not be inferred solely from the current auth.json, a session label, latest selected profile, ingestion time, model, or plan.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T19",
+        "T21",
+        "T23",
+        "T29"
+      ]
+    },
+    {
+      "id": "ATT-002",
+      "title": "Multi-identity sessions",
+      "requirement": "The same session SHALL support turns and attempts belonging to different identity bindings. Session-level identity presentation SHALL be a derived set, and account filters SHALL include only matching usage observations rather than all usage in a matching session.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T21",
+        "T22",
+        "T32"
+      ]
+    },
+    {
+      "id": "ATT-003",
+      "title": "Capture at start",
+      "requirement": "For qualified Codex versions, Tandem SHALL record launch context and bind session/turn identity at the earliest supported lifecycle boundary before work is lost to a crash. It SHALL not depend exclusively on Stop, Interrupt, or SubagentStop to discover identity.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T19",
+        "T20"
+      ]
+    },
+    {
+      "id": "ATT-004",
+      "title": "Stable per-launch context",
+      "requirement": "The capture adapter SHALL obtain immutable per-launch identity metadata through a version-tested propagation mechanism. Missing or stale environment variables SHALL be detected. A mutable global active-profile file SHALL not be the only source for a hook arriving late.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T20",
+        "T24"
+      ]
+    },
+    {
+      "id": "ATT-005",
+      "title": "Subagent relation correctness",
+      "requirement": "Child usage SHALL inherit identity only through a verified parent-attempt/launch relationship or direct execution evidence. Parent session IDs, child agent IDs, and child thread IDs SHALL remain distinct. Missing edges SHALL remain unresolved until evidence arrives.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T22",
+        "T24"
+      ]
+    },
+    {
+      "id": "ATT-006",
+      "title": "Repeated logical turn IDs",
+      "requirement": "A logical turn retried or resumed under a new identity SHALL produce separate attempt-level attribution where evidence establishes the boundary. A single mutable (thread, turn)->account mapping SHALL not overwrite previous ownership.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T23"
+      ]
+    },
+    {
+      "id": "ATT-007",
+      "title": "Late and out-of-order events",
+      "requirement": "Late events from profile A received after profile B starts SHALL retain A through their original launch/attempt evidence. Ingestion order SHALL not determine ownership. Reprocessing with stronger evidence SHALL be deterministic and audited.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T24",
+        "T26"
+      ]
+    },
+    {
+      "id": "ATT-008",
+      "title": "Exact, inferred, manual, unknown, conflicted",
+      "requirement": "The data model SHALL distinguish direct launch/event evidence, verified parent inheritance, operator assertion, unresolved identity, and contradictory evidence. These states SHALL be visible in reports; a manually asserted historical label SHALL not be presented as automatically verified.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T24",
+        "T29",
+        "T30"
+      ]
+    },
+    {
+      "id": "ATT-009",
+      "title": "No duplicated inherited history",
+      "requirement": "Inherited parent history, forks, compaction, archived copies, and subagent transcript prefixes SHALL not be counted as new child usage. Physical source ownership and native response identity SHALL govern normalization, with conservative handling of legacy counters.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T25",
+        "T26"
+      ]
+    },
+    {
+      "id": "ATT-010",
+      "title": "Conflicting evidence",
+      "requirement": "Contradictory non-secret account evidence, source ownership, launch binding, or response identity SHALL create a visible conflict. The implementation SHALL not silently choose whichever source arrived last or whichever profile is active.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T23",
+        "T24",
+        "T26"
+      ]
+    },
+    {
+      "id": "ATT-011",
+      "title": "Identity-safe quotas",
+      "requirement": "A recorded quota observation SHALL belong to the identity binding and scope evidenced when observed. A later identity switch SHALL not move that quota state to another profile. Unknown limit windows and stale samples SHALL remain explicit.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T31"
+      ]
+    },
+    {
+      "id": "ATT-012",
+      "title": "Limits of observation",
+      "requirement": "The product SHALL describe attribution as local evidence for observed work. It SHALL not claim to prove an unobserved provider bill, remote account-wide usage, or tool behavior that bypasses instrumentation. All missing records and unavailable sources SHALL affect completeness indicators.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T29",
+        "T31",
+        "T32"
+      ]
+    },
+    {
+      "id": "ATT-013",
+      "title": "Cross-account cumulative uncertainty",
+      "requirement": "When a legacy usage delta spans an unproven identity or attempt boundary, the collector SHALL retain an unresolved/conflicted interval rather than assigning the entire delta to the newer profile. Stronger evidence may resolve it later without adding the same tokens twice.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T23",
+        "T26"
+      ]
+    },
+    {
+      "id": "CAP-001",
+      "title": "Minimal hook event set",
+      "requirement": "Install only events required for session, turn-start, child-start/stop, completion and supported interruption capture. Ordinary tool-call hooks SHALL not be enabled just to identify accounts. Existing user/plugin hooks and trust settings SHALL be preserved.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T14",
+        "T19",
+        "T38"
+      ]
+    },
+    {
+      "id": "CAP-002",
+      "title": "No work amplification",
+      "requirement": "Hooks SHALL perform bounded input validation, metadata projection and durable event publication only. They SHALL not start the collector, open the analytics database, scan sessions, print reports, contact the network, or initiate additional agent turns.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18",
+        "T38"
+      ]
+    },
+    {
+      "id": "CAP-003",
+      "title": "Metadata-only projection",
+      "requirement": "Before persistence, hooks SHALL discard prompt text, assistant messages, tool input/output, environment dumps, cookies and tokens. Allowed metadata includes versioned event kind, launch/target IDs, session/turn/agent relationships, transcript reference, model metadata, status and timestamps.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T37",
+        "T38"
+      ]
+    },
+    {
+      "id": "CAP-004",
+      "title": "Atomic event publication",
+      "requirement": "Use one bounded event per committed file or an equivalently crash-safe record protocol. Writers SHALL not share an unprotected append buffer. Publication SHALL use a restricted temporary file and atomic completion marker; readers SHALL ignore unfinished writes.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T19",
+        "T24",
+        "T28"
+      ]
+    },
+    {
+      "id": "CAP-005",
+      "title": "Acknowledgment after commit",
+      "requirement": "The host SHALL acknowledge an event for deletion only after its normalized effect and event receipt are durably committed. Repeated transport or replay SHALL be idempotent. A crash between database commit and source deletion SHALL not duplicate usage.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T24",
+        "T26",
+        "T28"
+      ]
+    },
+    {
+      "id": "CAP-006",
+      "title": "Neutral Codex hook response",
+      "requirement": "Each hook SHALL emit only the documented neutral output for that event/version, with no model context, approval decision, continuation request, or user-facing receipt by default. Hook errors SHALL not masquerade as an instruction to Codex.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T38"
+      ]
+    },
+    {
+      "id": "CAP-007",
+      "title": "Bounded failure behavior",
+      "requirement": "Hooks SHALL fail quickly without blocking useful Codex work when later telemetry fails. A visible tracking-degraded state SHALL be raised out of band; the collector SHALL reconcile persisted rollouts without inventing identity evidence. Essential pre-launch record failure follows the explicit untracked policy.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T19",
+        "T28",
+        "T38"
+      ]
+    },
+    {
+      "id": "CAP-008",
+      "title": "Versioned and restrictive envelopes",
+      "requirement": "All hook envelopes SHALL have a schema version, event ID, launch ID and target generation. Validate size, field types, field lengths and source containment. Unknown fields SHALL be ignored or quarantined without execution; unsupported schema versions SHALL not be treated as valid empty usage.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T36",
+        "T38",
+        "T45"
+      ]
+    },
+    {
+      "id": "COL-001",
+      "title": "Read-only source handling",
+      "requirement": "The collector SHALL read registered Codex rollout/session sources without modifying, truncating, deleting, or rewriting them. Hook/configuration installation is a separate consented operation. Collection SHALL include the relevant active and archived sources.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T25",
+        "T27",
+        "T36"
+      ]
+    },
+    {
+      "id": "COL-002",
+      "title": "Incremental and recoverable parsing",
+      "requirement": "Persist file generation, cursor, parser state and source health. Commit normalized observations and cursor progress together. Incomplete trailing records SHALL wait for more data; rotation, truncation and replacement SHALL trigger bounded revalidation rather than blind offset reuse.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T25",
+        "T27"
+      ]
+    },
+    {
+      "id": "COL-003",
+      "title": "Duplicate-safe observation keys",
+      "requirement": "Use stable upstream response identifiers when available, namespaced to their documented uniqueness domain. Source-copy identity and immutable observation facts SHALL support fallback deduplication. Adding a profile or launch ID to an otherwise identical response key SHALL not turn a replay into new usage.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T26"
+      ]
+    },
+    {
+      "id": "COL-004",
+      "title": "Conservative legacy counters",
+      "requirement": "Legacy cumulative counters SHALL use a verified baseline and monotonic validated deltas. Counter resets, inherited baselines and uncertain request boundaries SHALL be flagged. Native and legacy records describing the same work SHALL not both contribute to totals.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T25",
+        "T26"
+      ]
+    },
+    {
+      "id": "COL-005",
+      "title": "Bounded decompression",
+      "requirement": "Use host built-in gzip/Zstandard support with streaming input, decompressed-byte and record-size limits, time/cancellation bounds, and explicit corrupt/truncated-source status. No bundled native decoder SHALL be executed.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T03",
+        "T27"
+      ]
+    },
+    {
+      "id": "COL-006",
+      "title": "One writer and responsive reads",
+      "requirement": "A collector worker SHALL own the analytics writer. Schema migrations and imports SHALL be coordinated. Dashboard requests SHALL remain responsive while parsing yields in bounded batches. Multiple launcher processes SHALL not become competing database writers.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T27",
+        "T33",
+        "T39"
+      ]
+    },
+    {
+      "id": "COL-007",
+      "title": "Useful observation fields",
+      "requirement": "Retain supported token categories, recorded model and reasoning effort, service tier, timestamps, duration evidence, terminal outcome, source format/version and provenance. Missing data SHALL be unknown, not zero or a fabricated default.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T26",
+        "T31",
+        "T32"
+      ]
+    },
+    {
+      "id": "COL-008",
+      "title": "Safe numeric accounting",
+      "requirement": "Token counts SHALL be nonnegative validated integers with overflow protection. Cached-input and reasoning subsets SHALL not be added again to totals that already include them. Monetary estimates SHALL use fixed-point or equivalent decimal-safe arithmetic.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T26",
+        "T31"
+      ]
+    },
+    {
+      "id": "COL-009",
+      "title": "Honest local cost estimates",
+      "requirement": "API-equivalent cost estimates SHALL be labeled estimates, retain the pricing source/version and unpriced portions, and remain distinct from actual subscription fees or quota. Unknown model aliases SHALL not be silently mapped to a guessed price.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T31"
+      ]
+    },
+    {
+      "id": "COL-010",
+      "title": "Preserve observed failure",
+      "requirement": "Store original structured failure/outcome metadata without conversation text, plus a presentation status. Exact observed usage-limit errors SHALL display usage exceeded. Process disappearance without a recorded provider failure SHALL display interrupted/unknown termination rather than an invented cause.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T21",
+        "T28",
+        "T32"
+      ]
+    },
+    {
+      "id": "UI-001",
+      "title": "Session and turn hierarchy",
+      "requirement": "Show sessions with project/target, first/latest activity, observed outcomes, identity set and totals. Expanding a session SHALL show turns, attempt boundaries where necessary, child work and identity-specific contributions.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T21",
+        "T22",
+        "T32"
+      ]
+    },
+    {
+      "id": "UI-002",
+      "title": "Mixed-identity presentation",
+      "requirement": "A session with more than one binding SHALL show Multiple identities and a breakdown. Each turn/attempt SHALL show its own binding or unresolved state. Filtering to one identity SHALL not charge that identity for contextual rows displayed from another.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T21",
+        "T22",
+        "T32"
+      ]
+    },
+    {
+      "id": "UI-003",
+      "title": "Visible evidence and health",
+      "requirement": "Show collector state, last successful reconciliation, source completeness, backlog, missing instrumentation, unsupported formats, stale quota data and attribution conflicts. Unknown identity SHALL be a visible selectable category.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T29",
+        "T32",
+        "T39"
+      ]
+    },
+    {
+      "id": "UI-004",
+      "title": "Readable accessible desktop UI",
+      "requirement": "Provide keyboard-operable controls, visible focus, semantic tables, adequate contrast, light/dark/system themes and a global font-size setting affecting every component. Reduced-motion preferences SHALL be respected; live refresh SHALL not move focus or reset expanded rows.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T34"
+      ]
+    },
+    {
+      "id": "UI-005",
+      "title": "Common filters and exports",
+      "requirement": "Support target, project, profile/binding, model, outcome, attribution status and time-range filtering. CLI and browser SHALL use consistent inclusive/exclusive time-boundary semantics and documented time zone. Export non-secret report data as JSON and CSV.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T31",
+        "T32",
+        "T35"
+      ]
+    },
+    {
+      "id": "UI-006",
+      "title": "No secrets or destructive browser control",
+      "requirement": "The browser SHALL not expose credentials, initiate login, execute arbitrary commands, change credential ownership, or kill processes. Profile/target names may be displayed; credential CRUD and stopping remain explicit CLI operations.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T35",
+        "T37"
+      ]
+    },
+    {
+      "id": "UI-007",
+      "title": "Persisted presentation only",
+      "requirement": "Local session display names, theme, font scale and default filters SHALL persist independently of upstream logs and normalized ownership. Renaming a session SHALL not rewrite Codex transcripts.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T30",
+        "T34"
+      ]
+    },
+    {
+      "id": "UI-008",
+      "title": "Quiet default receipts",
+      "requirement": "The launcher SHALL not inject usage receipts into the active Codex terminal or model context by default. A concise post-exit local summary MAY be enabled without delaying exit for a full import; pending work SHALL be stated rather than replaced with zero.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18",
+        "T32",
+        "T38"
+      ]
+    },
+    {
+      "id": "SEC-001",
+      "title": "Private credential files",
+      "requirement": "Credential and activation files SHALL be owner-restricted on POSIX and verified with effective user ACLs on Windows. POSIX chmod flags SHALL not be accepted as proof of equivalent Windows protection. Secrets SHALL not appear in command arguments, Docker environment, logs, exports, URLs or crash diagnostics.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T08",
+        "T37",
+        "T44"
+      ]
+    },
+    {
+      "id": "SEC-002",
+      "title": "Local-only authenticated server",
+      "requirement": "Bind the dashboard API to loopback only. Require a private per-installation capability/session authentication mechanism, validate Host and Origin, use restrictive browser policies and protect state-changing endpoints against cross-site requests. Do not rely on localhost alone as authentication.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T35"
+      ]
+    },
+    {
+      "id": "SEC-003",
+      "title": "Restricted file and input access",
+      "requirement": "All source/inbox/import paths SHALL remain within approved canonical roots. Prevent traversal, unsafe symlink following, decompression/resource abuse, malicious HTML labels and CSV formula execution on export.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T27",
+        "T35",
+        "T36"
+      ]
+    },
+    {
+      "id": "SEC-004",
+      "title": "Metadata minimization",
+      "requirement": "Analytics and event stores SHALL not contain prompt/response text, source code, tool arguments/output, complete process command lines, or token material. Diagnostics SHALL default to redacted paths and IDs and disclose the fields included before export.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T37"
+      ]
+    },
+    {
+      "id": "SEC-005",
+      "title": "No hidden network activity",
+      "requirement": "Tandem SHALL not send telemetry or usage to external services by default. Login remains an explicitly invoked Codex operation. Registry, update, price and quota network checks SHALL not run on the launch path and SHALL require a documented opt-in or explicit command.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18",
+        "T37"
+      ]
+    },
+    {
+      "id": "SEC-006",
+      "title": "Windows security stays enabled",
+      "requirement": "Installation, source build, launch, capture, compression, database operations, dashboard and uninstall SHALL be tested with Smart App Control enforcing on the target Windows 11 machine. Tandem SHALL not disable security features or claim npm is categorically exempt from policy.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T44"
+      ]
+    },
+    {
+      "id": "PKG-001",
+      "title": "No companion-owned native runtime artifacts",
+      "requirement": "The production npm tarball SHALL contain compiled JavaScript, static browser assets, schemas/data and necessary text helpers only. It SHALL not contain companion-owned .exe/.dll/.node/.so binaries or fetch/compile such artifacts at install time.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T01",
+        "T43",
+        "T44"
+      ]
+    },
+    {
+      "id": "PKG-002",
+      "title": "Installation without lifecycle compilation",
+      "requirement": "The published package SHALL install and run with lifecycle scripts disabled. It SHALL not require TypeScript, pnpm, Python, Go, Rust, a compiler, or administrator access on a normal local Windows/WSL/Linux installation beyond existing trusted Node and Codex.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T01",
+        "T43",
+        "T44"
+      ]
+    },
+    {
+      "id": "PKG-003",
+      "title": "Windows launch paths",
+      "requirement": "Validate the installed npm command shim and a documented direct node entrypoint. Distinguish .cmd launch handling from native executable launching. Do not change execution policy to repair a blocked shim; present a policy-compliant diagnostic or already-approved invocation path.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T17",
+        "T44"
+      ]
+    },
+    {
+      "id": "PKG-004",
+      "title": "Name and publication verification",
+      "requirement": "Before publishing, confirm npm scope ownership, scoped package availability and command naming conflicts. The SRS name SHALL not be presented as a registered package or trademark clearance. Preserve third-party license notices and inspect the final tarball for secrets and unintended files.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T01",
+        "T43"
+      ]
+    },
+    {
+      "id": "OPS-001",
+      "title": "Background lifecycle",
+      "requirement": "After approved setup, a normal launch SHALL start or reconnect the collector without waiting for it. Exactly one collector SHALL own an installation database. start, stop and status commands SHALL operate on that identified collector only.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T28",
+        "T39"
+      ]
+    },
+    {
+      "id": "OPS-002",
+      "title": "Offline and backlog mode",
+      "requirement": "Collector absence or failure SHALL not block Codex when the launch journal and capture inbox can still retain essential evidence. On recovery, replay the backlog and reconcile persisted sources. If essential pre-launch recording fails, default to cancel and offer explicit untracked launch.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T19",
+        "T28"
+      ]
+    },
+    {
+      "id": "OPS-003",
+      "title": "No implied automatic reboot startup",
+      "requirement": "The MVP SHALL not require an OS service or startup-task installation. After host restart, the next launcher/collector command can recover state. Any future login/boot autostart remains optional and explicitly installed.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T39",
+        "T40"
+      ]
+    },
+    {
+      "id": "OPS-004",
+      "title": "Diagnostics and recovery",
+      "requirement": "doctor SHALL report runtime capabilities, executable resolution, target user/path mapping, hooks/trust status where detectable, process conflicts, locks, filesystem permissions, decoder/database self-test, source health and package version without secrets. Repair SHALL be an explicit separate operation with a preview.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T03",
+        "T16",
+        "T37",
+        "T39"
+      ]
+    },
+    {
+      "id": "OPS-005",
+      "title": "Backups and imports",
+      "requirement": "Create consistent analytics backups and validate schema/version before restore or import. Preview destructive operations and preserve a rollback copy. Analytics exports SHALL exclude credentials. Unknown future schema versions SHALL fail clearly rather than mutate the store.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T40",
+        "T41"
+      ]
+    },
+    {
+      "id": "OPS-006",
+      "title": "Bounded disk use",
+      "requirement": "Log rotation, completed journal compaction and acknowledged event cleanup SHALL be bounded. Never delete unacknowledged attribution events silently. Disk-full conditions SHALL expose degraded status and follow essential-record failure rules.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T27",
+        "T28",
+        "T39"
+      ]
+    },
+    {
+      "id": "OPS-007",
+      "title": "Safe uninstall",
+      "requirement": "An explicit uninstall/setup-cleanup command SHALL remove only unchanged Tandem-managed hooks and helper files after preview. Changed user files SHALL remain with a warning. Credentials and analytics SHALL remain by default; purge requires separate confirmation.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T38",
+        "T40"
+      ]
+    },
+    {
+      "id": "MIG-001",
+      "title": "Selective reuse",
+      "requirement": "Migrate tested accounting behavior and UI features from codex-report at the pinned base, not its native driver/decoder packaging. Port the codex-as workflow rather than its unsafe process-inspection fallback or remove-before-rename credential replacement.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T09",
+        "T26",
+        "T43"
+      ]
+    },
+    {
+      "id": "MIG-002",
+      "title": "Read-only donor migration",
+      "requirement": "Migration SHALL back up and read donor state without altering it. Present a preview of profiles, identity mappings, session settings, records and conflicts. Preserve unattested historical labels as assertions rather than manufacturing verified attribution.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T29",
+        "T30",
+        "T41"
+      ]
+    },
+    {
+      "id": "MIG-003",
+      "title": "One credential controller during transition",
+      "requirement": "During comparison, two collectors may read copied fixtures or read-only sources into separate databases, but only one manager SHALL control each live credential scope. Rollback instructions SHALL preserve the latest valid refresh state and remove only Tandem-managed integration.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T08",
+        "T10",
+        "T41"
+      ]
+    },
+    {
+      "id": "NFR-001",
+      "title": "Selection-to-Codex latency",
+      "requirement": "For a configured healthy target, Tandem-added latency SHALL be p95 <=100 ms and p99 <=250 ms on agreed validation machines. A repeatable 2-3 second wrapper delay SHALL fail release acceptance. Publish observed values and machine/runtime details; never present these targets as achieved without measurement.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18"
+      ]
+    },
+    {
+      "id": "NFR-002",
+      "title": "Docker baseline accounting",
+      "requirement": "For Docker mode, compare wrapped launch with an equivalent direct docker exec using the same container, user, working directory, environment and Codex binary. Exclude only transport work inherent to that direct baseline. All extra exec calls, guard checks and hooks introduced by Tandem SHALL count as added overhead.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18"
+      ]
+    },
+    {
+      "id": "NFR-003",
+      "title": "Hook budget",
+      "requirement": "On qualified target/runtime combinations, capture hooks SHALL target p95 <=50 ms and p99 <=100 ms, with a bounded maximum compatible with Codex hook deadlines. No hook may delay a turn for collector readiness or history import. End-to-end startup remains the stronger gate.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18",
+        "T38"
+      ]
+    },
+    {
+      "id": "NFR-004",
+      "title": "History-independent startup",
+      "requirement": "Launch work SHALL be independent of transcript history size. Compare empty, typical and large stores; the large-store launch path SHALL not parse rollouts, open the analytics database for reporting, or scale with file count.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T18",
+        "T27"
+      ]
+    },
+    {
+      "id": "NFR-005",
+      "title": "Freshness and responsiveness",
+      "requirement": "With healthy local sources, display committed new usage within a target p95 of 2 seconds; the no-mount Docker pull adapter targets p95 of 5 seconds. Report source persistence delay separately. A paginated dashboard request SHALL target p95 <=300 ms on the standard synthetic dataset while collection is active.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T27",
+        "T33"
+      ]
+    },
+    {
+      "id": "NFR-006",
+      "title": "Resource targets",
+      "requirement": "On the standard validation dataset, idle collector CPU SHALL target <=1 percent of one logical CPU averaged over five minutes, with idle RSS <=150 MiB and bounded import RSS <=300 MiB excluding Codex/browser. Report Docker process overhead separately. Adjustments require measured evidence and an explicit requirements revision.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T33"
+      ]
+    },
+    {
+      "id": "NFR-007",
+      "title": "Durability definition",
+      "requirement": "Successfully acknowledged capture events SHALL survive a collector/process crash and replay without duplication. Local files SHALL use data flush and directory durability where supported. Sudden power loss, device failure, unflushed upstream Codex data and destruction of an unexported container spool SHALL have explicitly documented limits.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T09",
+        "T19",
+        "T28"
+      ]
+    },
+    {
+      "id": "NFR-008",
+      "title": "Deterministic accounting",
+      "requirement": "For the same supported input records and evidence, replay order, restart count and source copies SHALL not change final normalized totals or ownership. Contradictory data must deterministically produce a conflict instead of a silently different answer.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T24",
+        "T26"
+      ]
+    },
+    {
+      "id": "NFR-009",
+      "title": "Maintainability and support",
+      "requirement": "Platform/target adapters and upstream format decoders SHALL have small documented contracts and fixture tests. No generic abstraction SHALL be added without at least one concrete requirement. New upstream formats SHALL be capability-detected and version-qualified.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T43",
+        "T45"
+      ]
+    },
+    {
+      "id": "NFR-010",
+      "title": "Selector responsiveness",
+      "requirement": "The initial interactive selector SHALL target p95 <=200 ms on configured local targets, with no network or history work before its first usable frame. Target discovery may show cached status and continue separately; moving a 2-3 second delay ahead of selection SHALL not evade the startup requirement.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T04",
+        "T18"
+      ]
+    },
+    {
+      "id": "INT-001",
+      "title": "Argument and exit transparency",
+      "requirement": "Except for explicitly reserved Tandem options, command arguments and standard streams SHALL reach the selected Codex process unchanged. Child exit status SHALL propagate; Tandem launch/validation errors SHALL use documented distinct diagnostics and machine-readable codes.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T05",
+        "T17"
+      ]
+    },
+    {
+      "id": "INT-002",
+      "title": "Versioned machine interfaces",
+      "requirement": "Configuration, event, report/export and internal API formats SHALL declare schema versions. JSON output SHALL remain parseable without interleaved progress text or ANSI escapes; human diagnostics belong on stderr.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T05",
+        "T35",
+        "T41"
+      ]
+    },
+    {
+      "id": "INT-003",
+      "title": "No installer hidden in doctor",
+      "requirement": "Diagnostic commands SHALL be read-only except for explicitly documented disposable self-tests. Fixes to hooks, permissions, targets or configuration SHALL require a separate preview-and-confirm operation.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T37",
+        "T39"
+      ]
+    },
+    {
+      "id": "REL-001",
+      "title": "No unsupported success claims",
+      "requirement": "The release SHALL include a tested support matrix, measured performance evidence, package checksum, migration/rollback instructions and known limitations. Tests not run SHALL remain not run. Required failures SHALL block the corresponding product claim or release until resolved or explicitly waived.",
+      "priority": "MUST",
+      "acceptance_tests": [
+        "T42",
+        "T44",
+        "T45"
+      ]
+    }
+  ],
+  "acceptanceTests": [
+    {
+      "id": "T01",
+      "title": "Packed installation and artifact inventory",
+      "procedure": "Build and pack the application; inspect every production file and transitive production dependency. Install the tarball with lifecycle scripts disabled into an isolated user prefix. Exercise the actual bin command and direct Node entrypoint.",
+      "expected": "No native companion artifact, secret, raw transcript, compiler download, or install-time build. CLI works without developer tooling. Publication and license checks are recorded separately.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T02",
+      "title": "Minimum and newer host runtimes",
+      "procedure": "Run core and package tests at the Node capability floor and maintained newer compatible releases. Disable or mock missing built-in capabilities to exercise diagnostics.",
+      "expected": "Supported runtimes work; missing APIs yield actionable failure. No use of newer-only APIs hidden by recent type definitions. No artificial Node-major cap.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T03",
+      "title": "Database/compression/runtime self-test",
+      "procedure": "Use temporary state to open the built-in database and decode known gzip/Zstandard fixtures. Observe executable launches on Windows, WSL and Linux. Include the supplied incompatible container Node example.",
+      "expected": "Database and compression work entirely on host built-ins. No decoder executable or native addon runs. Broken container Node is never invoked.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T04",
+      "title": "Arrow selector and terminal restoration",
+      "procedure": "Test zero/one/two/many profiles, Up/Down/Enter/Escape, Ctrl+C, terminal resize, Unicode labels and an exception during selection.",
+      "expected": "No numeric selection required, no identity change on cancellation, stable selection by ID, and clean restored terminal state.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T05",
+      "title": "Non-TTY and machine-readable contracts",
+      "procedure": "Pipe stdin, redirect stdout, omit identity, pass explicit identity, use --json, and pass Codex flags after -- including --profile.",
+      "expected": "No hangs or silent selection. JSON has no ANSI/progress contamination. Codex flags are not consumed as Tandem identity options.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T06",
+      "title": "CRUD, login staging and policy",
+      "procedure": "Add/import identities; cancel login; simulate keyring/managed file-mode prohibition; inspect proposed configuration changes and existing hooks.",
+      "expected": "Only consented changes occur, active credentials survive cancellation, secrets stay hidden, and policy restrictions cannot be bypassed.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T07",
+      "title": "Rename, deletion and account replacement",
+      "procedure": "Create A, record usage, rename A, remove its saved credentials, then log in as a different account under the same display label.",
+      "expected": "Historical profile/binding IDs and totals remain intact. New account gets a distinct binding; deleted profile shows historical status.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T08",
+      "title": "Credential refresh preservation",
+      "procedure": "Run a mock/qualified Codex flow that refreshes A credentials, exit, switch to B, then reactivate A. Repeat with a plain external Codex refresh and post-exit sync failure.",
+      "expected": "Latest valid matching credentials survive; wrong-binding copies are blocked; a sync failure preserves a recoverable target file.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T09",
+      "title": "Activation crash fault injection",
+      "procedure": "Terminate the launcher at every write/flush/replace/journal phase, including after auth replacement but before child execution. Restart and attempt another switch.",
+      "expected": "At least one valid credential version remains; incomplete phases are recovered or blocked clearly; no false successful launch or identity record is produced.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T10",
+      "title": "Competing launchers and stale locks",
+      "procedure": "Start two managers simultaneously; use aliased CODEX_HOME paths and a shared binding across targets; simulate a stale nonce and reused PID.",
+      "expected": "Only one managed launch obtains the scope, duplicate activation is prevented, and stale locks are not cleared solely on PID assumptions.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T11",
+      "title": "Background server stop consent",
+      "procedure": "Provide owned and unrelated server processes, including an old launch-context server. Choose cancel, graceful stop, timeout without force approval, then separately approve force. Reuse a listed PID before the stop action.",
+      "expected": "Cancel changes nothing; only revalidated approved processes stop; unrelated/reused PIDs survive; identity switch waits for safe scope.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T12",
+      "title": "Path and credential-scope aliases",
+      "procedure": "Register aliases to the same home, different homes, Windows/WSL shared database paths and source mounts. Attempt concurrent activation and cross-environment DB access.",
+      "expected": "Physical scope aliases share protection; independent sources stay distinct; a live shared Windows/WSL analytics store is rejected.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T13",
+      "title": "Actual work-container end-to-end launch",
+      "procedure": "From modern WSL, select a profile and launch the existing /home/cnh/.local/bin/codex in the selected legacy container. Confirm user, home, directory, terminal behavior and a representative work build command.",
+      "expected": "Codex uses the original toolchain as the intended user. No Node/npm/glibc/OS upgrade occurs in the container and no privileged Docker change is made.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T14",
+      "title": "Container metadata bridge qualification",
+      "procedure": "Test detected existing interpreter/facilities, trusted and untrusted hooks, mounted and no-mount spools, absent host collector, malformed payload, and missing safe bridge.",
+      "expected": "Metadata-only events survive and replay. No raw prompt is persisted; no modern Node is invoked. Missing capability or trust is explicit, not full-tracking success.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T15",
+      "title": "Container process termination and client disconnect",
+      "procedure": "Disconnect or kill the host docker exec client while Codex/children remain alive. Exercise scoped approved stopping and leave an unrelated build process and container PID 1 running.",
+      "expected": "Tandem checks remote state; it does not assume child death or terminate the container/unrelated processes. Credential scope is not released prematurely.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T16",
+      "title": "Container state and replacement",
+      "procedure": "Pause, stop, remove/recreate, rename and switch Docker context for a configured target. Include inaccessible daemon and unexpected user/path mapping.",
+      "expected": "No automatic restart/recreation or credential transfer to an unverified replacement. Clear target-state diagnosis and revalidation path.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T17",
+      "title": "Arguments, environment, project and exit",
+      "procedure": "Use spaces, quotes, Unicode and shell metacharacters in allowed paths/arguments; test exit codes, signals, TTY/no-TTY, Codex config profiles, worktrees and resume.",
+      "expected": "Arguments are preserved without shell injection, environment initialization is explicit, project scoping is correct and terminal/exit behavior is transparent.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T18",
+      "title": "Startup and hook performance",
+      "procedure": "Use the benchmark protocol in section 14 across healthy warm/cold conditions, small/large histories, collector states and Docker baseline. Trace filesystem, child-process and network activity.",
+      "expected": "Reported percentiles meet the approved gates. All Tandem-added work is counted; no history scan/network/DB reporting blocks launch or a lifecycle hook.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T19",
+      "title": "Crash before completion event",
+      "procedure": "Launch A, capture start and turn identity, emit usage, then terminate Codex before any Stop event. Repeat with collector absent and an essential-journal write failure.",
+      "expected": "Persisted observed work retains A; collector later catches up. Essential failure defaults to cancel with explicit untracked alternative. No zero-as-complete result.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T20",
+      "title": "Stale or missing launch context",
+      "procedure": "Resume through a persisted server with old TANDEM metadata; drop custom environment propagation; supply delayed hook data and explicit launch correlation alternatives.",
+      "expected": "Adapter proves current context or blocks full tracking. A stale global profile pointer never relabels work. Version capability evidence is retained.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T21",
+      "title": "A to B within one session",
+      "procedure": "Run session S turn T1 under A, record usage-limit termination, stop approved conflicts, relaunch/resume S under B and execute T2.",
+      "expected": "T1 and its quota remain A; T2 is B; session shows both. Identity-filtered totals exactly match only their observations.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T22",
+      "title": "Nested child attribution",
+      "procedure": "Create parent/worker/reviewer descendants under A, then additional child work under B in the same conversation. Include a child-start hook whose session ID is the parent ID.",
+      "expected": "Parent and child identifiers are not conflated, each proven child execution is assigned correctly, and aggregate totals count each observation once.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T23",
+      "title": "Same logical turn, new account attempt",
+      "procedure": "Retry an upstream turn ID under B after A termination; also simulate account/workspace change during a launch and a legacy cumulative delta spanning the change.",
+      "expected": "Attempt history remains separate. Unknown cross-boundary deltas are unresolved/conflicted, not entirely charged to B. Earlier confirmed work is unchanged.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T24",
+      "title": "Out-of-order evidence and replay",
+      "procedure": "Deliver a child usage record before its relation, an A event after B starts, duplicate inbox deliveries, mismatched account evidence and a post-commit pre-ack crash.",
+      "expected": "Deterministic final attribution; unresolved state resolves only with valid evidence; conflicts remain visible; no duplicate usage.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T25",
+      "title": "Forks, archives and incomplete files",
+      "procedure": "Import inherited history, forked transcripts, archived and compressed copies, partial lines, truncation, file replacement and compaction fixtures.",
+      "expected": "Physical source ownership and cursor rebuilds are correct. Parent history is not charged again to children; incomplete records await completion.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T26",
+      "title": "Accounting invariants",
+      "procedure": "Replay native and legacy records in varied orders with duplicated response IDs, changed content under one ID, resets, cached/reasoning subsets and large integer values.",
+      "expected": "Stable totals, no double counting, conservative resets, overflow protection and deterministic conflict detection.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T27",
+      "title": "Bounded collection and source failures",
+      "procedure": "Import the large corpus with corrupt/compression-bomb fixtures, huge records, unavailable paths, locked files and a growing source. Measure memory, cancellation and source modifications.",
+      "expected": "Bounded resource use, responsive cancellation, visible incomplete/error status, no source writes and no full-history startup scan.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T28",
+      "title": "Collector restart, outages and disk full",
+      "procedure": "Stop/restart collector, crash between DB commit and acknowledgment, fill the inbox disk, interrupt transport and destroy an unexported container spool.",
+      "expected": "Replay is idempotent, captured evidence survives supported failures, essential failures are explicit, and destroyed unexported evidence is not claimed recoverable.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T29",
+      "title": "External and historical sessions",
+      "procedure": "Import old uninstrumented logs and start Codex outside Tandem. Include account-looking labels and files written while another profile is selected.",
+      "expected": "No invented verified ownership. Historical/manual assertions are labeled; unknown/conflicted usage stays visible and excluded from confident per-account claims.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T30",
+      "title": "User metadata survives migration and profile changes",
+      "procedure": "Rename sessions/profiles, retire identities, edit display settings, migrate donor labels and rebuild analytics from retained evidence.",
+      "expected": "Presentation changes do not modify source transcripts or ownership; historical IDs and user metadata survive as designed.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T31",
+      "title": "Prices, quotas and periods",
+      "procedure": "Use priced/unpriced models, unknown aliases, stale quota snapshots, explicit limit reset times, custom date ranges, billing settings and time-zone boundaries.",
+      "expected": "Token totals remain separate from subset counters; cost estimates are labeled and partial where needed; quotas stay identity-bound and no plan limits are inferred.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T32",
+      "title": "Dashboard/CLI accounting parity",
+      "procedure": "Compare dashboard, CLI, JSON and CSV on mixed identities, child work, attempt retries, unknown ownership and all supported filter combinations.",
+      "expected": "Same selected observations and totals everywhere. Mixed-session summaries and contextual child rows do not charge excluded accounts.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T33",
+      "title": "Responsiveness and resource profile",
+      "procedure": "Run continuous import and replay against standard query fixtures while issuing paginated reports. Measure idle/import CPU and RSS including Docker adapter overhead.",
+      "expected": "Performance and resource targets are measured, reproducible and within the documented gates; collector work does not freeze the server.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T34",
+      "title": "Desktop accessibility and presentation",
+      "procedure": "Operate all UI via keyboard; check focus during refresh, semantic tables, light/dark/system themes, all font scales, zoom, long labels, reduced motion and empty/error states.",
+      "expected": "Every component respects font scale, controls remain accessible, no clipping blocks information and live updates preserve focus/context.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T35",
+      "title": "Local API and export abuse",
+      "procedure": "Send unauthenticated and foreign Host/Origin requests; try browser-triggered commands, XSS labels, stale settings revisions and CSV formula cells.",
+      "expected": "Unauthorized/state-changing attacks fail, no arbitrary command/credential endpoint exists, and exports are safe with consistent schema/version.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T36",
+      "title": "Source path and import containment",
+      "procedure": "Supply ../ traversal, symlinks escaping approved roots, hostile paths in hook events, aliases, malformed archives and a shared DB destination.",
+      "expected": "Only registered contained resources are read; no unsafe extraction or live cross-environment DB sharing occurs.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T37",
+      "title": "Privacy and policy inspection",
+      "procedure": "Seed secrets, prompts and tool output into all input paths. Inspect disk, logs, process arguments, Docker environment, API responses, exports and backups. Test denied OS/organization permissions.",
+      "expected": "No content/secret leaks; allowed metadata only; no permission/security-policy bypass or automatic installation. Diagnostics are redacted.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T38",
+      "title": "Hook coexistence and neutral behavior",
+      "procedure": "Install/update/remove Tandem hooks alongside custom/plugin hooks; edit a managed hook manually; test malformed and oversized inputs, unsupported events and output contracts.",
+      "expected": "Existing hooks survive, modified files are not overwritten/deleted, neutral output does not alter agent flow, and failures stay bounded.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T39",
+      "title": "Lifecycle and diagnostics",
+      "procedure": "Start the collector twice, recycle a PID/port, stop it, restart the host, run read-only doctor and explicit repair previews.",
+      "expected": "Only the owned collector is controlled, stale identities are detected, next launch recovers, and doctor does not mutate production configuration.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T40",
+      "title": "Upgrade, rollback and uninstall",
+      "procedure": "Upgrade the packed package with existing state, restore an analytics backup, run managed cleanup, retain/purge choices and roll back after token refresh.",
+      "expected": "State remains outside package files; only approved data is removed; schema incompatibility is explicit and obsolete credentials are not blindly restored.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T41",
+      "title": "Donor migration and schemas",
+      "procedure": "Use copies of codex-as/codex-report state, preview imports, simulate future schema versions, interrupted migration and rollback. Compare donor files byte-for-byte.",
+      "expected": "Donor state is unchanged, migration is recoverable, unverified labels stay assertions and newer incompatible schema is not modified.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T42",
+      "title": "Requirement and evidence completeness",
+      "procedure": "Validate every requirement-to-test mapping, every approval A-F, scenario coverage, source provenance and explicit NOT EXECUTED versus passed status.",
+      "expected": "No orphan MUST requirement or fabricated pass. Each release claim has linked evidence and an identified verification environment.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T43",
+      "title": "Build, dependency and upstream boundaries",
+      "procedure": "Review architecture, imports and production tarball; build with minimum compiler/runtime and supported newer versions; inspect licenses and dependency floors.",
+      "expected": "No hidden native runtime dependency, duplicate accounting engine or accidental modern-only API. Reproducible lockfile and package checks are retained.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T44",
+      "title": "Windows 11 Smart App Control enforcing",
+      "procedure": "On the real qualified Windows 11 environment, keep Smart App Control on and test source build, packed installation, command shim, Codex launch, hooks, SQLite, compression, dashboard and uninstall.",
+      "expected": "All required flows succeed without disabling protections, installing a signing certificate or compiling native add-ons. Failure is a release blocker, not a claimed npm exemption.",
+      "status": "NOT EXECUTED"
+    },
+    {
+      "id": "T45",
+      "title": "Installed Codex capability matrix",
+      "procedure": "Qualify the observed 0.159.0 binary and compatible newer releases using real sanitized lifecycle evidence; test missing hooks, changed payloads and server context reuse.",
+      "expected": "Support status is per tested capability/target. Full tracking is not advertised when event IDs, inheritance or account boundaries are unproven.",
+      "status": "NOT EXECUTED"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S01",
+      "title": "Node.js build/platform requirements",
+      "url": "https://github.com/nodejs/node/blob/main/BUILDING.md",
+      "notes": "Official platform requirements; glibc/libstdc++ and WSL support-boundary context."
+    },
+    {
+      "id": "S02",
+      "title": "Node.js SQLite API, version 22 documentation",
+      "url": "https://nodejs.org/download/release/latest-v22.x/docs/api/sqlite.html",
+      "notes": "SQLite enabling-flag removal at 22.13.0; documented API maturity."
+    },
+    {
+      "id": "S03",
+      "title": "Node.js Zlib API at the proposed capability floor",
+      "url": "https://nodejs.org/download/release/v22.15.0/docs/api/zlib.html",
+      "notes": "Zstandard is present at 22.15.0; use bounded built-in decoding."
+    },
+    {
+      "id": "S04",
+      "title": "Docker container exec reference",
+      "url": "https://docs.docker.com/reference/cli/docker/container/exec/",
+      "notes": "User/environment/TTY/workdir options; API floors and container lifetime relationship."
+    },
+    {
+      "id": "S05",
+      "title": "OpenAI Codex authentication",
+      "url": "https://developers.openai.com/codex/auth/",
+      "notes": "Credential storage modes, file sensitivity and existing Codex login ownership."
+    },
+    {
+      "id": "S06",
+      "title": "Docker bind mounts",
+      "url": "https://docs.docker.com/engine/storage/bind-mounts/",
+      "notes": "Daemon-host path boundary and explicit mount configuration."
+    },
+    {
+      "id": "S07",
+      "title": "Docker container cp reference",
+      "url": "https://docs.docker.com/reference/cli/docker/container/cp/",
+      "notes": "File transport behavior and ownership considerations for fallback setup/pull."
+    },
+    {
+      "id": "S08",
+      "title": "OpenAI Codex release 0.159.0",
+      "url": "https://github.com/openai/codex/releases/tag/rust-v0.159.0",
+      "notes": "Release exists; user reports it running. No hook-compatibility test was performed here."
+    },
+    {
+      "id": "S09",
+      "title": "OpenAI Codex hooks",
+      "url": "https://developers.openai.com/codex/hooks/",
+      "notes": "Lifecycle hooks, trust, common identifiers and parent-session semantics for subagents."
+    },
+    {
+      "id": "S10",
+      "title": "Microsoft Smart App Control application testing",
+      "url": "https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/test-your-app-with-smart-app-control",
+      "notes": "Actual execution/integration-path validation under enforcement is required."
+    },
+    {
+      "id": "S11",
+      "title": "OpenAI Codex App Server",
+      "url": "https://developers.openai.com/codex/app-server/",
+      "notes": "Server/session/authentication context; not evidence that every user installation has the same background process behavior."
+    },
+    {
+      "id": "P01",
+      "title": "User-provided codex-as-go archive",
+      "url": "codex-as-go.zip",
+      "notes": "Inspected README.md; internal/manager/app.go lines 209-304; internal/manager/files.go lines 25-58. Archive SHA-256: fd675029900bfad68382a513b17b415ced49ba51b6a1f388ffa06e5d931be67d."
+    },
+    {
+      "id": "P02",
+      "title": "codex-report pinned implementation base",
+      "url": "https://github.com/kanakamedala-rajesh/codex-report/tree/516a1d6306559d8a607de84c4d76529160349ac8",
+      "notes": "Requested branch feat/dashboard-redesign; baseline commit 516a1d6306559d8a607de84c4d76529160349ac8. Relevant files: src/hooks.ts, database.ts, collector.ts, parser.ts, compression.ts, service.ts; package.json and docs/ARCHITECTURE.md. This specification does not silently move to a later branch head."
+    },
+    {
+      "id": "U01",
+      "title": "User requirements and approvals",
+      "url": "Conversation, September 30, 2026",
+      "notes": "Approved A-F decisions, work-container diagnostics, observed 2-3 second folio delay, and consent requirement for stopping conflicting processes. Diagnostics are user-provided observations, not remotely reproduced measurements."
+    }
+  ]
+}
