@@ -1,0 +1,437 @@
+{
+  "central": {
+    "id": "gid://gitlab/WorkItem/205189586",
+    "iid": 1,
+    "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/1"
+  },
+  "tickets": {
+    "CT-01": {
+      "title": "CT-01 — Capture reusable behavior and accounting fixtures",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/8",
+      "iid": "8",
+      "blockers": [],
+      "gate": "G0",
+      "id": "gid://gitlab/WorkItem/205191005"
+    },
+    "CT-02": {
+      "id": "gid://gitlab/WorkItem/205191028",
+      "blockers": [],
+      "gate": "G0",
+      "iid": "9",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/9",
+      "title": "CT-02 — Install a packed CLI and run host capability diagnostics"
+    },
+    "CT-03": {
+      "id": "gid://gitlab/WorkItem/205191030",
+      "blockers": [
+        "CT-02"
+      ],
+      "gate": "G0",
+      "iid": "10",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/10",
+      "title": "CT-03 — Discover targets without changing their environment"
+    },
+    "CT-04": {
+      "id": "gid://gitlab/WorkItem/205191033",
+      "blockers": [
+        "CT-02"
+      ],
+      "gate": "G0",
+      "iid": "11",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/11",
+      "title": "CT-04 — Select a profile and pass through to a harmless child"
+    },
+    "CT-05": {
+      "id": "gid://gitlab/WorkItem/205191039",
+      "blockers": [
+        "CT-03"
+      ],
+      "gate": "G0",
+      "iid": "12",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/12",
+      "title": "CT-05 — Qualify a minimal metadata bridge on the legacy target"
+    },
+    "CT-06": {
+      "id": "gid://gitlab/WorkItem/205191047",
+      "blockers": [
+        "CT-04",
+        "CT-05"
+      ],
+      "gate": "G0",
+      "iid": "13",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/13",
+      "title": "CT-06 — Probe A-to-B resume attribution feasibility"
+    },
+    "CT-07": {
+      "id": "gid://gitlab/WorkItem/205191048",
+      "blockers": [
+        "CT-06"
+      ],
+      "gate": "G0",
+      "iid": "14",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/14",
+      "title": "CT-07 — Qualify initial package and launch behavior locally"
+    },
+    "CT-08": {
+      "id": "gid://gitlab/WorkItem/205191050",
+      "blockers": [
+        "CT-01",
+        "CT-07"
+      ],
+      "gate": "G0",
+      "iid": "15",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/15",
+      "title": "CT-08 — Review the compatibility gate"
+    },
+    "CT-09": {
+      "id": "gid://gitlab/WorkItem/205191055",
+      "blockers": [
+        "CT-08"
+      ],
+      "gate": "G1",
+      "iid": "16",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/16",
+      "title": "CT-09 — Manage stable profiles through isolated login"
+    },
+    "CT-10": {
+      "id": "gid://gitlab/WorkItem/205191058",
+      "blockers": [
+        "CT-09"
+      ],
+      "gate": "G1",
+      "iid": "17",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/17",
+      "title": "CT-10 — Guard canonical scopes and identify conflicting processes"
+    },
+    "CT-11": {
+      "id": "gid://gitlab/WorkItem/205191061",
+      "blockers": [
+        "CT-10"
+      ],
+      "gate": "G1",
+      "iid": "18",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/18",
+      "title": "CT-11 — Activate credentials with refresh-safe crash recovery"
+    },
+    "CT-12": {
+      "id": "gid://gitlab/WorkItem/205191066",
+      "blockers": [
+        "CT-11"
+      ],
+      "gate": "G1",
+      "iid": "19",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/19",
+      "title": "CT-12 — Stop only freshly verified conflicting processes"
+    },
+    "CT-13": {
+      "id": "gid://gitlab/WorkItem/205191069",
+      "blockers": [
+        "CT-12"
+      ],
+      "gate": "G1",
+      "iid": "20",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/20",
+      "title": "CT-13 — Launch and resume locally with safe identity ownership"
+    },
+    "CT-14": {
+      "id": "gid://gitlab/WorkItem/205191077",
+      "blockers": [
+        "CT-13"
+      ],
+      "gate": "G1",
+      "iid": "21",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/21",
+      "title": "CT-14 — Launch and supervise Codex inside the existing container"
+    },
+    "CT-15": {
+      "id": "gid://gitlab/WorkItem/205191081",
+      "blockers": [
+        "CT-14"
+      ],
+      "gate": "G1",
+      "iid": "22",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/22",
+      "title": "CT-15 — Qualify safe-launch recovery and performance"
+    },
+    "CT-16": {
+      "title": "CT-16 — Capture bounded lifecycle metadata without altering Codex",
+      "blockers": [
+        "CT-14"
+      ],
+      "id": "gid://gitlab/WorkItem/205191105",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/23",
+      "gate": "G2",
+      "iid": "23"
+    },
+    "CT-17": {
+      "title": "CT-17 — Replay captured events through a durable host receipt",
+      "blockers": [
+        "CT-16"
+      ],
+      "id": "gid://gitlab/WorkItem/205191112",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/24",
+      "gate": "G2",
+      "iid": "24"
+    },
+    "CT-18": {
+      "title": "CT-18 — Attribute mixed-identity sessions by launch and turn attempt",
+      "blockers": [
+        "CT-17"
+      ],
+      "id": "gid://gitlab/WorkItem/205191116",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/25",
+      "gate": "G2",
+      "iid": "25"
+    },
+    "CT-19": {
+      "title": "CT-19 — Attribute nested child work without inherited-history duplication",
+      "blockers": [
+        "CT-18"
+      ],
+      "id": "gid://gitlab/WorkItem/205191121",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/26",
+      "gate": "G2",
+      "iid": "26"
+    },
+    "CT-20": {
+      "title": "CT-20 — Expose unknown, imported and conflicting attribution",
+      "blockers": [
+        "CT-19"
+      ],
+      "id": "gid://gitlab/WorkItem/205191123",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/27",
+      "gate": "G2",
+      "iid": "27"
+    },
+    "CT-21": {
+      "title": "CT-21 — Qualify attribution against actual installed Codex",
+      "blockers": [
+        "CT-15",
+        "CT-20"
+      ],
+      "id": "gid://gitlab/WorkItem/205191126",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/28",
+      "gate": "G2",
+      "iid": "28"
+    },
+    "CT-22": {
+      "title": "CT-22 — Read rollout sources incrementally with bounded decoding",
+      "blockers": [
+        "CT-01",
+        "CT-02"
+      ],
+      "id": "gid://gitlab/WorkItem/205191131",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/29",
+      "gate": "G3",
+      "iid": "29"
+    },
+    "CT-23": {
+      "title": "CT-23 — Produce deterministic token totals from native and legacy observations",
+      "blockers": [
+        "CT-22",
+        "CT-20"
+      ],
+      "id": "gid://gitlab/WorkItem/205191134",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/30",
+      "gate": "G3",
+      "iid": "30"
+    },
+    "CT-24": {
+      "title": "CT-24 — Report usage, estimates and quota with shared time semantics",
+      "blockers": [
+        "CT-23"
+      ],
+      "id": "gid://gitlab/WorkItem/205191138",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/31",
+      "gate": "G3",
+      "iid": "31"
+    },
+    "CT-25": {
+      "title": "CT-25 — Run one recoverable collector without delaying launch",
+      "blockers": [
+        "CT-17",
+        "CT-22"
+      ],
+      "id": "gid://gitlab/WorkItem/205191141",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/32",
+      "gate": "G3",
+      "iid": "32"
+    },
+    "CT-26": {
+      "title": "CT-26 — Serve authenticated local reports through a restricted API",
+      "blockers": [
+        "CT-24",
+        "CT-25"
+      ],
+      "id": "gid://gitlab/WorkItem/205191145",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/33",
+      "gate": "G3",
+      "iid": "33"
+    },
+    "CT-27": {
+      "title": "CT-27 — Browse sessions, attempts and child identity contributions",
+      "blockers": [
+        "CT-21",
+        "CT-26"
+      ],
+      "id": "gid://gitlab/WorkItem/205191148",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/34",
+      "gate": "G3",
+      "iid": "34"
+    },
+    "CT-28": {
+      "title": "CT-28 — Persist accessible presentation and consistent report filters",
+      "blockers": [
+        "CT-27"
+      ],
+      "id": "gid://gitlab/WorkItem/205191153",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/35",
+      "gate": "G3",
+      "iid": "35"
+    },
+    "CT-29": {
+      "title": "CT-29 — Qualify accounting, dashboard performance and accessibility",
+      "blockers": [
+        "CT-28"
+      ],
+      "id": "gid://gitlab/WorkItem/205191157",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/36",
+      "gate": "G3",
+      "iid": "36"
+    },
+    "CT-30": {
+      "id": "gid://gitlab/WorkItem/205191272",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/37",
+      "iid": "37",
+      "title": "CT-30 — Preview and import existing profile and analytics state",
+      "blockers": [
+        "CT-28"
+      ]
+    },
+    "CT-31": {
+      "id": "gid://gitlab/WorkItem/205191273",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/38",
+      "iid": "38",
+      "title": "CT-31 — Back up, restore and upgrade with recoverable schema changes",
+      "blockers": [
+        "CT-30"
+      ]
+    },
+    "CT-32": {
+      "id": "gid://gitlab/WorkItem/205191276",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/39",
+      "iid": "39",
+      "title": "CT-32 — Diagnose and bound retained operational data",
+      "blockers": [
+        "CT-25"
+      ]
+    },
+    "CT-33": {
+      "id": "gid://gitlab/WorkItem/205191278",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/40",
+      "iid": "40",
+      "title": "CT-33 — Remove managed integration safely",
+      "blockers": [
+        "CT-31",
+        "CT-32"
+      ]
+    },
+    "CT-34": {
+      "id": "gid://gitlab/WorkItem/205191279",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/41",
+      "iid": "41",
+      "title": "CT-34 — Verify privacy and source containment across the integrated product",
+      "blockers": [
+        "CT-33"
+      ]
+    },
+    "CT-35": {
+      "id": "gid://gitlab/WorkItem/205191280",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/42",
+      "iid": "42",
+      "title": "CT-35 — Prepare a reproducible release package and notices",
+      "blockers": [
+        "CT-34"
+      ]
+    },
+    "CT-36": {
+      "id": "gid://gitlab/WorkItem/205191283",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/43",
+      "iid": "43",
+      "title": "CT-36 — Qualify the final artifact locally on Windows and WSL2",
+      "blockers": [
+        "CT-29",
+        "CT-35"
+      ]
+    },
+    "CT-37": {
+      "id": "gid://gitlab/WorkItem/205191287",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/44",
+      "iid": "44",
+      "title": "CT-37 — Qualify native Linux and remaining runtime/browser combinations",
+      "blockers": [
+        "CT-35"
+      ]
+    },
+    "CT-38": {
+      "id": "gid://gitlab/WorkItem/205191288",
+      "gate": "G4",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/45",
+      "iid": "45",
+      "title": "CT-38 — Close traceability and prepare the release decision",
+      "blockers": [
+        "CT-36",
+        "CT-37"
+      ]
+    }
+  },
+  "hierarchy": "Central issue links to gate issues; each gate owns native child tasks.",
+  "spec": {
+    "id": "gid://gitlab/WorkItem/205190975",
+    "title": "Codex Tandem: approved implementation specification",
+    "iid": 2,
+    "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2"
+  },
+  "project": "venkata-sudha/codex-tandem",
+  "gates": {
+    "G2": {
+      "id": "gid://gitlab/WorkItem/205190985",
+      "title": "G2 — Attribution backbone",
+      "iid": 5,
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5"
+    },
+    "G3": {
+      "id": "gid://gitlab/WorkItem/205190989",
+      "title": "G3 — Accounting and dashboard",
+      "iid": 6,
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6"
+    },
+    "G4": {
+      "id": "gid://gitlab/WorkItem/205190992",
+      "title": "G4 — Hardening, migration and release qualification",
+      "iid": 7,
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7"
+    },
+    "G0": {
+      "id": "gid://gitlab/WorkItem/205190977",
+      "title": "G0 — Compatibility and feasibility",
+      "iid": 3,
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3"
+    },
+    "G1": {
+      "id": "gid://gitlab/WorkItem/205190981",
+      "title": "G1 — Safe identity launcher",
+      "iid": 4,
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/4"
+    }
+  },
+  "projectId": 87154127
+}
