@@ -158,6 +158,37 @@ no credentials had been copied before those staging checks succeeded.
 
 ## Local implementation checks
 
+### Review repair: isolate the container credential source
+
+Spec review found that the original container runner inherited all environment
+variables and staged an empty config, so a future invocation could silently use
+an API credential or endpoint override instead of the approved file. The repaired
+runner removes `OPENAI_API_KEY`, `CODEX_API_KEY` and `OPENAI_BASE_URL`, as well as
+uncontrolled home/context values, then supplies only the experiment's home and
+selected context. Staging writes `cli_auth_credentials_store = "file"`; the
+runner also requests `-c cli_auth_credentials_store="file"` explicitly. Normal
+hook trust and sandbox settings are unchanged. The helper is staged beside the
+runner; no new container runtime or library is needed.
+
+The original actual observations and original source hashes remain intact. After
+the run, the same container generation's immutable creation environment was read
+by name only: both API-key variables and `OPENAI_BASE_URL` were absent. Review of
+the exact original launch commands found no `docker exec -e` key/endpoint override;
+Python inherited that environment and added only CODEX_HOME and controlled context.
+This is a post-run check, not retrospectively claimed preflight. It supports the
+original controlled-input experiment without asserting provider ownership.
+`auth-source-review.json` records the check. Live inference was not repeated because
+there is no evidence of a different original auth source; the repair guards future
+reproduction. New repair-source hashes are separate in the manifest.
+
+TDD for the public environment boundary first failed with a missing module, then
+passed with sentinel API keys, endpoint, home and stale context excluded while PATH
+and the original input mapping stayed unchanged. The focused test ran on native
+Windows and Ubuntu, with the four metadata tests on each and five Ubuntu bridge
+tests also passing. Use `python -B test/resume_environment_test.py` with the existing
+Windows Python, or `python3 -B test/resume_environment_test.py` on Ubuntu. The host
+application/package code did not change in this repair.
+
 Both platforms ran sequentially against integration base
 `e4d7942c264c091effe45604bf10217ef5a42eef` plus the implementation in the commit containing this evidence.
 `manifest.json` pins source hashes and each platform's packed checksum. The

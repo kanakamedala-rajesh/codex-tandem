@@ -10,6 +10,7 @@ import re
 import signal
 import subprocess
 import sys
+from experiment_environment import prepare_launch_environment
 
 ROOT = pathlib.Path('/home/validation/ct06-qualification-20261002')
 SPOOL = ROOT / 'spool'
@@ -19,11 +20,10 @@ mode = sys.argv[1]
 if mode not in ('A', 'B', 'missing', 'stale'):
     raise SystemExit('INVALID_EXPERIMENT_MODE')
 os.umask(0o077)
-env = {**os.environ, 'CODEX_HOME':str(ROOT / 'codex-home')}
-env.pop('TANDEM_CT06_CONTEXT', None)
-if mode != 'missing':
-    env['TANDEM_CT06_CONTEXT'] = str(ROOT / ('context-A.json' if mode in ('A','stale') else 'context-B.json'))
-command = ['/tmp/codex-tandem-validation-codex', '--no-daemon', '--sandbox', 'read-only', 'exec']
+context_path = None if mode == 'missing' else str(ROOT / ('context-A.json' if mode in ('A','stale') else 'context-B.json'))
+env = prepare_launch_environment(os.environ, str(ROOT / 'codex-home'), context_path)
+command = ['/tmp/codex-tandem-validation-codex', '--no-daemon', '--sandbox', 'read-only',
+           '-c', 'cli_auth_credentials_store="file"', 'exec']
 if mode != 'A':
     session = (ROOT / 'session-id').read_text()
     assert UUID.fullmatch(session)

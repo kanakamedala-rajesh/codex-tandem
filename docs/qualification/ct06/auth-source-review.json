@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "originalEvidenceCommit": "99ea2802a5d927c2542a971690d3f0c2f942e0d1",
+  "reviewFinding": "Container runner inherited API credential and endpoint environment overrides; staging used empty config",
+  "containerGeneration": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf",
+  "generationMatches": true,
+  "immutableContainerCreationEnvironment": {
+    "OPENAI_API_KEY_present": false,
+    "CODEX_API_KEY_present": false,
+    "OPENAI_BASE_URL_present": false
+  },
+  "inspectionTiming": "Post-run review; not represented as a pre-run check",
+  "launcherReview": "Original docker exec commands launched Python directly, without -e API-key/endpoint overrides; Python added only CODEX_HOME and the controlled context variable",
+  "repair": "Drop API-key and endpoint overrides; explicitly stage and request file-only credential storage",
+  "originalLifecycleRecordsUnchanged": true,
+  "liveInferenceRerun": "NOT_EXECUTED; original immutable environment absence was verified and no evidence shows another auth source",
+  "providerOwnership": "NOT_PROVEN",
+  "focusedValidation": {
+    "nativeWindowsEnvironmentContract": "PASS",
+    "ubuntuEnvironmentContract": "PASS",
+    "nativeWindowsMetadataContract": "4 PASS",
+    "ubuntuMetadataContract": "4 PASS",
+    "ubuntuBridgeContract": "5 PASS"
+  }
+}

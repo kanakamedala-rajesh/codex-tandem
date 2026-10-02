@@ -19,9 +19,10 @@ def put(path, data, mode=0o600):
     run("import os,sys; fd=os.open(" + repr(path) + ",os.O_WRONLY|os.O_CREAT|os.O_EXCL," + str(mode) + "); os.write(fd,sys.stdin.buffer.read()); os.close(fd)", data)
 
 put(ROOT + '/bridge.py', (repo / 'tools/capture/bridge.py').read_bytes())
+put(ROOT + '/experiment_environment.py', (repo / 'tools/capture/experiment_environment.py').read_bytes())
 for identity in ('A', 'B'):
     put(ROOT + '/context-' + identity + '.json', json.dumps({'launchId':'ct06_' + identity, 'targetGeneration':GENERATION}).encode(), 0o400)
-put(ROOT + '/codex-home/config.toml', b'')
+put(ROOT + '/codex-home/config.toml', b'cli_auth_credentials_store = "file"\n')
 command = '/usr/local/bin/python3 ' + ROOT + '/bridge.py --context "$TANDEM_CT06_CONTEXT" --spool ' + ROOT + '/spool'
 hooks = {'hooks': {'SessionStart':[{'hooks':[{'type':'command','command':'/bin/true','timeout':2}]}], 'UserPromptSubmit':[{'hooks':[{'type':'command','command':command,'timeout':2}]}]}}
 put(ROOT + '/codex-home/hooks.json', json.dumps(hooks).encode())

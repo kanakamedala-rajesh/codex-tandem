@@ -92,5 +92,19 @@
     "tools/capture/stage-resume-experiment.py": "3308fcab98dd3a31c97a82a8803a643238062cd0825f36622955bceb4910cf0d",
     "scripts/verify-capture-package.mjs": "8f57967819db6944cc39ba0a5ce12aef506e15a93bc222971a4750e760dab2ab",
     "tools/capture/local-authenticated-resume.mjs": "b14fe61f218b74d4791d252c8e2439063ebd54f3d99e28a1fc65663dab873391"
+  },
+  "authSourceReview": "auth-source-review.json",
+  "originalEvidenceCommit": "99ea2802a5d927c2542a971690d3f0c2f942e0d1",
+  "repairWorktreeSourceSha256": {
+    "tools/capture/resume-experiment.py": "8ceb84c6cb3428ceec494bd8a24304345a0d5b5da8d1ac193cca1a15ef43bbc6",
+    "test/resume_environment_test.py": "c69d7b86b513b1c7e2dfc92ed2909b7f53c247ffc4f69e0cd89bed117abd6f01",
+    "tools/capture/experiment_environment.py": "15b4a2148fe1de02eaad2336f1527f3384c02f57c09e2795c1fd64cfd52142d8",
+    "tools/capture/stage-resume-experiment.py": "96cc32d8a26572cc5ad6caeabcca462a9badf7eee743c94e523e99b5bb2f886f"
+  },
+  "repairGitSourceSha256": {
+    "tools/capture/resume-experiment.py": "8ceb84c6cb3428ceec494bd8a24304345a0d5b5da8d1ac193cca1a15ef43bbc6",
+    "test/resume_environment_test.py": "c69d7b86b513b1c7e2dfc92ed2909b7f53c247ffc4f69e0cd89bed117abd6f01",
+    "tools/capture/experiment_environment.py": "15b4a2148fe1de02eaad2336f1527f3384c02f57c09e2795c1fd64cfd52142d8",
+    "tools/capture/stage-resume-experiment.py": "96cc32d8a26572cc5ad6caeabcca462a9badf7eee743c94e523e99b5bb2f886f"
   }
 }
