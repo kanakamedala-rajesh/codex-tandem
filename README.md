@@ -33,3 +33,30 @@ zstandard. This reports host capability, never target or release qualification.
 
 Package publication, license approval, native Linux, actual legacy-container
 and full Smart App Control qualification remain separate work.
+
+## G0 synthetic selector
+
+`codex-tandem [run] --g0-fixture profiles.json --target local [--identity ID] [--json] -- CHILD_ARGS`
+
+This compatibility slice always launches the bundled harmless child, never Codex.
+The fixture must contain only `schemaVersion: 1`, `synthetic: true`, and a
+`profiles` array of `{ "id": "stable-id", "label": "Display label" }` objects.
+IDs are unique; duplicate labels are disambiguated by IDs. Files are limited to
+64 KiB, 500 profiles, 80 ASCII ID characters and 200 label characters. Control
+characters are rejected. No credentials, history, quota or network are read.
+Production invocation returns `G1_ACTIVATION_UNAVAILABLE` until G1 activation.
+
+Interactive terminals use arrows and Enter; Escape/Ctrl+C cancel (exit 130).
+Without usable stdin/stdout/stderr terminals, or with `--json`, supply an explicit
+stable `--identity`. `--target local` is always required. Wrapper failures exit 2
+and print a diagnostic on stderr; `--json` makes that diagnostic a single
+schema-versioned JSON object. Successful child stdout/stderr remain untouched.
+Everything after `--`, including Codex `--profile`, passes unchanged to the child.
+The child prints its arguments as JSON, writes a harmless stderr marker, echoes
+stdin, and supports `--fixture-exit=N`, `--fixture-no-stdin`, and `--fixture-wait`.
+Child exits propagate; terminal Ctrl+C exits 130 on Windows and POSIX.
+
+Run installed-package tests by setting `TANDEM_TEST_PACKAGE` to the installed
+package directory before `node --test test/run.test.mjs`. Terminal qualification
+is `python tools/qualify-selector.py NODE INSTALLED_PACKAGE`; Windows uses
+pywinpty in a separate test-only environment, never a production dependency.

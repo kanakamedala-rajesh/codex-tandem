@@ -1,0 +1,16 @@
+{
+  "platform": "linux",
+  "node": "v24.18.0",
+  "harness": "POSIX PTY/termios",
+  "p95FirstFrameMs": null,
+  "results": [
+    {
+      "case": "child-ctrl-c",
+      "firstFrameMs": null,
+      "harnessWallMs": 304.62,
+      "restored": true,
+      "exit": 130,
+      "transcript": "{\"args\":[\"--fixture-wait\"]}\r\nG0 harmless child\r\n^C\r\nFIRST_FRAME_MS:undefined\r\nTERMINAL_RAW:false\r\n"
+    }
+  ]
+}

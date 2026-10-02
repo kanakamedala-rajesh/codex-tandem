@@ -1,0 +1,16 @@
+{
+  "platform": "win32",
+  "node": "v24.15.0",
+  "harness": "ConPTY/pywinpty",
+  "p95FirstFrameMs": null,
+  "results": [
+    {
+      "case": "child-ctrl-c",
+      "firstFrameMs": null,
+      "harnessWallMs": 3150.68,
+      "restored": true,
+      "exit": 130,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h{\"args\":[\"--fixture-wait\"]}\r\nG0 harmless child\r\n\r\nFIRST_FRAME_MS:undefined\r\nTERMINAL_RAW:false\r\n"
+    }
+  ]
+}

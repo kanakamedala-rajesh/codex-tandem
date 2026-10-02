@@ -1,0 +1,14 @@
+✔ doctor emits clean versioned host capabilities with disposable self tests (100.1345ms)
+✔ missing built-ins return actionable JSON without disclosing raw errors (115.5759ms)
+✔ non-TTY requires explicit stable identity and target without waiting (76.574ms)
+✔ passes child arguments, streams and exit exactly like direct invocation (188.015ms)
+✔ validates synthetic metadata and selects stable IDs rather than duplicate labels (241.124ms)
+﹣ forwards POSIX termination to the harmless child and propagates its exit (0.1733ms) # SKIP
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 605.0743

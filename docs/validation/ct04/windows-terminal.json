@@ -1,0 +1,232 @@
+{
+  "platform": "win32",
+  "node": "v24.15.0",
+  "harness": "ConPTY/pywinpty",
+  "p95FirstFrameMs": 50.51,
+  "results": [
+    {
+      "case": "zero",
+      "firstFrameMs": null,
+      "harnessWallMs": null,
+      "restored": true,
+      "exit": 2,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001hNO_PROFILES: Add synthetic profile metadata to the G0 fixture.\r\n\r\nFIRST_FRAME_MS:undefined\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "one",
+      "firstFrameMs": 38.9,
+      "harnessWallMs": 3083.56,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\u001b[?25h\u001b[?1049lSelected synthetic profile [alpha]\r\n{\"args\":[\"--fixture-no-stdin\"]}\r\nG0 harmless child\r\n\r\nFIRST_FRAME_MS:38.9022\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "two",
+      "firstFrameMs": 40.44,
+      "harnessWallMs": 3088.57,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n  [alpha] \u65e5\u672c\u8a9e\r\n> [beta] \u540c\u3058\u001b[?25h\u001b[?1049lSelected synthetic profile [beta]\r\n{\"args\":[\"--fixture-no-stdin\"]}\r\nG0 harmless child\r\n\r\nFIRST_FRAME_MS:40.4447\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "many-unicode-duplicate",
+      "firstFrameMs": 47.03,
+      "harnessWallMs": 3102.25,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[H\u001b[2JSelect synthetic profile (arr\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[H\u001b[2JSelect synthetic profile (arr\r\n  [alpha] \u65e5\u672c\u8a9e\r\n> [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[H\u001b[2JSelect synthetic profile (arr\r\n  [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n> [gamma] \u540c\u3058\u001b[H\u001b[2JSelect synthetic profile (arr\r\n  [alpha] \u65e5\u672c\u8a9e\r\n> [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049lSelected synthetic profile [beta]\r\n{\"args\":[\"--fixture-no-stdin\"]}\r\nG0 harmless child\r\n\r\nFIRST_FRAME_MS:47.0284\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "long-duplicate-labels",
+      "firstFrameMs": 37.66,
+      "harnessWallMs": 3082.89,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\r\n  [beta] \u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u001b[H\u001b[2JSelect synthetic profile (arr\r\n> [alpha] \u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\r\n  [beta] \u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u001b[H\u001b[2JSelect synthetic profile (arr\r\n  [alpha] \u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\r\n> [beta] \u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u540c\u3058\u001b[?25h\u001b[?1049lSelected synthetic profile [beta]\r\n{\"args\":[\"--fixture-no-stdin\"]}\r\nG0 harmless child\r\n\r\nFIRST_FRAME_MS:37.6618\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "cancel",
+      "firstFrameMs": 43.06,
+      "harnessWallMs": 3100.63,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:43.0595\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "ctrl-c",
+      "firstFrameMs": 38.27,
+      "harnessWallMs": 3083.43,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:38.267\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "exception",
+      "firstFrameMs": 35.66,
+      "harnessWallMs": null,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[?25h\u001b[?1049lSELECTOR_FAILED: Selection failed; no child was launched.\r\n\r\nFIRST_FRAME_MS:35.6609\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-0",
+      "firstFrameMs": 37.3,
+      "harnessWallMs": 3084.46,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:37.2957\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-1",
+      "firstFrameMs": 50.51,
+      "harnessWallMs": 3103.14,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:50.5063\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-2",
+      "firstFrameMs": 36.71,
+      "harnessWallMs": 3103.5,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:36.7108\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-3",
+      "firstFrameMs": 34.83,
+      "harnessWallMs": 3079.03,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:34.8318\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-4",
+      "firstFrameMs": 35.35,
+      "harnessWallMs": 3080.18,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:35.3493\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-5",
+      "firstFrameMs": 36.79,
+      "harnessWallMs": 3087.8,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:36.7909\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-6",
+      "firstFrameMs": 33.69,
+      "harnessWallMs": 3080.39,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:33.6877\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-7",
+      "firstFrameMs": 36.99,
+      "harnessWallMs": 3107.92,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:36.9864\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-8",
+      "firstFrameMs": 44.23,
+      "harnessWallMs": 3089.88,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:44.2325\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-9",
+      "firstFrameMs": 35.41,
+      "harnessWallMs": 3090.47,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:35.4105\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-10",
+      "firstFrameMs": 61.36,
+      "harnessWallMs": 3119.39,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:61.3606\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-11",
+      "firstFrameMs": 37.86,
+      "harnessWallMs": 3102.55,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:37.8578\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-12",
+      "firstFrameMs": 31.72,
+      "harnessWallMs": 3091.29,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:31.7175\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-13",
+      "firstFrameMs": 37.39,
+      "harnessWallMs": 3084.41,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:37.3904\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-14",
+      "firstFrameMs": 38.45,
+      "harnessWallMs": 3104.28,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:38.448\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-15",
+      "firstFrameMs": 38.03,
+      "harnessWallMs": 3086.39,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:38.0289\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-16",
+      "firstFrameMs": 35.41,
+      "harnessWallMs": 3085.93,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:35.4119\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-17",
+      "firstFrameMs": 44.97,
+      "harnessWallMs": 3103.29,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:44.9721\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-18",
+      "firstFrameMs": 33.28,
+      "harnessWallMs": 3084.11,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:33.2827\r\nTERMINAL_RAW:false\r\n"
+    },
+    {
+      "case": "timing-19",
+      "firstFrameMs": 35.06,
+      "harnessWallMs": 3093.81,
+      "restored": true,
+      "exit": null,
+      "transcript": "\u001b[1t\u001b[c\u001b[?1004h\u001b[?9001h\u001b[?1049h\u001b[?25l\u001b[H\u001b[2JSelect synthetic profile (arrows/Enter; Esc cance\r\n> [alpha] \u65e5\u672c\u8a9e\r\n  [beta] \u540c\u3058\r\n  [gamma] \u540c\u3058\u001b[?25h\u001b[?1049l\r\nFIRST_FRAME_MS:35.0617\r\nTERMINAL_RAW:false\r\n"
+    }
+  ]
+}
