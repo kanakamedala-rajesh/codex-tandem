@@ -18,7 +18,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs",
     "verify:package": "node scripts/verify-package.mjs",
-    "verify:discovery": "node scripts/verify-discovery-package.mjs"
+    "verify:discovery": "node scripts/verify-discovery-package.mjs",
+    "verify:capture": "node scripts/verify-capture-package.mjs"
   },
   "devDependencies": {
     "@types/node": "22.15.0",
