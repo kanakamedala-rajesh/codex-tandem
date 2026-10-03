@@ -72,15 +72,15 @@ Keep the approved requirements baseline unchanged. This specification supplies i
 
 ### Application shape and module contracts
 
-| Responsibility | Public behavior and boundary |
-| --- | --- |
-| CLI and selector | Parse reserved Tandem options, collect scoped consent, display saved profiles, restore terminal state and preserve Codex passthrough. Reporting imports stay off the launch path. |
-| Profiles and activation | Separate stable profiles/bindings, detect credential-storage policy, stage login, preserve refreshes, protect canonical scopes and recover interrupted activation. |
-| Launcher | Acquire ownership, record immutable target/identity context before child execution, supervise lifecycle and propagate exit results. |
-| Local and Docker targets | Resolve execution scope, run the existing binary, inspect owned processes, transfer selected files privately and enforce canonical project/source roots. |
-| Capture | Validate bounded versioned input, project allowed metadata and publish durable events with neutral hook output. It does not calculate accounting or start collection. |
-| Collector and storage | Own one analytics writer, cursor/receipt transactions, normalization, deduplication, evidence resolution, migrations and shared report computation. |
-| Local API and browser | Serve authenticated read-only reports and validated presentation settings. Credentials, login, arbitrary execution and process stopping remain CLI responsibilities. |
+| Responsibility           | Public behavior and boundary                                                                                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CLI and selector         | Parse reserved Tandem options, collect scoped consent, display saved profiles, restore terminal state and preserve Codex passthrough. Reporting imports stay off the launch path. |
+| Profiles and activation  | Separate stable profiles/bindings, detect credential-storage policy, stage login, preserve refreshes, protect canonical scopes and recover interrupted activation.                |
+| Launcher                 | Acquire ownership, record immutable target/identity context before child execution, supervise lifecycle and propagate exit results.                                               |
+| Local and Docker targets | Resolve execution scope, run the existing binary, inspect owned processes, transfer selected files privately and enforce canonical project/source roots.                          |
+| Capture                  | Validate bounded versioned input, project allowed metadata and publish durable events with neutral hook output. It does not calculate accounting or start collection.             |
+| Collector and storage    | Own one analytics writer, cursor/receipt transactions, normalization, deduplication, evidence resolution, migrations and shared report computation.                               |
+| Local API and browser    | Serve authenticated read-only reports and validated presentation settings. Credentials, login, arbitrary execution and process stopping remain CLI responsibilities.              |
 
 Use the SRS logical entities: Profile, IdentityBinding, Target, Launch, Thread/Session, TurnAttempt, AgentRelation, UsageObservation, QuotaObservation, CaptureReceipt/Cursor, AttributionEvidence/Audit and Settings. Physical tables may combine entities only when their invariants stay explicit. Use versioned schemas, stable keys, foreign-key/uniqueness constraints and coordinated migrations.
 
@@ -140,13 +140,13 @@ This repository has no existing product tests. Prior art consists of inspected G
 
 ### Required execution environments
 
-| Environment | Required evidence |
-| --- | --- |
-| Local native Windows | Actual applicable package, source-build, terminal, credential/ACL/recovery, capture, storage, browser, migration and cleanup validation. Smart App Control enforcing for required Windows qualification. |
-| Local WSL2 | Actual applicable package, terminal, credential/recovery, capture, storage, browser and lifecycle validation in its independent store. |
-| WSL2 to actual legacy container | Existing Codex/build environment, bridge, target mappings, A/B resume, child linkage, scoped stopping, lifecycle and measured overhead. |
-| Native glibc Linux x64 | Required local workflows and available Docker integration; WSL2 is not a substitute for this environment. |
-| Runtime/browser matrix | Initial minimum capability floor plus maintained compatible newer runtimes; required Edge/Chrome/Firefox behavior on applicable platforms. |
+| Environment                     | Required evidence                                                                                                                                                                                        |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local native Windows            | Actual applicable package, source-build, terminal, credential/ACL/recovery, capture, storage, browser, migration and cleanup validation. Smart App Control enforcing for required Windows qualification. |
+| Local WSL2                      | Actual applicable package, terminal, credential/recovery, capture, storage, browser and lifecycle validation in its independent store.                                                                   |
+| WSL2 to actual legacy container | Existing Codex/build environment, bridge, target mappings, A/B resume, child linkage, scoped stopping, lifecycle and measured overhead.                                                                  |
+| Native glibc Linux x64          | Required local workflows and available Docker integration; WSL2 is not a substitute for this environment.                                                                                                |
+| Runtime/browser matrix          | Initial minimum capability floor plus maintained compatible newer runtimes; required Edge/Chrome/Firefox behavior on applicable platforms.                                                               |
 
 **CI cannot replace the explicitly required local Windows and WSL2 runs.** Fixture checks, inventory observations, available runner names and successful compilation are not actual platform qualification. Platform-specific cases require the relevant platform, with any genuine non-applicability explained explicitly. Missing access stays BLOCKED or NOT EXECUTED, never PASS.
 

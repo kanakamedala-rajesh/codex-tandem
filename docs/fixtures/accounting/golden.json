@@ -1,0 +1,773 @@
+{
+  "schema": 1,
+  "provenance": "Hand-authored synthetic metadata; donor inspection plus approved SRS. No real conversations, accounts, credentials or telemetry.",
+  "donorCommit": "516a1d6306559d8a607de84c4d76529160349ac8",
+  "contract": {
+    "recordExpansion": "Each record receives timestamp 2026-10-02T00:00:00.000Z unless overridden. Each source starts with independent empty parser state. Replay orders preserve order within each source. Named records expand literally, not via product code.",
+    "vectors": "Expected vectors are [input,cached,write,output,reasoning]. Cached and write partition input; reasoning is a subset of output. Decimal strings express exact expected integer results, not a proposed ingestion wire format.",
+    "outcomes": "These are future accounting seam oracles, not evidence of a passing accounting implementation. Diagnostic labels describe semantics and do not freeze CLI wording or a database schema.",
+    "sourceOwnership": "A source's first session_meta owns the physical source. Repeated copies of a response do not create new work. Native/legacy reconciliation requires evidence that both describe the same work."
+  },
+  "records": {
+    "root": {
+      "type": "session_meta",
+      "payload": {
+        "id": "synthetic-root",
+        "source": "cli"
+      }
+    },
+    "child": {
+      "type": "session_meta",
+      "payload": {
+        "id": "synthetic-child",
+        "parent_thread_id": "synthetic-root",
+        "subagent_history_start_ordinal": 10
+      }
+    },
+    "fork": {
+      "type": "session_meta",
+      "payload": {
+        "id": "synthetic-child",
+        "parent_thread_id": "synthetic-root"
+      }
+    },
+    "context": {
+      "type": "turn_context",
+      "payload": {
+        "turn_id": "synthetic-turn",
+        "model": "synthetic-model",
+        "service_tier": "standard"
+      }
+    },
+    "start": {
+      "type": "event_msg",
+      "payload": {
+        "type": "task_started",
+        "turn_id": "synthetic-turn"
+      }
+    },
+    "native": {
+      "type": "token_usage_record",
+      "payload": {
+        "thread_id": "synthetic-root",
+        "turn_id": "synthetic-turn",
+        "response_id": "synthetic-response",
+        "usage": {
+          "input_tokens": 1000,
+          "cached_input_tokens": 800,
+          "cache_write_input_tokens": 20,
+          "output_tokens": 100,
+          "reasoning_output_tokens": 60
+        }
+      }
+    },
+    "changed": {
+      "type": "token_usage_record",
+      "payload": {
+        "thread_id": "synthetic-root",
+        "turn_id": "synthetic-turn",
+        "response_id": "synthetic-response",
+        "usage": {
+          "input_tokens": 1001,
+          "cached_input_tokens": 800,
+          "cache_write_input_tokens": 20,
+          "output_tokens": 100,
+          "reasoning_output_tokens": 60
+        }
+      }
+    },
+    "childNative": {
+      "type": "token_usage_record",
+      "ordinal": 10,
+      "payload": {
+        "thread_id": "synthetic-child",
+        "turn_id": "synthetic-child-turn",
+        "response_id": "synthetic-child-response",
+        "usage": {
+          "input_tokens": 50,
+          "output_tokens": 5
+        }
+      }
+    },
+    "inherited": {
+      "type": "token_usage_record",
+      "ordinal": 9,
+      "payload": {
+        "thread_id": "synthetic-child",
+        "turn_id": "synthetic-child-turn",
+        "response_id": "synthetic-history-response",
+        "usage": {
+          "input_tokens": 700,
+          "output_tokens": 70
+        }
+      }
+    },
+    "baseline": {
+      "type": "event_msg",
+      "payload": {
+        "type": "token_count",
+        "info": {
+          "total_token_usage": {
+            "input_tokens": 100,
+            "output_tokens": 10
+          }
+        }
+      }
+    },
+    "delta": {
+      "type": "event_msg",
+      "payload": {
+        "type": "token_count",
+        "info": {
+          "total_token_usage": {
+            "input_tokens": 150,
+            "output_tokens": 15
+          },
+          "last_token_usage": {
+            "input_tokens": 50,
+            "output_tokens": 5
+          }
+        }
+      }
+    },
+    "reset": {
+      "type": "event_msg",
+      "payload": {
+        "type": "token_count",
+        "info": {
+          "total_token_usage": {
+            "input_tokens": 20,
+            "output_tokens": 2
+          }
+        }
+      }
+    },
+    "afterReset": {
+      "type": "event_msg",
+      "payload": {
+        "type": "token_count",
+        "info": {
+          "total_token_usage": {
+            "input_tokens": 30,
+            "output_tokens": 3
+          },
+          "last_token_usage": {
+            "input_tokens": 10,
+            "output_tokens": 1
+          }
+        }
+      }
+    },
+    "legacySameWork": {
+      "type": "event_msg",
+      "payload": {
+        "type": "token_count",
+        "info": {
+          "total_token_usage": {
+            "input_tokens": 1000,
+            "cached_input_tokens": 800,
+            "cache_write_input_tokens": 20,
+            "output_tokens": 100,
+            "reasoning_output_tokens": 60
+          },
+          "last_token_usage": {
+            "input_tokens": 1000,
+            "cached_input_tokens": 800,
+            "cache_write_input_tokens": 20,
+            "output_tokens": 100,
+            "reasoning_output_tokens": 60
+          }
+        }
+      }
+    },
+    "invalidSubset": {
+      "type": "token_usage_record",
+      "payload": {
+        "thread_id": "synthetic-root",
+        "turn_id": "synthetic-turn",
+        "response_id": "synthetic-invalid",
+        "usage": {
+          "input_tokens": 10,
+          "cached_input_tokens": 8,
+          "cache_write_input_tokens": 3,
+          "output_tokens": 2,
+          "reasoning_output_tokens": 3
+        }
+      }
+    },
+    "unsafeInteger": {
+      "type": "token_usage_record",
+      "payload": {
+        "thread_id": "synthetic-root",
+        "turn_id": "synthetic-turn",
+        "response_id": "synthetic-large",
+        "usage": {
+          "input_tokens": 9007199254740992,
+          "output_tokens": 0
+        }
+      }
+    },
+    "largeA": {
+      "type": "token_usage_record",
+      "payload": {
+        "thread_id": "synthetic-root",
+        "turn_id": "synthetic-turn",
+        "response_id": "synthetic-large-a",
+        "usage": {
+          "input_tokens": 9007199254740991,
+          "output_tokens": 0
+        }
+      }
+    },
+    "largeB": {
+      "type": "token_usage_record",
+      "payload": {
+        "thread_id": "synthetic-root",
+        "turn_id": "synthetic-turn",
+        "response_id": "synthetic-large-b",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 0
+        }
+      }
+    },
+    "quota": {
+      "type": "event_msg",
+      "payload": {
+        "type": "token_count",
+        "info": null,
+        "rate_limits": {
+          "limit_id": "synthetic-limit",
+          "primary": {
+            "window_minutes": 10080,
+            "used_percent": 42,
+            "resets_at": 1791000000
+          }
+        }
+      }
+    },
+    "abort": {
+      "type": "event_msg",
+      "payload": {
+        "type": "turn_aborted",
+        "turn_id": "synthetic-turn"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "native-subsets",
+      "basis": "donor",
+      "requirements": [
+        "MIG-001",
+        "COL-008"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "context",
+          "native"
+        ]
+      ],
+      "expected": {
+        "vector": [
+          "1000",
+          "800",
+          "20",
+          "100",
+          "60"
+        ],
+        "total": "1100",
+        "ordinaryInput": "180"
+      }
+    },
+    {
+      "id": "duplicate-response",
+      "basis": "donor",
+      "requirements": [
+        "COL-003"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "native",
+          "native"
+        ],
+        [
+          "root",
+          "native"
+        ]
+      ],
+      "replayOrders": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "expected": {
+        "observations": 1,
+        "vector": [
+          "1000",
+          "800",
+          "20",
+          "100",
+          "60"
+        ]
+      }
+    },
+    {
+      "id": "changed-response-conflict",
+      "basis": "srs-extension",
+      "requirements": [
+        "COL-003"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "native"
+        ],
+        [
+          "root",
+          "changed"
+        ]
+      ],
+      "replayOrders": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "expected": {
+        "conflict": true,
+        "orderIndependent": true,
+        "variants": 2,
+        "mustNotSumVariants": true
+      },
+      "donorDifference": "Store.writeBatch flags conflicting_request_identity but keeps first sample; Tandem must not adopt arrival order as truth."
+    },
+    {
+      "id": "native-supersedes-proven-legacy",
+      "basis": "donor",
+      "requirements": [
+        "COL-003",
+        "COL-004"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "start",
+          "legacySameWork"
+        ],
+        [
+          "root",
+          "native"
+        ]
+      ],
+      "replayOrders": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "evidence": "Both fixture sources describe exactly synthetic-response in synthetic-turn; no additional work exists.",
+      "expected": {
+        "vector": [
+          "1000",
+          "800",
+          "20",
+          "100",
+          "60"
+        ],
+        "observations": 1
+      }
+    },
+    {
+      "id": "physical-owner-and-child-prefix",
+      "basis": "donor",
+      "requirements": [
+        "ATT-009"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "child",
+          "root",
+          "native",
+          "inherited",
+          "childNative"
+        ]
+      ],
+      "expected": {
+        "owner": "synthetic-child",
+        "vector": [
+          "50",
+          "0",
+          "0",
+          "5",
+          "0"
+        ],
+        "observations": 1
+      }
+    },
+    {
+      "id": "legacy-verified-baseline",
+      "basis": "donor",
+      "requirements": [
+        "COL-004"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "baseline",
+          "start",
+          "delta"
+        ]
+      ],
+      "expected": {
+        "vector": [
+          "50",
+          "0",
+          "0",
+          "5",
+          "0"
+        ],
+        "requestBoundary": "exact"
+      }
+    },
+    {
+      "id": "legacy-no-owned-start",
+      "basis": "donor",
+      "requirements": [
+        "COL-004"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "context",
+          "baseline"
+        ]
+      ],
+      "expected": {
+        "observations": 0,
+        "baselineOnly": true
+      }
+    },
+    {
+      "id": "legacy-inherited-baseline",
+      "basis": "donor",
+      "requirements": [
+        "COL-004",
+        "ATT-009"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "fork",
+          "baseline",
+          "start",
+          "delta"
+        ]
+      ],
+      "expected": {
+        "vector": [
+          "50",
+          "0",
+          "0",
+          "5",
+          "0"
+        ]
+      }
+    },
+    {
+      "id": "legacy-reset",
+      "basis": "donor",
+      "requirements": [
+        "COL-004"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "baseline",
+          "start",
+          "delta",
+          "reset",
+          "afterReset"
+        ]
+      ],
+      "expected": {
+        "vector": [
+          "60",
+          "0",
+          "0",
+          "6",
+          "0"
+        ],
+        "counterReset": true,
+        "resetRecordContributes": false
+      }
+    },
+    {
+      "id": "legacy-ambiguous-request",
+      "basis": "donor",
+      "requirements": [
+        "COL-004"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "baseline",
+          "start",
+          "legacySameWork"
+        ]
+      ],
+      "expected": {
+        "vector": [
+          "900",
+          "800",
+          "20",
+          "90",
+          "60"
+        ],
+        "price": null,
+        "reason": "ambiguous_request_boundaries"
+      }
+    },
+    {
+      "id": "cross-identity-delta",
+      "basis": "srs-extension",
+      "requirements": [
+        "ATT-013",
+        "COL-004"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "baseline",
+          "start",
+          "delta"
+        ]
+      ],
+      "evidence": "Baseline belongs to identity A. Identity changes to B before delta, with no proven work boundary.",
+      "expected": {
+        "unresolvedVector": [
+          "50",
+          "0",
+          "0",
+          "5",
+          "0"
+        ],
+        "assignedToB": "0",
+        "mustNotDoubleCountOnResolution": true
+      }
+    },
+    {
+      "id": "invalid-token-subsets",
+      "basis": "donor",
+      "requirements": [
+        "MIG-001",
+        "COL-008"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "invalidSubset"
+        ]
+      ],
+      "expected": {
+        "observations": 0,
+        "invalidUsage": true
+      }
+    },
+    {
+      "id": "unsafe-wire-integer",
+      "basis": "donor",
+      "requirements": [
+        "MIG-001",
+        "COL-008"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "unsafeInteger"
+        ]
+      ],
+      "expected": {
+        "observations": 0,
+        "invalidUsage": true
+      }
+    },
+    {
+      "id": "aggregate-beyond-safe-integer",
+      "basis": "srs-extension",
+      "requirements": [
+        "MIG-001",
+        "COL-008"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "largeA",
+          "largeB"
+        ]
+      ],
+      "expected": {
+        "exactInput": "9007199254740993",
+        "noSilentRounding": true,
+        "onUnsupportedRange": "explicit-overflow-error"
+      }
+    },
+    {
+      "id": "quota-only",
+      "basis": "donor",
+      "requirements": [
+        "MIG-001"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "quota"
+        ]
+      ],
+      "expected": {
+        "observations": 0,
+        "quota": {
+          "windowMinutes": 10080,
+          "usedPercent": 42
+        }
+      }
+    },
+    {
+      "id": "cancellation",
+      "basis": "donor",
+      "requirements": [
+        "MIG-001"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "start",
+          "abort"
+        ]
+      ],
+      "expected": {
+        "turnStatus": "interrupted",
+        "observations": 0
+      }
+    },
+    {
+      "id": "synthetic-price-subsets",
+      "basis": "donor",
+      "requirements": [
+        "MIG-001",
+        "COL-008"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "context",
+          "native"
+        ]
+      ],
+      "rates": {
+        "unit": "synthetic pico-USD per token; NOT market prices",
+        "input": "2000000",
+        "cached": "200000",
+        "write": "2500000",
+        "output": "10000000"
+      },
+      "expected": {
+        "picoUsd": "1570000000",
+        "reasoningChargedSeparately": false
+      }
+    },
+    {
+      "id": "unknown-model",
+      "basis": "donor",
+      "requirements": [
+        "MIG-001"
+      ],
+      "tests": [
+        "T26"
+      ],
+      "sources": [
+        [
+          "root",
+          "native"
+        ]
+      ],
+      "rates": {
+        "models": {}
+      },
+      "expected": {
+        "price": null,
+        "reason": "unlisted_model"
+      }
+    }
+  ]
+}

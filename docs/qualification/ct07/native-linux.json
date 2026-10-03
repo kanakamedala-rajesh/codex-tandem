@@ -1,0 +1,44 @@
+{
+  "pipelineId": 2906910689,
+  "commit": "e4d7942c264c091effe45604bf10217ef5a42eef",
+  "jobs": [
+    {
+      "observedNodeVersions": ["v24.21.0"],
+      "jobId": 16897479400,
+      "name": "validate: [24]",
+      "scope": "format/lint/typecheck/build/unit/installed-package/accounting-fixture verification; not interactive or native Codex qualification",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/jobs/16897479400",
+      "status": "success"
+    },
+    {
+      "observedNodeVersions": ["v22.23.3"],
+      "jobId": 16897479399,
+      "name": "validate: [22]",
+      "scope": "format/lint/typecheck/build/unit/installed-package/accounting-fixture verification; not interactive or native Codex qualification",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/jobs/16897479399",
+      "status": "success"
+    },
+    {
+      "observedNodeVersions": ["v22.15.0"],
+      "jobId": 16897479398,
+      "name": "validate: [22.15.0]",
+      "scope": "format/lint/typecheck/build/unit/installed-package/accounting-fixture verification; not interactive or native Codex qualification",
+      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/jobs/16897479398",
+      "status": "success"
+    }
+  ],
+  "runtime": {
+    "platform": "native Linux container on Linux CI runner",
+    "image": "node:${NODE_VERSION}-bookworm",
+    "qualification": "noninteractive prior-source checks only",
+    "executor": "GitLab saas-linux-small-amd64"
+  },
+  "commands": [
+    "node --version",
+    "npm --version",
+    "npm ci --ignore-scripts --engine-strict --cache .npm-cache --prefer-offline",
+    "npm run validate",
+    "npm run verify:installed",
+    "node tools/verify-accounting-fixtures.mjs"
+  ]
+}

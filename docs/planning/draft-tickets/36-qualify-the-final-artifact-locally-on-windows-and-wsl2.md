@@ -12,6 +12,7 @@ Execute the final applicable acceptance matrix on both local platforms using the
 ## Blocked by
 
 CT-29 ([GitLab #36](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/36)), CT-35 ([GitLab #42](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/42)).
+
 - [CT-35](35-prepare-a-reproducible-release-package-and-notices.md) — Prepare a reproducible release package and notices
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

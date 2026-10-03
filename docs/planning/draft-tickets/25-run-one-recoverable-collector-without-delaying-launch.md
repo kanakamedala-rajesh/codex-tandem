@@ -12,6 +12,7 @@ Start or reconnect a separately owned collector while Codex launches immediately
 ## Blocked by
 
 CT-17 ([GitLab #24](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/24)), CT-22 ([GitLab #29](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/29)).
+
 - [CT-22](22-read-rollout-sources-incrementally-with-bounded-decoding.md) — Read rollout sources incrementally with bounded decoding
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

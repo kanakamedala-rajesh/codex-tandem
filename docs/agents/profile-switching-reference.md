@@ -48,17 +48,17 @@ Source: `internal/manager/app.go`, especially `syncCurrent`, `switchTo`,
 
 ## Behavior to preserve and extend
 
-| Inspected behavior | Tandem implementation contract | Requirements / tests |
-| --- | --- | --- |
-| Arrow selection with current-account highlighting and management menu | Preserve an efficient interactive selection/management workflow; use stable profile IDs and restore terminal state on all exits. | CLI-001/006, PRO-001; T04/T06 |
-| Account labels select saved credentials | Separate mutable labels, immutable profile IDs and account/workspace identity bindings. | PRO-002/003; T07 |
-| Copy-and-sync switching in one shared Codex home | Preserve shared Codex state and outgoing credential refreshes; implement a guarded, recoverable activation transaction. | PRO-005, AUTH-002/003/008; T08/T09 |
-| Isolated temporary home for add/reauthentication through existing Codex login | Preserve cancellation safety; respect credential-storage policy and validate whether login represents the same identity binding. | PRO-003/004, AUTH-001; T06/T07 |
-| Argument, stream and child-exit passthrough | Preserve transparency using the SRS CLI surface, including explicit --identity, --target and the -- boundary. | CLI-002/003, INT-001; T05/T17 |
-| Resume arguments pass through to Codex | Add target/project-scoped session resolution and avoid silently choosing another project. | CLI-004; T17 |
-| Rename and removal of saved accounts | Retain immutable historical records after rename/removal; confirm destructive actions before mutation. | PRO-001/002; T06/T07 |
-| Platform-specific process discovery | Add credential-scope ownership, process creation identity, alias protection, concurrency locks and scoped stop consent. | AUTH-005/006, PROC-001–006; T10–T12/T15 |
-| Separate OS-specific state locations | Keep native Windows and WSL stores independent, using the SRS Tandem state layout and explicit migration preview. | ARC-003, MIG-002/003; T12/T41 |
+| Inspected behavior                                                            | Tandem implementation contract                                                                                                   | Requirements / tests                    |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Arrow selection with current-account highlighting and management menu         | Preserve an efficient interactive selection/management workflow; use stable profile IDs and restore terminal state on all exits. | CLI-001/006, PRO-001; T04/T06           |
+| Account labels select saved credentials                                       | Separate mutable labels, immutable profile IDs and account/workspace identity bindings.                                          | PRO-002/003; T07                        |
+| Copy-and-sync switching in one shared Codex home                              | Preserve shared Codex state and outgoing credential refreshes; implement a guarded, recoverable activation transaction.          | PRO-005, AUTH-002/003/008; T08/T09      |
+| Isolated temporary home for add/reauthentication through existing Codex login | Preserve cancellation safety; respect credential-storage policy and validate whether login represents the same identity binding. | PRO-003/004, AUTH-001; T06/T07          |
+| Argument, stream and child-exit passthrough                                   | Preserve transparency using the SRS CLI surface, including explicit --identity, --target and the -- boundary.                    | CLI-002/003, INT-001; T05/T17           |
+| Resume arguments pass through to Codex                                        | Add target/project-scoped session resolution and avoid silently choosing another project.                                        | CLI-004; T17                            |
+| Rename and removal of saved accounts                                          | Retain immutable historical records after rename/removal; confirm destructive actions before mutation.                           | PRO-001/002; T06/T07                    |
+| Platform-specific process discovery                                           | Add credential-scope ownership, process creation identity, alias protection, concurrency locks and scoped stop consent.          | AUTH-005/006, PROC-001–006; T10–T12/T15 |
+| Separate OS-specific state locations                                          | Keep native Windows and WSL stores independent, using the SRS Tandem state layout and explicit migration preview.                | ARC-003, MIG-002/003; T12/T41           |
 
 Login details come from `app.go` functions `addAccount`, `reauthAccount` and
 `initialize`; management behavior comes from `manage.go`. The existing CLI

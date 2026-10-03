@@ -1,0 +1,110 @@
+{
+  "observedDateUtc": "2026-10-02",
+  "ubuntu": {
+    "validation": "PASS",
+    "distribution": "Ubuntu",
+    "pythonBridgeTestsPassed": 5,
+    "node": "24.18.0",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "codex": "0.160.0",
+    "credentialFreeProbe": {
+      "exit": 1,
+      "nativeTurnStarted": true,
+      "disposableHomeRemoved": true,
+      "authenticationBoundary": true,
+      "nativeTurnCompleted": false
+    },
+    "testsPassed": 29,
+    "testsSkipped": 2,
+    "installedPackage": "PASS",
+    "packageSha256": "71f3cd7403fda4565ffea5a03f7cfb376906d72733d435ee7dced960f5d56bd7",
+    "authenticatedResume": "OBSERVED_PARENT_PROCESS_ONLY",
+    "observations": "ubuntu-observations.json",
+    "cleanup": "ubuntu-cleanup.json"
+  },
+  "integrationBase": "e4d7942c264c091effe45604bf10217ef5a42eef",
+  "status": "BOUNDED_FEASIBILITY_CRITERIA_COMPLETE",
+  "originalLegacyTarget": "NOT_QUALIFIED",
+  "nativeLinuxOutsideWsl": "NOT_EXECUTED",
+  "sourceSha256": {
+    "src/resume-experiment.ts": "2e569ddfffd2baef75b87817958702299ea9d9255dc30a287130eeb0af5cd2a3",
+    "tools/capture/resume-experiment.py": "a499bb2eb540dc45b12283034f5cfec5e8c02d5b88f29f90c44572a1dccfea49",
+    "tools/capture/bridge.py": "a9e2be0ad4316833f50ab21841c6928b0fe43a99b308531d85ed845fd6a4a3ba",
+    "test/resume.test.mjs": "e38ee08cadbe18a6d69ce777fc35732e58db44449de1299d22ca9b6e71d32391",
+    "tools/capture/local-resume-feasibility.mjs": "2b6b56320dadc544389bb3adaca199a4d4ce98eebdd6cac062a656f061f2b79d",
+    "tools/capture/stage-resume-experiment.py": "3308fcab98dd3a31c97a82a8803a643238062cd0825f36622955bceb4910cf0d",
+    "scripts/verify-capture-package.mjs": "8f57967819db6944cc39ba0a5ce12aef506e15a93bc222971a4750e760dab2ab",
+    "tools/capture/local-authenticated-resume.mjs": "b14fe61f218b74d4791d252c8e2439063ebd54f3d99e28a1fc65663dab873391"
+  },
+  "schemaVersion": 1,
+  "windows": {
+    "validation": "PASS",
+    "packageSha256": "41f8112496e7635cf768eb68687d3ff0957437b2e1f186055421767d85b74f85",
+    "node": "24.15.0",
+    "release": "10.0.26300",
+    "codex": "0.159.0-alpha.12.1",
+    "credentialFreeProbe": {
+      "exit": 1,
+      "nativeTurnStarted": true,
+      "disposableHomeRemoved": true,
+      "authenticationBoundary": true,
+      "nativeTurnCompleted": false
+    },
+    "testsPassed": 28,
+    "testsSkipped": 3,
+    "installedPackage": "PASS",
+    "authenticatedResume": "OBSERVED_PARENT_PROCESS_ONLY",
+    "observations": "windows-observations.json",
+    "cleanup": "windows-cleanup.json"
+  },
+  "implementationCommit": "CONTAINING_GIT_COMMIT",
+  "container": {
+    "uid": 1000,
+    "cleanup": "container-cleanup.json",
+    "python": "3.12.15",
+    "sameLogicalTurnRetry": "SYNTHETIC_ONLY",
+    "observations": "container-observations.json",
+    "codex": "0.160.0",
+    "hook": "UserPromptSubmit",
+    "fullTracking": false,
+    "backgroundServerReuse": "NOT_EXECUTED",
+    "accountOwnership": "CONTROLLED_INPUT_ALIAS_ONLY",
+    "name": "codex-tandem-g0-linux",
+    "generation": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf"
+  },
+  "ticket": 13,
+  "commands": [
+    "npm run validate",
+    "npm run verify:installed",
+    "node tools/verify-accounting-fixtures.mjs",
+    "python3 test/capture_bridge_test.py",
+    "node tools/capture/local-resume-feasibility.mjs <installed Codex binary>",
+    "python3 tools/capture/stage-resume-experiment.py",
+    "python3 <disposable-root>/resume_experiment.py A|B|missing|stale"
+  ],
+  "sourceHashEncoding": "sourceSha256 pins validated worktree bytes; gitSourceSha256 pins committed blobs with Git line-ending normalization.",
+  "gitSourceSha256": {
+    "src/resume-experiment.ts": "2e569ddfffd2baef75b87817958702299ea9d9255dc30a287130eeb0af5cd2a3",
+    "tools/capture/resume-experiment.py": "a499bb2eb540dc45b12283034f5cfec5e8c02d5b88f29f90c44572a1dccfea49",
+    "tools/capture/bridge.py": "a9e2be0ad4316833f50ab21841c6928b0fe43a99b308531d85ed845fd6a4a3ba",
+    "test/resume.test.mjs": "e38ee08cadbe18a6d69ce777fc35732e58db44449de1299d22ca9b6e71d32391",
+    "tools/capture/local-resume-feasibility.mjs": "2b6b56320dadc544389bb3adaca199a4d4ce98eebdd6cac062a656f061f2b79d",
+    "tools/capture/stage-resume-experiment.py": "3308fcab98dd3a31c97a82a8803a643238062cd0825f36622955bceb4910cf0d",
+    "scripts/verify-capture-package.mjs": "8f57967819db6944cc39ba0a5ce12aef506e15a93bc222971a4750e760dab2ab",
+    "tools/capture/local-authenticated-resume.mjs": "b14fe61f218b74d4791d252c8e2439063ebd54f3d99e28a1fc65663dab873391"
+  },
+  "authSourceReview": "auth-source-review.json",
+  "originalEvidenceCommit": "99ea2802a5d927c2542a971690d3f0c2f942e0d1",
+  "repairWorktreeSourceSha256": {
+    "tools/capture/resume-experiment.py": "8ceb84c6cb3428ceec494bd8a24304345a0d5b5da8d1ac193cca1a15ef43bbc6",
+    "test/resume_environment_test.py": "c69d7b86b513b1c7e2dfc92ed2909b7f53c247ffc4f69e0cd89bed117abd6f01",
+    "tools/capture/experiment_environment.py": "15b4a2148fe1de02eaad2336f1527f3384c02f57c09e2795c1fd64cfd52142d8",
+    "tools/capture/stage-resume-experiment.py": "96cc32d8a26572cc5ad6caeabcca462a9badf7eee743c94e523e99b5bb2f886f"
+  },
+  "repairGitSourceSha256": {
+    "tools/capture/resume-experiment.py": "8ceb84c6cb3428ceec494bd8a24304345a0d5b5da8d1ac193cca1a15ef43bbc6",
+    "test/resume_environment_test.py": "c69d7b86b513b1c7e2dfc92ed2909b7f53c247ffc4f69e0cd89bed117abd6f01",
+    "tools/capture/experiment_environment.py": "15b4a2148fe1de02eaad2336f1527f3384c02f57c09e2795c1fd64cfd52142d8",
+    "tools/capture/stage-resume-experiment.py": "96cc32d8a26572cc5ad6caeabcca462a9badf7eee743c94e523e99b5bb2f886f"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sacBefore": 1,
+  "tests": {
+    "skip": 3,
+    "pass": 30,
+    "total": 33,
+    "fail": 0
+  },
+  "validate": "PASS",
+  "terminal": {
+    "fullRunsFailed": 2,
+    "status": "UNDER_DIAGNOSIS",
+    "focusedPass": true,
+    "category": "CLOSED_PTY_WRAPPED_INPUT",
+    "observedFailure": "Post-failure output drain captured INPUT with an empty line before intended harness input; child exited 7. Selector-to-child handoff diagnosis remains open."
+  },
+  "accounting": "PASS",
+  "platform": "win32",
+  "node": "24.15.0",
+  "python": {
+    "fail": 0,
+    "scope": "environment test passes; POSIX-only bridge explicitly skipped",
+    "skip": 5,
+    "total": 6,
+    "initialUnqualifiedDiscovery": "5 bridge tests failed before applicability correction",
+    "pass": 1
+  },
+  "securityPolicyChanged": false,
+  "installedChecks": "PASS",
+  "sacAfter": 1,
+  "machine": {
+    "system": "Microsoft Windows 11 Home Single Language",
+    "version": "10.0.26300",
+    "build": "26300",
+    "architecture": "64-bit",
+    "npm": "11.12.1",
+    "inventoryCollectedSeparatelyFromTests": true
+  },
+  "evidencePhase": "Initial pre-repair observations; current selector qualification is recorded separately in selector-fix.json"
+}

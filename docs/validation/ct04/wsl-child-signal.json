@@ -1,0 +1,19 @@
+{
+  "platform": "linux",
+  "node": "v24.18.0",
+  "harness": "POSIX PTY/termios + pyte",
+  "source": "wsl-terminal.json",
+  "results": [
+    {
+      "case": "child-ctrl-c",
+      "firstFrameMs": null,
+      "harnessWallMs": null,
+      "restored": true,
+      "naturalExit": true,
+      "exit": 130,
+      "interactiveInput": null,
+      "screenBeforeConfirmation": null,
+      "transcript": "{\"args\":[\"--fixture-wait\"]}\r\nG0 harmless child\r\n^C\r\nFIRST_FRAME_MS:undefined\r\nTERMINAL_RAW:false\r\n"
+    }
+  ]
+}
