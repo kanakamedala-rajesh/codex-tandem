@@ -1432,3 +1432,106 @@ test('verified mutation mutexes recover only native dead owners and reject chang
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test(
+  'Linux comm scan requires native absence before omitting vanished entries',
+  { skip: process.platform !== 'linux' },
+  async () => {
+    const fs = (await import('node:fs/promises')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { spawn } = await import('node:child_process');
+    const { once } = await import('node:events');
+    const { inspectProcesses, processIdentity } = await import(
+      new URL('dist/processes.js', packageRoot)
+    );
+    const nativeReadFile = fs.readFile;
+    const nativeReaddir = fs.readdir;
+    const root = await mkdtemp(join(tmpdir(), 'tandem-proc-race-'));
+    const home = join(root, 'home');
+    await mkdir(home);
+    const child = spawn(
+      process.execPath,
+      ['-e', "process.stdout.write('ready');setInterval(()=>{},1000)"],
+      {
+        env: { ...process.env, CODEX_HOME: home },
+        stdio: ['ignore', 'pipe', 'ignore'],
+      },
+    );
+    try {
+      await once(child.stdout, 'data');
+      const exited = spawn(process.execPath, ['-e', 'process.exit(0)'], {
+        stdio: 'ignore',
+      });
+      const absentPid = exited.pid;
+      await once(exited, 'exit');
+      assert.equal(await processIdentity(absentPid), null);
+      let mode = 'absent',
+        commCode = 'ESRCH';
+      let absentStatReads = 0,
+        liveStatReads = 0;
+      const nativeError = (code) =>
+        Object.assign(new Error('synthetic proc read'), { code });
+      fs.readdir = async (path, ...args) => {
+        if (path === '/proc')
+          return mode === 'absent'
+            ? [String(absentPid), String(child.pid)]
+            : [String(child.pid)];
+        return nativeReaddir(path, ...args);
+      };
+      fs.readFile = async (path, ...args) => {
+        if (path === '/proc/' + absentPid + '/comm')
+          throw nativeError(commCode);
+        if (path === '/proc/' + absentPid + '/stat') absentStatReads++;
+        if (path === '/proc/' + child.pid + '/comm' && mode !== 'absent')
+          throw nativeError(mode === 'comm-denied' ? 'EACCES' : commCode);
+        if (path === '/proc/' + child.pid + '/stat') {
+          liveStatReads++;
+          if (mode === 'identity-denied') throw nativeError('EACCES');
+          if (mode === 'reappeared' && liveStatReads === 1)
+            throw nativeError('ENOENT');
+        }
+        return nativeReadFile(path, ...args);
+      };
+      syncBuiltinESMExports();
+      const options = { codexHome: home, codexExecutable: process.execPath };
+      for (const code of ['ESRCH', 'ENOENT']) {
+        commCode = code;
+        absentStatReads = 0;
+        const rows = await inspectProcesses(options);
+        assert.equal(rows.length, 1);
+        assert.equal(rows[0].pid, child.pid);
+        assert.equal(rows[0].ownership, 'unknown');
+        assert(absentStatReads >= 2);
+      }
+      mode = 'live';
+      for (const code of ['ESRCH', 'ENOENT']) {
+        commCode = code;
+        await assert.rejects(
+          inspectProcesses(options),
+          /PROCESS_INVENTORY_UNAVAILABLE/,
+        );
+      }
+      commCode = 'ESRCH';
+      for (const outcome of ['identity-denied', 'reappeared', 'comm-denied']) {
+        mode = outcome;
+        liveStatReads = 0;
+        await assert.rejects(
+          inspectProcesses(options),
+          /PROCESS_INVENTORY_UNAVAILABLE/,
+        );
+        if (outcome === 'reappeared') assert.equal(liveStatReads, 2);
+        if (outcome === 'comm-denied') assert.equal(liveStatReads, 0);
+      }
+    } finally {
+      fs.readFile = nativeReadFile;
+      fs.readdir = nativeReaddir;
+      syncBuiltinESMExports();
+      if (child.exitCode === null && child.signalCode === null) {
+        const exited = once(child, 'exit');
+        child.kill();
+        await exited;
+      }
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);

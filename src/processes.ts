@@ -382,7 +382,7 @@ export async function proveManagedProcess(
   }
   throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
 }
-/** Inspect local Codex candidates against a canonical home and native managed records. Unreadable or ambiguous scope blocks switching; no process is stopped. */
+/** Inspect local Codex candidates against a canonical home and native managed records. Vanished Linux scan entries are omitted only after native absence proof. Unreadable or ambiguous scope blocks switching; no process is stopped. */
 export async function inspectProcesses(
   options: { codexHome: string; codexExecutable?: string },
   managed: ManagedProcess[] = [],
@@ -434,7 +434,20 @@ $r=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -match '^codex(?:\\.
       try {
         comm = (await readFile(`/proc/${pid}/comm`, 'utf8')).trim();
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+        if (
+          ['ENOENT', 'ESRCH'].includes(
+            (error as NodeJS.ErrnoException).code ?? '',
+          )
+        ) {
+          // A failed name read cannot prove that the enumerated process is gone.
+          try {
+            if ((await processIdentity(pid)) === null) continue;
+          } catch (identityError) {
+            throw new Error('PROCESS_INVENTORY_UNAVAILABLE', {
+              cause: identityError,
+            });
+          }
+        }
         throw new Error('PROCESS_INVENTORY_UNAVAILABLE', { cause: error });
       }
       let exe;

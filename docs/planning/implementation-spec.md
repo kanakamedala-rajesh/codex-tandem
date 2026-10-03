@@ -151,7 +151,9 @@ expiration or caller-supplied process inventory can authorize acquisition/recove
 
 `processesForScope` is the read-only `processes` command boundary. Process names and
 arguments select candidates/roles; they do not prove ownership or unrelatedness.
-Unreadable scope, incomplete metadata and unresolved locks fail closed. Failed
+Unreadable scope, incomplete metadata and unresolved locks fail closed. A vanished
+Linux name entry is omitted only after native process identity proves absence;
+live, reappeared or inaccessible evidence remains an inventory error. Failed
 multi-lock acquisition removes only directories still proved to belong to that
 attempt; replaced owners are preserved. A retained lease must be diagnosed rather
 than dropped after a release error. The `guard --hold` diagnostic and packed verifier
