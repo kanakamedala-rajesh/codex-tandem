@@ -12,18 +12,27 @@ const consumerEnv = {
 await withTempPackage(
   async ({ scratch, packed, packageRoot, installLog, sha256 }) => {
     for (const file of packed.files)
-      assert.match(file.path, /^(dist\/.*\.js|package\.json|README\.md)$/);
+      assert.match(
+        file.path,
+        /^(dist\/.*\.js|dist\/windows-process-reader\.ps1|package\.json|README\.md)$/,
+      );
     const manifest = JSON.parse(readFileSync('package.json', 'utf8'));
     assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0);
     for (const hook of ['preinstall', 'install', 'postinstall'])
       assert.equal(manifest.scripts[hook], undefined);
     execFileSync(
       process.execPath,
-      ['--test', 'test/profiles.test.mjs', 'test/profile-login.test.mjs'],
+      [
+        '--test',
+        'test/profiles.test.mjs',
+        'test/profile-login.test.mjs',
+        'test/scope-guard.test.mjs',
+      ],
       {
         encoding: 'utf8',
         env: { ...consumerEnv, TANDEM_TEST_PACKAGE: packageRoot },
-        timeout: 180000,
+        // Native Windows process and ACL probes need a bounded 30-minute suite budget.
+        timeout: process.platform === 'win32' ? 1800000 : 600000,
         maxBuffer: 1048576,
       },
     );

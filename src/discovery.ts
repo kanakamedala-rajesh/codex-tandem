@@ -71,7 +71,9 @@ const boundedText = (value: unknown, limit: number): value is string =>
   value.length <= limit &&
   // eslint-disable-next-line no-control-regex -- Reject control characters in untrusted input.
   !/[\x00-\x1f\x7f]/.test(value);
-async function physical(path: string): Promise<string> {
+/** Resolve an absolute path through physical aliases, including an absent destination beneath its existing canonical ancestor. Does not create files; relative paths throw. */
+export async function canonicalPath(path: string): Promise<string> {
+  if (!isAbsolute(path)) throw new Error('PATH_ABSOLUTE_REQUIRED');
   try {
     return await realpath(path);
   } catch (error) {
@@ -81,7 +83,7 @@ async function physical(path: string): Promise<string> {
     )
       throw error;
     return join(
-      await physical(dirname(path)),
+      await canonicalPath(dirname(path)),
       path.slice(dirname(path).length + (dirname(path).endsWith(sep) ? 0 : 1)),
     );
   }
@@ -185,7 +187,7 @@ export async function discoverTarget(
         throw new Error('PROJECT_MOUNT_REQUIRES_REGISTERED_ROOT');
     }
     await access(project, constants.R_OK | constants.X_OK);
-    const codexHome = await physical(
+    const codexHome = await canonicalPath(
       resolve(
         options.codexHome ?? process.env.CODEX_HOME ?? join(home, '.codex'),
       ),

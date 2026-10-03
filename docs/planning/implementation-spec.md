@@ -127,3 +127,77 @@ The installed-package verifier runs profile CLI outcomes and focused isolated-lo
 credential-file tests against the packed code. Synthetic fixtures and private
 Windows/POSIX permission checks do not qualify real login, native Linux, Docker,
 Smart App Control release behavior or complete T06/T07/T08/T23/T30/T37/T44 families.
+
+## Local guard lease contract
+
+`acquireGuard` protects an installation root, a physically canonical existing native
+Codex home and a mutable binding file. Callers retain the lease across their protected
+operation and revalidate immediately before switching; activation and launch
+orchestration are subsequent ticket responsibilities. `registerProcess(pid)` accepts
+only a fresh native descendant chain with compatible creation chronology, executable
+and physical home evidence. Persisted records bind that evidence to the manager
+nonce. A surviving registered process blocks release and stale-manager recovery.
+Recovery also verifies the recorded home's physical identity and fresh native scope
+inventory, even when the requested home differs; unregistered survivors, unknown
+ownership and inaccessible or changed prior scopes block reclamation. Each guard
+record preserves its original inventory selector: default native-name matching or
+the canonical explicit executable and its physical file identity. Recovery uses
+that stored selector; missing legacy context, malformed metadata and changed or
+inaccessible explicit executables block recovery. A PID reused
+since its recorded creation also blocks recovery. Recovery mutexes carry native
+owner evidence and a nonce; release verifies their directory and exact ownership.
+No elapsed-time
+expiration or caller-supplied process inventory can authorize acquisition/recovery.
+
+`processesForScope` is the read-only `processes` command boundary. Process names and
+arguments select candidates/roles; they do not prove ownership or unrelatedness.
+Unreadable scope, incomplete metadata and unresolved locks fail closed. Failed
+multi-lock acquisition removes only directories still proved to belong to that
+attempt; replaced owners are preserved. A retained lease must be diagnosed rather
+than dropped after a release error. The `guard --hold` diagnostic and packed verifier
+exercise the current lease consumer without implementing activation or stopping.
+
+Private installation and native-home claims persist their native operating
+environment. Both profile root entrypoints and guard acquisition check the
+installation claim before permissions or store access; a separate analytics path
+does not bypass it. Native-home first adoption follows scoped process inspection.
+Unmarked state with unresolved legacy ownership is not adopted. Foreign claims and
+partial first claims require explicit diagnosis/migration; no environment is inferred
+from a mounted filesystem or numeric UID. These local claims do not define the later
+Docker target-home adapter, whose target identity/generation and shared bindings
+remain governed by the SRS.
+
+Analytics ownership is checked at the canonical destination, including an absent
+file below an aliased parent, before opening a database. Existing unmarked databases
+are refused without adopting them. New claims require an absent destination,
+recheck canonical paths and absence during publication, and remove only their own
+verified marker on failure. Valid same-environment markers permit existing stores;
+foreign or ambiguous ownership requires explicit diagnosis or migration.
+Hardlinked mutable binding
+or analytics files are unsupported. Canonicalization preserves case and uses native
+physical filesystem identity; it never lowercases WSL UNC paths. Platform permission
+or canonicalization failures block the operation rather than imply separation.
+Windows process inspection uses a packaged compiler-free text helper and checks
+same-handle native creation evidence against CIM. Its tested native AMD64 layout
+is not universal architecture/build qualification. The native guard cost remains
+part of SRS §14 launch latency; current Windows acquisition takes seconds and is
+not budget-qualified. Full T11 stop, T15 Docker and T36 containment are not implied
+by these CT-10 guard subcases.
+
+Profile credential mutations consume the same canonical binding lock directory.
+The lock order is the verified `profiles.lock` mutex followed by binding leases;
+removal acquires all historical bindings in ID order before publishing deletion.
+Reauthentication protects the old binding before login/import and keeps both old
+and new leases through replacement publication and retired-file removal. Addition
+protects its new destination, while label/display operations need only the profile
+mutex. None of these CRUD operations requires a full launch inventory. A held or
+orphaned guard record cannot be recovered by CRUD, even if its manager exited.
+
+Mutation-only records identify their kind, canonical scope, nonce and native
+creation. Only the manager writes saved bindings or metadata; staged-login children
+write their isolated staging files. Known dead mutation owners can recover through
+fresh native absence, nonce and physical directory checks under an owned recovery
+mutex, bounded to two nested recovery locks. Partial, legacy empty, inaccessible,
+foreign-environment or reused-PID records remain blocking. Mutex recovery restores
+concurrency only; it does not repair an interrupted credential transaction or restore
+older token bytes. Every release checks the exact owned nonce and directory.

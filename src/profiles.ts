@@ -1,4 +1,10 @@
-import { open, rm, mkdir, lstat } from 'node:fs/promises';
+import {
+  acquireBindingLease,
+  acquireProfileMutex,
+  type BindingLease,
+} from './binding-lock.js';
+import { claimPrivateState } from './private-state.js';
+import { open, rm, lstat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
@@ -210,7 +216,7 @@ async function readManifest(root: string): Promise<Manifest> {
     return { schemaVersion: 1, profiles: [], bindings: [] };
   }
 }
-/** Manage stable local profiles. Commands return non-secret profile/binding references; imported credentials stay private. Mutations serialize on a fail-closed installation lock. */
+/** Manage stable local profiles. Commands return non-secret profile/binding references; imported credentials stay private. Mutations use a verified profile mutex, then canonical binding leases for credential changes; ambiguous ownership blocks cleanup and recovery. */
 export async function profilesCommand(args: string[]): Promise<number> {
   const json = args.includes('--json');
   try {
@@ -245,8 +251,9 @@ export async function profilesCommand(args: string[]): Promise<number> {
       )
     )
       throw new Error('INVALID_ARGUMENTS');
-    const root = await privateDirectory(
+    const root = await claimPrivateState(
       resolve(options.get('--state-home') ?? defaultStateHome),
+      'installation',
     );
     const credentials = await privateDirectory(join(root, 'credentials'));
     const loginOptions = async (): Promise<StagedLoginOptions> => {
@@ -278,14 +285,13 @@ export async function profilesCommand(args: string[]): Promise<number> {
       return 0;
     }
     const mutating = !['list', 'show', 'policy'].includes(command);
-    const lock = join(root, 'profiles.lock');
-    if (mutating) {
-      try {
-        await mkdir(lock, { mode: 0o700 });
-      } catch {
-        throw new Error('PROFILE_STORE_BUSY');
-      }
-    }
+    const profileMutex = mutating ? await acquireProfileMutex(root) : undefined;
+    const bindingLeases: BindingLease[] = [];
+    const protectBinding = async (bindingId: string) => {
+      bindingLeases.push(
+        await acquireBindingLease(join(credentials, bindingId + '.json')),
+      );
+    };
     try {
       const path = join(root, 'profiles.json');
       const manifest = await readManifest(root);
@@ -330,6 +336,7 @@ export async function profilesCommand(args: string[]): Promise<number> {
           updatedAt: now,
           status: 'available',
         };
+        await protectBinding(bindingId);
         await writePrivate(join(credentials, `${bindingId}.json`), bytes);
         manifest.profiles.push(selected);
         manifest.bindings.push({
@@ -361,6 +368,10 @@ export async function profilesCommand(args: string[]): Promise<number> {
       } else if (command === 'remove') {
         if (options.get('--confirm') !== profile!.id)
           throw new Error('CONFIRMATION_REQUIRED');
+        for (const binding of manifest.bindings
+          .filter((b) => b.profileId === profile!.id)
+          .sort((a, b) => a.id.localeCompare(b.id)))
+          await protectBinding(binding.id);
         // Retire metadata first: interruption cannot leave removed credentials selectable.
         profile!.status = 'deleted';
         profile!.updatedAt = now;
@@ -375,6 +386,7 @@ export async function profilesCommand(args: string[]): Promise<number> {
           await rm(join(credentials, `${binding.id}.json`), { force: true });
       } else if (command === 'login') {
         if (profile!.status !== 'available') throw new Error('PROFILE_DELETED');
+        await protectBinding(profile!.bindingId);
         const bytes = options.get('--import')
           ? await bounded(resolve(options.get('--import')!))
           : await stagedCredential(await loginOptions());
@@ -391,6 +403,7 @@ export async function profilesCommand(args: string[]): Promise<number> {
           if (options.get('--new-binding') !== profile!.id)
             throw new Error('NEW_BINDING_CONFIRMATION_REQUIRED');
           const bindingId = `binding_${randomUUID()}`;
+          await protectBinding(bindingId);
           await writePrivate(join(credentials, `${bindingId}.json`), bytes);
           previous.retired = true;
           profile!.bindingId = bindingId;
@@ -434,7 +447,11 @@ export async function profilesCommand(args: string[]): Promise<number> {
       );
       return 0;
     } finally {
-      if (mutating) await rm(lock, { recursive: true });
+      try {
+        for (const lease of bindingLeases.reverse()) await lease.release();
+      } finally {
+        await profileMutex?.release();
+      }
     }
   } catch (error) {
     const message = (error as Error).message;
@@ -485,8 +502,9 @@ async function manageProfiles(options: string[]): Promise<number> {
       if (['show', 'rename', 'login', 'remove'].includes(action)) {
         if ((await profilesCommand(['list', ...options])) !== 0) continue;
         const stateIndex = options.indexOf('--state-home');
-        const root = await privateDirectory(
+        const root = await claimPrivateState(
           resolve(stateIndex >= 0 ? options[stateIndex + 1] : defaultStateHome),
+          'installation',
         );
         const profiles = (await readManifest(root)).profiles.filter(
           (profile) => action === 'show' || profile.status === 'available',

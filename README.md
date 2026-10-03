@@ -134,9 +134,14 @@ Stores default to `~/.codex-tandem-windows` on Windows and `~/.codex-tandem` on
 POSIX, with `--state-home PATH` for an explicit private directory. Windows and WSL
 keep separate state. Credential files use effective current-user Windows ACL
 verification (SYSTEM and Administrators also allowed) or owner-only POSIX access.
-An existing insecure store, symlink, corrupt metadata or unresolved mutation lock
-blocks the operation. A crash can leave `profiles.lock`; diagnose ownership and
-recovery before removing it. There is no automatic stale-lock override.
+An insecure store, symlink, corrupt metadata or unresolved mutation lock blocks the
+operation. New profile mutexes and binding leases carry nonce and native creation
+evidence. Known mutation owners recover only after native absence and fresh owner
+checks; legacy empty locks and guard-owned binding locks remain blocking. Recovery
+restores concurrency, without restoring credentials or repairing transactions.
+Reauthentication holds the old binding through replacement/removal; removal holds
+all profile bindings before changing metadata. Other profiles and label changes
+remain available while a managed launch protects one binding.
 
 Login invokes the existing Codex in a restricted temporary home. First run
 `profiles policy` to inspect the proposed staging storage choice. A non-file mode
@@ -157,3 +162,36 @@ unknown policy contracts remain unsupported; `POLICY_UNVERIFIABLE` distinguishes
 incomplete policy from `FILE_STORAGE_PROHIBITED`. Copying user configuration does
 not prove complete cloud-policy preservation. Real login and full platform/target
 qualification remain separate acceptance evidence.
+
+## Local scope guards
+
+```sh
+codex-tandem processes --codex-home /existing/codex-home --json
+codex-tandem guard --state-home /private/tandem-state --codex-home /existing/codex-home --binding /private/saved-binding.json --hold --json
+```
+
+`processes` reports foreground, worker and background Codex candidates as managed,
+unrelated or unknown. Only positive native evidence of a different physical home
+proves unrelatedness; inaccessible evidence stays blocking. JSON returns bounded
+process metadata, without command lines, environment values or credential bytes.
+`guard --hold` exercises the same installation, canonical home and binding lease
+used by the host API. Enter, EOF or interruption requests release. A changed owner
+or surviving registered child retains protection and reports recovery required.
+This diagnostic command does not activate credentials or launch or stop Codex.
+
+Native installation state, native Codex homes and analytics destinations retain
+operating-environment ownership markers after release. Windows and WSL cannot
+reuse these stores, including with a different `--analytics-path`. First adoption
+claims unmarked, unlocked state; unresolved existing locks or incomplete markers
+block adoption. There is no automatic relabeling or migration. Physical path aliases
+are resolved without changing case; hardlinked binding/database files are refused.
+These guards currently accept local homes and existing binding files. Docker target
+ownership and transfer remain separate work.
+
+The compiler-free Windows text helper currently reads supported native AMD64
+processes. Unsupported architecture, inaccessible memory or inconsistent native
+layout/creation evidence stays unknown. Linux uses native `/proc` evidence. Native
+platform checks and packed-package checks qualify individual guard cases; complete
+stop, Docker, containment and launch performance acceptance remain separate. Native
+Windows guard acquisition currently takes seconds and does not meet SRS §14's
+100 ms/250 ms latency budgets.
