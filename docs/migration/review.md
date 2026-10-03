@@ -12,7 +12,7 @@ candidate and migration evidence. Generated maps/reports and final links are
 expected in-progress work until that candidate is pinned. Confirmation is limited
 to accepted findings and directly caused regressions under the shared review policy.
 
-Automatic repair/confirmation rounds used: 1 of 2.
+Automatic repair/confirmation rounds used: 2 of 2; S1 and C1 resolved.
 
 S1 accepted: a removed body marker could cause a duplicate POST despite a saved
 destination ID. Repair uses the checkpointed ID as a guard before issue/comment
@@ -29,3 +29,25 @@ evidence and the six source hashes in `validation.json`. Windows and Ubuntu
 verification passed within the migration scope. Final acceptance requires only
 the pinned GitHub Actions/rehearsal and tracker-selection evidence; reviewing
 those results does not restart the full code review.
+
+M4 selection confirmation: PASS. The read-only exercise in `selection.json`
+preserves the same ready set (CT-09 and CT-22), selects CT-09 first and checks
+38 tickets, 47 blocker edges and seven relevant comments. No new findings.
+
+C1 accepted from hosted CI: the Python isolation test inherited GitHub's
+`HOME=/github/home` into its synthetic container child, producing the intended
+`HOME_USER_MISMATCH` rejection instead of a successful isolation probe. The fixer
+reproduced the failure on development Ubuntu by injecting that HOME; normal
+execution passed. Repair is limited to the test's simulated target environment,
+with explicit coverage retaining rejection of a mismatched HOME and unchanged
+poison sentinel. Product and workflow behavior remain unchanged. Native Windows
+and development Ubuntu discovery suites each passed 14 tests with two platform
+skips; Ubuntu's focused test also passed with injected `HOME=/github/home`.
+Scoped formatting, lint and type checks passed on both hosts. Repaired test
+SHA-256: `1639525574375cd4e2ce0efffc17fd1bea81ef3f59b7d85dafad9ab3355dc469`.
+C1 independent confirmation: RESOLVED with no direct regression. The intentional
+formatting failure in rehearsal run `37098012007` remains valid: all three jobs
+rejected the malformed JSON and uploaded their artifacts. C1 affects a later test,
+not that failure path. This demonstrates failure propagation, not enforced branch
+protection. Successful hosted runs remain pending; initial failed runs remain
+part of the evidence.

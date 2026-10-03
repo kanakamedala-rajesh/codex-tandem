@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { discoverTarget } from '../dist/discovery.js';
 
@@ -437,7 +437,7 @@ test(
         join(userSite, 'fixture.pth'),
         `import builtins; builtins.open(${JSON.stringify(sentinel)},'w').write('executed')\n`,
       );
-      const run = async (args) => {
+      const run = async (args, home = userInfo().homedir) => {
         if (args[0] === 'context')
           return JSON.stringify('unix:///var/run/docker.sock');
         if (args.includes('info')) return JSON.stringify('daemon-fixture');
@@ -454,23 +454,32 @@ test(
           args.slice(args.indexOf('/usr/bin/python3') + 1),
           {
             cwd: root,
-            env: { ...process.env, PYTHONPATH: root, PYTHONUSERBASE: root },
+            env: {
+              ...process.env,
+              HOME: home,
+              PYTHONPATH: root,
+              PYTHONUSERBASE: root,
+            },
             encoding: 'utf8',
           },
         );
       };
-      const report = await discoverTarget(
-        {
-          target: 'docker',
-          container: 'alias',
-          dockerContext: 'test',
-          projectRoot: root,
-          codexExecutable: '/usr/bin/python3',
-        },
-        run,
-      );
+      const options = {
+        target: 'docker',
+        container: 'alias',
+        dockerContext: 'test',
+        projectRoot: root,
+        codexExecutable: '/usr/bin/python3',
+      };
+      const report = await discoverTarget(options, run);
       assert.equal(await readFile(sentinel, 'utf8'), 'untouched');
       assert.equal(report.ok, true, JSON.stringify(report));
+      const mismatchedHome = await discoverTarget(options, (args) =>
+        run(args, root),
+      );
+      assert.equal(mismatchedHome.ok, false);
+      assert.deepEqual(mismatchedHome.diagnostics, ['HOME_USER_MISMATCH']);
+      assert.equal(await readFile(sentinel, 'utf8'), 'untouched');
     } finally {
       await rm(root, { recursive: true, force: true });
     }
