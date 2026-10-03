@@ -1,45 +1,12 @@
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
+
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { createHash } from 'node:crypto';
+import { withTempPackage } from './temp-package.mjs';
 import assert from 'node:assert/strict';
-const scratch = mkdtempSync(join(tmpdir(), 'tandem-capture-package-'));
-const npm = process.env.npm_execpath;
-if (!npm) throw new Error('Run via npm run verify:capture');
-const npmRun = (args) =>
-  execFileSync(
-    process.execPath,
-    [npm, ...args, '--cache', join(scratch, 'cache')],
-    { encoding: 'utf8' },
-  );
-try {
-  const packed = JSON.parse(
-    npmRun([
-      'pack',
-      '--ignore-scripts',
-      '--json',
-      '--pack-destination',
-      scratch,
-    ]),
-  )[0];
-  const tarball = join(scratch, packed.filename);
-  npmRun([
-    'install',
-    '--prefix',
-    scratch,
-    '--ignore-scripts',
-    '--offline',
-    '--no-audit',
-    '--loglevel',
-    'error',
-    tarball,
-  ]);
+await withTempPackage(async ({ scratch, packageRoot, sha256 }) => {
   const { decodeCaptureEvent, readCaptureInbox } = await import(
-    pathToFileURL(
-      join(scratch, 'node_modules', 'codex-tandem', 'dist', 'capture.js'),
-    )
+    pathToFileURL(join(packageRoot, 'dist', 'capture.js'))
   );
   const fixture = {
     schemaVersion: 1,
@@ -68,15 +35,7 @@ try {
     message: 'INVALID_CAPTURE_EVENT',
   });
   const { assessResumeExperiment } = await import(
-    pathToFileURL(
-      join(
-        scratch,
-        'node_modules',
-        'codex-tandem',
-        'dist',
-        'resume-experiment.js',
-      ),
-    )
+    pathToFileURL(join(packageRoot, 'dist', 'resume-experiment.js'))
   );
   const launches = [
     {
@@ -110,9 +69,7 @@ try {
         schemaVersion: 1,
         platform: process.platform,
         node: process.version,
-        packageSha256: createHash('sha256')
-          .update(readFileSync(tarball))
-          .digest('hex'),
+        packageSha256: sha256,
         result: 'PASS',
         cases: [
           'installed capture projection',
@@ -127,6 +84,4 @@ try {
       2,
     ),
   );
-} finally {
-  rmSync(scratch, { recursive: true, force: true });
-}
+});

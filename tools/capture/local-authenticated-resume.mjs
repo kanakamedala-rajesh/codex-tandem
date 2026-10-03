@@ -29,7 +29,15 @@ const env = {
 };
 delete env.OPENAI_API_KEY;
 delete env.CODEX_API_KEY;
-const command = ['--no-daemon', '--sandbox', 'read-only', 'exec'];
+delete env.OPENAI_BASE_URL;
+const command = [
+  '--no-daemon',
+  '--sandbox',
+  'read-only',
+  '-c',
+  'cli_auth_credentials_store="file"',
+  'exec',
+];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 let session;
 if (mode === 'B') {

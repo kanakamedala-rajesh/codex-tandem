@@ -1,41 +1,10 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
+import { withTempPackage } from './temp-package.mjs';
 import assert from 'node:assert/strict';
-const scratch = mkdtempSync(join(tmpdir(), 'tandem-discovery-package-'));
-const npm = process.env.npm_execpath;
-if (!npm) throw new Error('Run via npm run verify:discovery');
-const npmRun = (args) =>
-  execFileSync(
-    process.execPath,
-    [npm, ...args, '--cache', join(scratch, 'cache')],
-    { encoding: 'utf8' },
-  );
-try {
-  const packed = JSON.parse(
-    npmRun([
-      'pack',
-      '--ignore-scripts',
-      '--json',
-      '--pack-destination',
-      scratch,
-    ]),
-  )[0];
-  const tarball = join(scratch, packed.filename);
-  npmRun([
-    'install',
-    '--prefix',
-    scratch,
-    '--ignore-scripts',
-    '--offline',
-    '--no-audit',
-    '--loglevel',
-    'error',
-    tarball,
-  ]);
-  const entry = join(scratch, 'node_modules', 'codex-tandem', 'dist', 'cli.js');
+await withTempPackage(async ({ scratch, packageRoot, sha256 }) => {
+  const entry = join(packageRoot, 'dist', 'cli.js');
   const args = [
     'doctor',
     '--json',
@@ -76,9 +45,7 @@ try {
         schemaVersion: 1,
         platform: process.platform,
         node: process.version,
-        packageSha256: createHash('sha256')
-          .update(readFileSync(tarball))
-          .digest('hex'),
+        packageSha256: sha256,
         command: 'installed codex-tandem ' + args.join(' '),
         result: report,
         ...(actual
@@ -93,6 +60,4 @@ try {
       2,
     ),
   );
-} finally {
-  rmSync(scratch, { recursive: true, force: true });
-}
+});
