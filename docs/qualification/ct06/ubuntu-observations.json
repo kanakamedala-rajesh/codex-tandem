@@ -1,0 +1,52 @@
+[
+  {
+    "platform": "linux",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "node": "v24.18.0",
+    "mode": "A",
+    "context": {
+      "launchId": "ct06_linux_A",
+      "identity": "A",
+      "platform": "linux"
+    },
+    "exit": 1,
+    "timedOut": false,
+    "sessionId": "01a0fd17-2c87-7f23-bb73-a99a5c2ec8bc",
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnIdAvailable": false,
+    "nativeTurnCompleted": false,
+    "nativeTurnFailed": true,
+    "failureCategory": "OTHER",
+    "hooks": "NOT_INSTALLED",
+    "propagation": "PARENT_PROCESS_ONLY",
+    "backgroundServerReuse": "NOT_EXECUTED",
+    "rawExported": false,
+    "contextUnchanged": true
+  },
+  {
+    "platform": "linux",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "node": "v24.18.0",
+    "mode": "B",
+    "context": {
+      "launchId": "ct06_linux_B",
+      "identity": "B",
+      "platform": "linux"
+    },
+    "exit": 0,
+    "timedOut": false,
+    "sessionId": "01a0fd17-2c87-7f23-bb73-a99a5c2ec8bc",
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnIdAvailable": false,
+    "nativeTurnCompleted": true,
+    "nativeTurnFailed": false,
+    "failureCategory": "NONE",
+    "hooks": "NOT_INSTALLED",
+    "propagation": "PARENT_PROCESS_ONLY",
+    "backgroundServerReuse": "NOT_EXECUTED",
+    "rawExported": false,
+    "contextUnchanged": true
+  }
+]

@@ -12,6 +12,7 @@ Deliver a complete requirements-to-evidence record and an explicit release-ready
 ## Blocked by
 
 CT-36 ([GitLab #43](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/43)), CT-37 ([GitLab #44](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/44)).
+
 - [CT-37](37-qualify-native-linux-and-remaining-runtime-browser-combinations.md) — Qualify native Linux and remaining runtime/browser combinations
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

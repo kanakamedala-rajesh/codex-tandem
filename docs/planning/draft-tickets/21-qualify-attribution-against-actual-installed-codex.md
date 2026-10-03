@@ -12,6 +12,7 @@ Publish the per-version/per-target capability matrix and G2 attribution qualific
 ## Blocked by
 
 CT-15 ([GitLab #22](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/22)), CT-20 ([GitLab #27](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/27)).
+
 - [CT-20](20-expose-unknown-imported-and-conflicting-attribution.md) — Expose unknown, imported and conflicting attribution
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

@@ -25,13 +25,13 @@ covers all 119 requirements and all 45 test families.
 
 ## Gate summary
 
-| Gate | Tickets | Result |
-| --- | --- | --- |
-| G0 | CT-01–CT-08 | Packed CLI, target discovery, bounded capture/A-to-B experiments and actual compatibility evidence. |
-| G1 | CT-09–CT-15 | Safe profiles, scope ownership, crash recovery, local/container launch and measured overhead. |
-| G2 | CT-16–CT-21 | Durable capture/replay, attempt/child attribution and installed-version qualification. |
-| G3 | CT-22–CT-29 | Bounded collection, deterministic accounting, reports, authenticated dashboard and performance. |
-| G4 | CT-30–CT-38 | Migration, lifecycle, privacy, final package, actual platform qualification and release decision. |
+| Gate | Tickets     | Result                                                                                              |
+| ---- | ----------- | --------------------------------------------------------------------------------------------------- |
+| G0   | CT-01–CT-08 | Packed CLI, target discovery, bounded capture/A-to-B experiments and actual compatibility evidence. |
+| G1   | CT-09–CT-15 | Safe profiles, scope ownership, crash recovery, local/container launch and measured overhead.       |
+| G2   | CT-16–CT-21 | Durable capture/replay, attempt/child attribution and installed-version qualification.              |
+| G3   | CT-22–CT-29 | Bounded collection, deterministic accounting, reports, authenticated dashboard and performance.     |
+| G4   | CT-30–CT-38 | Migration, lifecycle, privacy, final package, actual platform qualification and release decision.   |
 
 ## G0 detail
 
@@ -87,126 +87,126 @@ blocked. Independent fixture groundwork can continue; incomplete tests do not be
    **Delivers:** Add, inspect, rename, reauthenticate and remove profiles while preserving valid credentials and historical identity bindings.
 
 10. **[CT-10 — Guard canonical scopes and identify conflicting processes](draft-tickets/10-guard-canonical-scopes-and-identify-conflicting-processes.md)**\
-   **Blocked by:** CT-09.\
-   **Delivers:** Refuse competing or ambiguous launches using canonical scope/binding locks and trustworthy process ownership evidence.
+    **Blocked by:** CT-09.\
+    **Delivers:** Refuse competing or ambiguous launches using canonical scope/binding locks and trustworthy process ownership evidence.
 
 11. **[CT-11 — Activate credentials with refresh-safe crash recovery](draft-tickets/11-activate-credentials-with-refresh-safe-crash-recovery.md)**\
-   **Blocked by:** CT-10.\
-   **Delivers:** Switch identities through a recoverable transaction that preserves the latest matching credentials and durably binds a launch before execution.
+    **Blocked by:** CT-10.\
+    **Delivers:** Switch identities through a recoverable transaction that preserves the latest matching credentials and durably binds a launch before execution.
 
 12. **[CT-12 — Stop only freshly verified conflicting processes](draft-tickets/12-stop-only-freshly-verified-conflicting-processes.md)**\
-   **Blocked by:** CT-11.\
-   **Delivers:** Offer scoped graceful shutdown and separately approved force termination without changing credentials on cancellation.
+    **Blocked by:** CT-11.\
+    **Delivers:** Offer scoped graceful shutdown and separately approved force termination without changing credentials on cancellation.
 
 13. **[CT-13 — Launch and resume locally with safe identity ownership](draft-tickets/13-launch-and-resume-locally-with-safe-identity-ownership.md)**\
-   **Blocked by:** CT-12.\
-   **Delivers:** Connect the selector and explicit CLI to guarded local launch and project-scoped resume.
+    **Blocked by:** CT-12.\
+    **Delivers:** Connect the selector and explicit CLI to guarded local launch and project-scoped resume.
 
 14. **[CT-14 — Launch and supervise Codex inside the existing container](draft-tickets/14-launch-and-supervise-codex-inside-the-existing-container.md)**\
-   **Blocked by:** CT-13.\
-   **Delivers:** Safely launch the existing container Codex with correct credentials, build environment and verified remote process lifecycle.
+    **Blocked by:** CT-13.\
+    **Delivers:** Safely launch the existing container Codex with correct credentials, build environment and verified remote process lifecycle.
 
 15. **[CT-15 — Qualify safe-launch recovery and performance](draft-tickets/15-qualify-safe-launch-recovery-and-performance.md)**\
-   **Blocked by:** CT-14.\
-   **Delivers:** Verify the integrated launcher meets G1 safety and latency requirements on the required environments.
+    **Blocked by:** CT-14.\
+    **Delivers:** Verify the integrated launcher meets G1 safety and latency requirements on the required environments.
 
 ### G2
 
 16. **[CT-16 — Capture bounded lifecycle metadata without altering Codex](draft-tickets/16-capture-bounded-lifecycle-metadata-without-altering-codex.md)**\
-   **Blocked by:** CT-14.\
-   **Delivers:** Install previewed minimal hooks that publish sanitized, versioned metadata durably and return neutral output.
+    **Blocked by:** CT-14.\
+    **Delivers:** Install previewed minimal hooks that publish sanitized, versioned metadata durably and return neutral output.
 
 17. **[CT-17 — Replay captured events through a durable host receipt](draft-tickets/17-replay-captured-events-through-a-durable-host-receipt.md)**\
-   **Blocked by:** CT-16.\
-   **Delivers:** Recover event backlogs without losing or duplicating committed effects, through mounted or background-pull transport.
+    **Blocked by:** CT-16.\
+    **Delivers:** Recover event backlogs without losing or duplicating committed effects, through mounted or background-pull transport.
 
 18. **[CT-18 — Attribute mixed-identity sessions by launch and turn attempt](draft-tickets/18-attribute-mixed-identity-sessions-by-launch-and-turn-attempt.md)**\
-   **Blocked by:** CT-17.\
-   **Delivers:** Retain A's observations when a session resumes under B, including retry attempts, late events and crashes before completion.
+    **Blocked by:** CT-17.\
+    **Delivers:** Retain A's observations when a session resumes under B, including retry attempts, late events and crashes before completion.
 
 19. **[CT-19 — Attribute nested child work without inherited-history duplication](draft-tickets/19-attribute-nested-child-work-without-inherited-history-duplication.md)**\
-   **Blocked by:** CT-18.\
-   **Delivers:** Resolve parent/child observations using verified execution relationships while counting each observation once.
+    **Blocked by:** CT-18.\
+    **Delivers:** Resolve parent/child observations using verified execution relationships while counting each observation once.
 
 20. **[CT-20 — Expose unknown, imported and conflicting attribution](draft-tickets/20-expose-unknown-imported-and-conflicting-attribution.md)**\
-   **Blocked by:** CT-19.\
-   **Delivers:** Make incomplete or contradictory ownership explicit and support audited deterministic automatic reconciliation.
+    **Blocked by:** CT-19.\
+    **Delivers:** Make incomplete or contradictory ownership explicit and support audited deterministic automatic reconciliation.
 
 21. **[CT-21 — Qualify attribution against actual installed Codex](draft-tickets/21-qualify-attribution-against-actual-installed-codex.md)**\
-   **Blocked by:** CT-15, CT-20.\
-   **Delivers:** Publish the per-version/per-target capability matrix and G2 attribution qualification results.
+    **Blocked by:** CT-15, CT-20.\
+    **Delivers:** Publish the per-version/per-target capability matrix and G2 attribution qualification results.
 
 ### G3
 
 22. **[CT-22 — Read rollout sources incrementally with bounded decoding](draft-tickets/22-read-rollout-sources-incrementally-with-bounded-decoding.md)**\
-   **Blocked by:** CT-01, CT-02.\
-   **Delivers:** Process registered synthetic/read-only rollout sources incrementally, recovering cursor progress without unbounded reads.
+    **Blocked by:** CT-01, CT-02.\
+    **Delivers:** Process registered synthetic/read-only rollout sources incrementally, recovering cursor progress without unbounded reads.
 
 23. **[CT-23 — Produce deterministic token totals from native and legacy observations](draft-tickets/23-produce-deterministic-token-totals-from-native-and-legacy-observations.md)**\
-   **Blocked by:** CT-22, CT-20.\
-   **Delivers:** Generate stable nonnegative accounting totals without counting inherited, cached, reasoning or replayed usage twice.
+    **Blocked by:** CT-22, CT-20.\
+    **Delivers:** Generate stable nonnegative accounting totals without counting inherited, cached, reasoning or replayed usage twice.
 
 24. **[CT-24 — Report usage, estimates and quota with shared time semantics](draft-tickets/24-report-usage-estimates-and-quota-with-shared-time-semantics.md)**\
-   **Blocked by:** CT-23.\
-   **Delivers:** Expose CLI reports and safe exports with identity-correct quotas and transparent API-equivalent estimates.
+    **Blocked by:** CT-23.\
+    **Delivers:** Expose CLI reports and safe exports with identity-correct quotas and transparent API-equivalent estimates.
 
 25. **[CT-25 — Run one recoverable collector without delaying launch](draft-tickets/25-run-one-recoverable-collector-without-delaying-launch.md)**\
-   **Blocked by:** CT-17, CT-22.\
-   **Delivers:** Start or reconnect a separately owned collector while Codex launches immediately, and recover after restarts or outages.
+    **Blocked by:** CT-17, CT-22.\
+    **Delivers:** Start or reconnect a separately owned collector while Codex launches immediately, and recover after restarts or outages.
 
 26. **[CT-26 — Serve authenticated local reports through a restricted API](draft-tickets/26-serve-authenticated-local-reports-through-a-restricted-api.md)**\
-   **Blocked by:** CT-24, CT-25.\
-   **Delivers:** Let an authenticated local browser read the same reports as the CLI while denying hostile sites and privileged actions.
+    **Blocked by:** CT-24, CT-25.\
+    **Delivers:** Let an authenticated local browser read the same reports as the CLI while denying hostile sites and privileged actions.
 
 27. **[CT-27 — Browse sessions, attempts and child identity contributions](draft-tickets/27-browse-sessions-attempts-and-child-identity-contributions.md)**\
-   **Blocked by:** CT-21, CT-26.\
-   **Delivers:** Show sessions with mixed identities, expandable attempts/children and honest evidence/health state.
+    **Blocked by:** CT-21, CT-26.\
+    **Delivers:** Show sessions with mixed identities, expandable attempts/children and honest evidence/health state.
 
 28. **[CT-28 — Persist accessible presentation and consistent report filters](draft-tickets/28-persist-accessible-presentation-and-consistent-report-filters.md)**\
-   **Blocked by:** CT-27.\
-   **Delivers:** Provide keyboard-accessible filters and persistent appearance/session labels without rewriting upstream logs or ownership.
+    **Blocked by:** CT-27.\
+    **Delivers:** Provide keyboard-accessible filters and persistent appearance/session labels without rewriting upstream logs or ownership.
 
 29. **[CT-29 — Qualify accounting, dashboard performance and accessibility](draft-tickets/29-qualify-accounting-dashboard-performance-and-accessibility.md)**\
-   **Blocked by:** CT-28.\
-   **Delivers:** Demonstrate G3 accounting/report correctness and resource budgets under collection load.
+    **Blocked by:** CT-28.\
+    **Delivers:** Demonstrate G3 accounting/report correctness and resource budgets under collection load.
 
 ### G4
 
 30. **[CT-30 — Preview and import existing profile and analytics state](draft-tickets/30-preview-and-import-existing-profile-and-analytics-state.md)**\
-   **Blocked by:** CT-28.\
-   **Delivers:** Import existing codex-as/codex-report state through a backed-up preview while preserving identity uncertainty and user presentation.
+    **Blocked by:** CT-28.\
+    **Delivers:** Import existing codex-as/codex-report state through a backed-up preview while preserving identity uncertainty and user presentation.
 
 31. **[CT-31 — Back up, restore and upgrade with recoverable schema changes](draft-tickets/31-back-up-restore-and-upgrade-with-recoverable-schema-changes.md)**\
-   **Blocked by:** CT-30.\
-   **Delivers:** Create consistent non-secret analytics backups and recover safely through restore or version upgrades.
+    **Blocked by:** CT-30.\
+    **Delivers:** Create consistent non-secret analytics backups and recover safely through restore or version upgrades.
 
 32. **[CT-32 — Diagnose and bound retained operational data](draft-tickets/32-diagnose-and-bound-retained-operational-data.md)**\
-   **Blocked by:** CT-25.\
-   **Delivers:** Explain runtime/source/target/recovery health through redacted diagnostics while bounding operational storage.
+    **Blocked by:** CT-25.\
+    **Delivers:** Explain runtime/source/target/recovery health through redacted diagnostics while bounding operational storage.
 
 33. **[CT-33 — Remove managed integration safely](draft-tickets/33-remove-managed-integration-safely.md)**\
-   **Blocked by:** CT-31, CT-32.\
-   **Delivers:** Uninstall Tandem integration without erasing user changes, credentials or analytics by default.
+    **Blocked by:** CT-31, CT-32.\
+    **Delivers:** Uninstall Tandem integration without erasing user changes, credentials or analytics by default.
 
 34. **[CT-34 — Verify privacy and source containment across the integrated product](draft-tickets/34-verify-privacy-and-source-containment-across-the-integrated-product.md)**\
-   **Blocked by:** CT-33.\
-   **Delivers:** Demonstrate that secrets/content and untrusted paths cannot escape through capture, storage, reporting or diagnostics.
+    **Blocked by:** CT-33.\
+    **Delivers:** Demonstrate that secrets/content and untrusted paths cannot escape through capture, storage, reporting or diagnostics.
 
 35. **[CT-35 — Prepare a reproducible release package and notices](draft-tickets/35-prepare-a-reproducible-release-package-and-notices.md)**\
-   **Blocked by:** CT-34.\
-   **Delivers:** Produce the final inspected tarball and release metadata without publishing it.
+    **Blocked by:** CT-34.\
+    **Delivers:** Produce the final inspected tarball and release metadata without publishing it.
 
 36. **[CT-36 — Qualify the final artifact locally on Windows and WSL2](draft-tickets/36-qualify-the-final-artifact-locally-on-windows-and-wsl2.md)**\
-   **Blocked by:** CT-29, CT-35.\
-   **Delivers:** Execute the final applicable acceptance matrix on both local platforms using the exact packaged candidate.
+    **Blocked by:** CT-29, CT-35.\
+    **Delivers:** Execute the final applicable acceptance matrix on both local platforms using the exact packaged candidate.
 
 37. **[CT-37 — Qualify native Linux and remaining runtime/browser combinations](draft-tickets/37-qualify-native-linux-and-remaining-runtime-browser-combinations.md)**\
-   **Blocked by:** CT-35.\
-   **Delivers:** Complete required native Linux and supported-version evidence beyond the local Windows/WSL2 runs.
+    **Blocked by:** CT-35.\
+    **Delivers:** Complete required native Linux and supported-version evidence beyond the local Windows/WSL2 runs.
 
 38. **[CT-38 — Close traceability and prepare the release decision](draft-tickets/38-close-traceability-and-prepare-the-release-decision.md)**\
-   **Blocked by:** CT-36, CT-37.\
-   **Delivers:** Deliver a complete requirements-to-evidence record and an explicit release-ready or blocked decision.
+    **Blocked by:** CT-36, CT-37.\
+    **Delivers:** Deliver a complete requirements-to-evidence record and an explicit release-ready or blocked decision.
 
 ## Publication
 

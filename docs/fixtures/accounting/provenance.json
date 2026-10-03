@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "donor": "https://github.com/kanakamedala-rajesh/codex-report",
+  "commit": "516a1d6306559d8a607de84c4d76529160349ac8",
+  "inspection": "2026-10-02",
+  "method": "Read pinned UTF-8 source over HTTPS; no donor build or execution; hashes of UTF-8 response bodies with no newline conversion",
+  "license": "MIT",
+  "notice": "third_party/codex-report-MIT.txt",
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "a73faf2243f61249d7715921d838b77682fe6b59672148d2c71402262a7dbfe0",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/LICENSE"
+    },
+    {
+      "path": "src/parser.ts",
+      "sha256": "2e8adbdc64e8861167872b78b7efa98d4c685a02e23dc8452537c2e2f30c44f6",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/src/parser.ts"
+    },
+    {
+      "path": "test/core.test.cjs",
+      "sha256": "17b44c96f43627931693699d38cf2b0fd3e6755b19f7d0f9c355c8c8342f6dd2",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/test/core.test.cjs"
+    },
+    {
+      "path": "src/compression.ts",
+      "sha256": "56a037bd3bac1d2460db803a48c3a94806f0ab3bda6ecd79df3df62e6a0fa998",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/src/compression.ts"
+    },
+    {
+      "path": "package.json",
+      "sha256": "8fc622891b3c3e63cab0fa5fd85171fe4d7d06854a6fc8a85dc521c492bb8782",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/package.json"
+    },
+    {
+      "path": "src/database.ts",
+      "sha256": "4b1b3871d1ee0ccc81571f5916ba8baf8ce09089adacb50a0dd562a7ec4486f2",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/src/database.ts"
+    },
+    {
+      "path": "src/collector.ts",
+      "sha256": "6c7a8c02e4951b8f2b403fed6b8a835ecdb8afb5d18d7567b4862f973bf82961",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/src/collector.ts"
+    },
+    {
+      "path": "src/pricing.ts",
+      "sha256": "fec6b9e87e919068138ce04447aa680e4c38f1768935a665b9bdf0644493b665",
+      "url": "https://raw.githubusercontent.com/kanakamedala-rajesh/codex-report/516a1d6306559d8a607de84c4d76529160349ac8/src/pricing.ts"
+    }
+  ]
+}

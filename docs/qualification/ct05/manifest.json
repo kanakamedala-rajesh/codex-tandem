@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "status": "SCOPED_CRITERIA_VALIDATED_REVIEW_PENDING",
+  "applicationBase": "38a300f3fda42b8b2d524b4b7abcd6807339d431",
+  "applicationRevision": "Git commit containing this manifest; sourceHashes pin canonical committed source bytes",
+  "target": "codex-tandem-g0-linux",
+  "targetGeneration": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf",
+  "targetPython": "3.12.15",
+  "targetUser": "validation",
+  "targetUid": 1000,
+  "codexVersion": "0.160.0",
+  "kernel": "6.6.87.2-microsoft-standard-WSL2",
+  "originalLegacyTarget": "NOT_QUALIFIED_USER_SELECTED_MODERN_TARGET",
+  "fullTracking": false,
+  "providerFailureCategory": "OTHER_UNRESOLVED",
+  "modelCompletion": "NOT_OBSERVED",
+  "windowsCodex0159LiveQualification": "NOT_EXECUTED",
+  "credentialCopy": "AUTHORIZED_PERSONAL_ONLY_REMOVED",
+  "trustedHook": "NORMAL_UI_EXACT_DEFINITION_TRUST_OBSERVED",
+  "changedHook": "TIMEOUT_ONLY_EDIT_SKIPPED_ORIGINAL_BYTES_RESTORED",
+  "existingHookAssurance": "CONFIGURATION_PRESERVED_AND_UI_ACTIVE_NO_SEPARATE_EXECUTION_MARKER",
+  "bridgeSha256": "2c8bfa3b4c95315043434bc1632b406854fc6ed566dee80abaed7681ffa3ca1a",
+  "hooksSha256": "4b334cc0509066a6358eb60a1f0827e1f2dad2b478f7836e18345ac533e5da54",
+  "actualEventProvenance": {
+    "67086d6a-aad3-4dd3-a7a2-5762bf1732e0.json": "interactive after normal exact-hook trust",
+    "9b8100b9-b607-4c8a-8e1f-706179504d8c.json": "trusted native exec baseline; start captured; later turn.failed exit1",
+    "14621415-988a-492b-ba78-c8caabd6588d.json": "native exec killed after committed start; exit-9; no completed/failed event",
+    "cd0bb74f-be4a-4634-bb22-2a523b117aea.json": "exact definition restored; capture resumed; later turn.failed exit1"
+  },
+  "cleanup": {
+    "authTrustRawAndHelpersRemoved": true,
+    "mountedExperimentRemoved": true,
+    "personalUnchanged": true,
+    "personalFreeUnchanged": true,
+    "workAccessed": false,
+    "personalFreeCopied": false,
+    "privateHashCheckpointRemoved": true,
+    "remainingProcess": "sleep"
+  },
+  "windows": {
+    "node": "v24.15.0",
+    "packageSha256": "a24a6fef73acbfa88490fd6f6662337eeea894bc15609cfa87f34b5b0bbccb81",
+    "commands": [
+      "npm run typecheck",
+      "npm run build",
+      "npm test",
+      "npm run verify:capture"
+    ],
+    "suite": "24 PASS, 3 platform skips, 0 failures",
+    "captureTests": "5/5 PASS",
+    "installedCaptureContract": "PASS",
+    "restrictedAgentSandboxFirstRun": "19 PASS, 5 pre-existing discovery failures PATH_OR_USER_INACCESSIBLE, 3 skips; superseded by native-host qualification"
+  },
+  "ubuntu": {
+    "node": "v24.18.0",
+    "python": "3.12.3",
+    "packageSha256": "11f2064b18ca2fd2cdaf8b3f3f6d24be4eb3e9b202301e527a84913af4674e7c",
+    "commands": [
+      "source ~/.nvm/nvm.sh && npm run typecheck && npm run build && npm test && npm run verify:capture && python3 test/capture_bridge_test.py"
+    ],
+    "suite": "25 PASS, 2 platform/capability skips, 0 failures",
+    "captureTests": "5/5 PASS",
+    "bridgeTests": "5/5 PASS",
+    "installedCaptureContract": "PASS",
+    "earlierCombinedRun": "4 stale-generated-CLI failures during concurrent Windows build; sequential rebuild passed"
+  },
+  "container": {
+    "commands": [
+      "docker exec -e CT05_BRIDGE=/home/validation/ct05-qualification-20261002/bridge.py codex-tandem-g0-linux /usr/local/bin/python3 /home/validation/ct05-qualification-20261002/capture_bridge_test.py",
+      "docker exec -e CT05_BRIDGE=/home/validation/ct05-qualification-20261002/bridge.py -e CT05_SPOOL_PARENT=/capture/ct05-20261002 codex-tandem-g0-linux /usr/local/bin/python3 /home/validation/ct05-qualification-20261002/capture_bridge_test.py",
+      "CODEX_HOME=<private-home> codex --no-daemon --no-alt-screen --sandbox read-only; normal folder trust; /hooks exact-definition review and trust",
+      "python3 live-experiment.py normal",
+      "python3 live-experiment.py crash",
+      "python3 live-experiment.py changed",
+      "python3 live-experiment.py restored"
+    ],
+    "privateSyntheticSpool": "5/5 PASS",
+    "mountedSyntheticSpool": "5/5 PASS",
+    "actualPrivateSpool": "4 validated native hook projections",
+    "actualMountedCodex": "NOT_EXECUTED",
+    "collector": "ABSENT",
+    "nodeNpmInvoked": false,
+    "crash": "NATIVE_CODEX_SIGKILL_AFTER_COMMITTED_START_SURVIVED",
+    "changedHookNewEvents": 0
+  },
+  "acceptanceCriteria": {
+    "previewReversiblePreserveHooksTrust": "PASS_SCOPED",
+    "mountedPrivateAbsentCollectorBoundedRejection": "PASS_SCOPED",
+    "noNodeNeutralAtomicUnsupportedExplicit": "PASS_SCOPED",
+    "requirementsTestsLimitationsRecorded": "PASS_SCOPED",
+    "localWindowsUbuntuAndTarget": "PASS_SCOPED"
+  },
+  "fullAcceptanceFamilies": "T03/T14/T19/T24/T28/T37/T38/T45 remain PARTIAL or NOT_EXECUTED beyond documented subcases",
+  "sourceHashes": {
+    "src/capture.ts": "7caf3814c0e959c3bd122f7a82b9d6f0a3a575a3770defdc5aa7ae92c2a83235",
+    "tools/capture/bridge.py": "a9e2be0ad4316833f50ab21841c6928b0fe43a99b308531d85ed845fd6a4a3ba",
+    "test/capture.test.mjs": "af8d107c456b2906752b16fe1a9cf73c13b581697b869c028a42577629e327c3",
+    "test/capture_bridge_test.py": "45aaa7b288d089986966b6667dd6fe927eb3345267103eee501ad6faaa7d744b",
+    "scripts/verify-capture-package.mjs": "c09c0b6adfda79c5ce92a7f66ce4b0adc753db3195a00a115e08ccc00e339738"
+  },
+  "byteNormalization": "Qualified deployed bridge used original Windows CRLF bytes identified by bridgeSha256. After qualification only line endings/trailing blank lines were normalized; sourceHashes identify canonical versioned equivalents, not a new target deployment."
+}

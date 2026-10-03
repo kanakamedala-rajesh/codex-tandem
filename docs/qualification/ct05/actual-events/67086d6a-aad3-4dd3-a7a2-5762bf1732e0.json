@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "eventId": "67086d6a-aad3-4dd3-a7a2-5762bf1732e0",
+  "kind": "turn.started",
+  "launchId": "launch_ct05",
+  "targetGeneration": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf",
+  "sessionId": "01a0fcb4-e8b8-7713-8372-a2d8817bb9c6",
+  "turnId": "01a0fcb8-00b5-7b91-b5ab-7b25e6f928db",
+  "capturedAt": "2026-10-02T13:05:13Z"
+}

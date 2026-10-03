@@ -1,1 +1,7 @@
+node_modules/
+dist/
+*.tgz
+.worktrees/
+.npm-cache/
+.runtime/
 /.scratch/

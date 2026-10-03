@@ -1,0 +1,66 @@
+{
+  "observedDateUtc": "2026-10-03",
+  "pipelineId": 2908467785,
+  "sourceCommit": "0299de5c52911c0c50c796ae1a40fbf03ca9447c",
+  "status": "success",
+  "verification": "GitLab pipeline jobs API and each job trace inspected; only fixed nonsecret summary retained",
+  "jobs": [
+    {
+      "id": 16908914449,
+      "name": "validate: [22.15.0]",
+      "node": "v22.15.0",
+      "status": "success"
+    },
+    {
+      "id": 16908914450,
+      "name": "validate: [22]",
+      "node": "v22.23.3",
+      "status": "success"
+    },
+    {
+      "id": 16908914451,
+      "name": "validate: [24]",
+      "node": "v24.21.0",
+      "status": "success"
+    }
+  ],
+  "perJob": {
+    "nodeTests": 33,
+    "passed": 31,
+    "skipped": 2,
+    "failed": 0,
+    "pythonTests": 6
+  },
+  "commands": [
+    "npm ci --ignore-scripts --engine-strict --cache .npm-cache --prefer-offline",
+    "npm run validate",
+    "npm run verify:installed",
+    "node tools/verify-accounting-fixtures.mjs",
+    "python3 -B -m unittest discover -s test -p '*_test.py'"
+  ],
+  "scope": "Hosted native Linux noninteractive implementation/package/fixture checks only; no native interactive Codex or actual target qualification",
+  "finalRepair": {
+    "pipelineId": 2908478014,
+    "sourceCommit": "810401cd1c5be48eb32391a72a9e08f84b05a123",
+    "status": "success",
+    "verification": "GitLab jobs API verified exact commit and success; coordinating agent confirmed pipeline success",
+    "jobs": [
+      {
+        "name": "validate: [22.15.0]",
+        "status": "success",
+        "id": 16908974263
+      },
+      {
+        "name": "validate: [22]",
+        "status": "success",
+        "id": 16908974264
+      },
+      {
+        "name": "validate: [24]",
+        "status": "success",
+        "id": 16908974265
+      }
+    ],
+    "scope": "Same hosted noninteractive suite after harness/verifier repairs; historical authenticated evidence unchanged"
+  }
+}

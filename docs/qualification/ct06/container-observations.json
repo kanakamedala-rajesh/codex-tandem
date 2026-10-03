@@ -1,0 +1,95 @@
+[
+  {
+    "mode": "A",
+    "exit": 1,
+    "timeout": false,
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnCompleted": false,
+    "nativeTurnFailed": true,
+    "failureCategories": ["OTHER"],
+    "captureDegraded": false,
+    "expectedLaunchId": "ct06_A",
+    "events": [
+      {
+        "schemaVersion": 1,
+        "eventId": "bdcd29e8-a7a4-4f02-b8d6-16437df1721b",
+        "kind": "turn.started",
+        "launchId": "ct06_A",
+        "targetGeneration": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf",
+        "sessionId": "01a0fce0-ead3-7673-973d-b44bfa8b916f",
+        "turnId": "01a0fce0-eb33-7b90-bb2b-7a4b7153b484",
+        "capturedAt": "2026-10-02T13:49:56Z"
+      }
+    ],
+    "rawExported": false,
+    "backgroundServerReuse": "NOT_EXECUTED"
+  },
+  {
+    "mode": "B",
+    "exit": 0,
+    "timeout": false,
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnCompleted": true,
+    "nativeTurnFailed": false,
+    "failureCategories": [],
+    "captureDegraded": false,
+    "expectedLaunchId": "ct06_B",
+    "events": [
+      {
+        "schemaVersion": 1,
+        "eventId": "3bce48b2-ae00-418d-a8b0-aeba3e99e6dc",
+        "kind": "turn.started",
+        "launchId": "ct06_B",
+        "targetGeneration": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf",
+        "sessionId": "01a0fce0-ead3-7673-973d-b44bfa8b916f",
+        "turnId": "01a0fce1-7cce-7cc0-a337-0cc98214f253",
+        "capturedAt": "2026-10-02T13:50:34Z"
+      }
+    ],
+    "rawExported": false,
+    "backgroundServerReuse": "NOT_EXECUTED"
+  },
+  {
+    "mode": "missing",
+    "exit": 0,
+    "timeout": false,
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnCompleted": true,
+    "nativeTurnFailed": false,
+    "failureCategories": [],
+    "captureDegraded": false,
+    "expectedLaunchId": "ct06_B",
+    "events": [],
+    "rawExported": false,
+    "backgroundServerReuse": "NOT_EXECUTED"
+  },
+  {
+    "mode": "stale",
+    "exit": 0,
+    "timeout": false,
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnCompleted": true,
+    "nativeTurnFailed": false,
+    "failureCategories": [],
+    "captureDegraded": false,
+    "expectedLaunchId": "ct06_B",
+    "events": [
+      {
+        "schemaVersion": 1,
+        "eventId": "9ebf37dd-a022-44fd-b8cf-ebd5144f2497",
+        "kind": "turn.started",
+        "launchId": "ct06_A",
+        "targetGeneration": "b54aa7bcd3c85c3dd617a9551740c2948ad6146b1b362b21bbe695c6f2bfdfcf",
+        "sessionId": "01a0fce0-ead3-7673-973d-b44bfa8b916f",
+        "turnId": "01a0fce2-5e17-7be1-9af2-c9ce3b661f90",
+        "capturedAt": "2026-10-02T13:51:34Z"
+      }
+    ],
+    "rawExported": false,
+    "backgroundServerReuse": "NOT_EXECUTED"
+  }
+]

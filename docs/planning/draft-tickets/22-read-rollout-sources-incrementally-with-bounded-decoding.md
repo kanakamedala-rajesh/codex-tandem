@@ -12,6 +12,7 @@ Process registered synthetic/read-only rollout sources incrementally, recovering
 ## Blocked by
 
 CT-01 ([GitLab #8](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/8)), CT-02 ([GitLab #9](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/9)).
+
 - [CT-02](02-install-a-packed-cli-and-run-host-capability-diagnostics.md) — Install a packed CLI and run host capability diagnostics
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

@@ -12,6 +12,7 @@ Publish an evidence-backed G0 decision identifying which guarantees are feasible
 ## Blocked by
 
 CT-01 ([GitLab #8](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/8)), CT-07 ([GitLab #14](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/14)).
+
 - [CT-07](07-qualify-initial-package-and-launch-behavior-locally.md) — Qualify initial package and launch behavior locally
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,

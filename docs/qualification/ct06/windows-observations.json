@@ -1,0 +1,52 @@
+[
+  {
+    "platform": "win32",
+    "release": "10.0.26300",
+    "node": "v24.15.0",
+    "mode": "A",
+    "context": {
+      "launchId": "ct06_win32_A",
+      "identity": "A",
+      "platform": "win32"
+    },
+    "exit": 1,
+    "timedOut": false,
+    "sessionId": "01a0fd14-f9a2-7c20-8079-27373495db89",
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnIdAvailable": false,
+    "nativeTurnCompleted": false,
+    "nativeTurnFailed": true,
+    "failureCategory": "OTHER",
+    "hooks": "NOT_INSTALLED",
+    "propagation": "PARENT_PROCESS_ONLY",
+    "backgroundServerReuse": "NOT_EXECUTED",
+    "rawExported": false,
+    "contextUnchanged": true
+  },
+  {
+    "platform": "win32",
+    "release": "10.0.26300",
+    "node": "v24.15.0",
+    "mode": "B",
+    "context": {
+      "launchId": "ct06_win32_B",
+      "identity": "B",
+      "platform": "win32"
+    },
+    "exit": 0,
+    "timedOut": false,
+    "sessionId": "01a0fd14-f9a2-7c20-8079-27373495db89",
+    "sameSession": true,
+    "nativeTurnStarted": true,
+    "nativeTurnIdAvailable": false,
+    "nativeTurnCompleted": true,
+    "nativeTurnFailed": false,
+    "failureCategory": "NONE",
+    "hooks": "NOT_INSTALLED",
+    "propagation": "PARENT_PROCESS_ONLY",
+    "backgroundServerReuse": "NOT_EXECUTED",
+    "rawExported": false,
+    "contextUnchanged": true
+  }
+]
