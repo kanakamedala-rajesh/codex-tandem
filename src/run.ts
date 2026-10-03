@@ -2,6 +2,13 @@ import { readSync, openSync, fstatSync, closeSync } from 'node:fs';
 import { selectProfile } from './selector.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+/**
+ * Run the bundled harmless G0 child using a bounded synthetic profile fixture;
+ * production credential activation is unavailable. args are run options followed
+ * by an optional -- and child arguments. Inherits stdio and forwards signals.
+ * Returns the child exit status, 130 on selection cancellation, or 2 on validation
+ * or launch failure; failures are written to stderr, using JSON with --json.
+ */
 export async function run(args: string[]): Promise<number> {
   const boundary = args.indexOf('--');
   const options = boundary < 0 ? args : args.slice(0, boundary);

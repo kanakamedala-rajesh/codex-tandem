@@ -1,0 +1,10 @@
+# Enforcement changes need the repository owner's review.
+
+/scripts/check-repo.mjs @kanakamedala-rajesh
+/test/repo-policy.test.mjs @kanakamedala-rajesh
+/.githooks/ @kanakamedala-rajesh
+/.github/ @kanakamedala-rajesh
+/package.json @kanakamedala-rajesh
+/CONTRIBUTING.md @kanakamedala-rajesh
+/.codex/agents/ @kanakamedala-rajesh
+/docs/agents/ @kanakamedala-rajesh

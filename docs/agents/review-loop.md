@@ -10,6 +10,14 @@ Mark assignments `full` or `confirmation`; infer confirmation for repairs alread
 covered by a ledger. Full review inspects the complete assigned delta and evidence.
 Standards and Spec remain independent; the parent deduplicates their findings.
 
+In that review, check each added file's lasting purpose and caller or supported
+command. Identify unused scaffolding, duplicate records, speculative abstractions
+and tests that merely repeat implementation. Verify public API documentation
+explains the actual contract and that future-spec inputs remain available. Record
+concrete violations in the existing ledger; do not launch a separate cleanup
+review or generate another report. Policy, hook or CI exceptions require explicit
+owner review and cannot be introduced to make a failing candidate pass.
+
 A blocker needs an existing contract or demonstrated regression, concrete failing
 behavior and evidence. Questions and heuristic smells are advisory until proved.
 The parent accepts, dismisses with a reason, or defers each finding. Only accepted

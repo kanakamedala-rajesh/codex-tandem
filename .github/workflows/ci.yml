@@ -36,6 +36,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Resolve runtime version
         id: runtime
         run: printf 'node=%s\n' "$(node --version)" >> "$GITHUB_OUTPUT"
@@ -60,6 +61,11 @@ jobs:
           } | tee ci-evidence/result.txt
       - name: Install locked development dependencies
         run: npm ci --ignore-scripts --engine-strict --cache .npm-cache --prefer-offline
+      - name: Check repository policy throughout the change
+        env:
+          POLICY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          POLICY_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/check-repo.mjs --range "$POLICY_BASE..$POLICY_HEAD"
       - name: Validate source
         run: npm run validate
       - name: Verify installed package

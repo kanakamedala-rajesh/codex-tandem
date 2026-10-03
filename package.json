@@ -18,6 +18,8 @@
     "build": "npm run clean && tsc",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs",
+    "check:repo": "node scripts/check-repo.mjs",
+    "setup:hooks": "git config --local core.hooksPath .githooks",
     "verify:package": "node scripts/verify-package.mjs",
     "verify:discovery": "node scripts/verify-discovery-package.mjs",
     "verify:capture": "node scripts/verify-capture-package.mjs",
@@ -25,7 +27,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix --max-warnings 0",
-    "validate": "npm run format:check && npm run lint && npm run typecheck && npm run build && npm test",
+    "validate": "npm run check:repo && npm run format:check && npm run lint && npm run typecheck && npm run build && npm test",
     "verify:installed": "npm run verify:package && npm run verify:discovery && npm run verify:capture"
   },
   "devDependencies": {

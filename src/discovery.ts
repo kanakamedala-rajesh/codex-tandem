@@ -12,10 +12,16 @@ import {
   sep,
 } from 'node:path';
 
+/**
+ * Inputs for read-only target discovery. Path and executable overrides are
+ * resolved inside the selected target; project must stay within projectRoot
+ * without crossing a nested mount. Docker requires an existing local container.
+ */
 export type DiscoveryOptions = {
   target: 'local' | 'docker';
   container?: string;
   dockerContext?: string;
+  /** Full container ID expected by the caller; a replacement fails discovery. */
   expectedGeneration?: string;
   user?: string;
   projectRoot?: string;
@@ -31,6 +37,11 @@ type Paths = {
   project: string;
   executable: string;
 };
+/**
+ * Discovery snapshot with canonical paths and safe diagnostic codes. ok means
+ * the checked paths, permissions and projection are usable; hook trust, durable
+ * capture and full tracking remain unqualified. Failed reports may be partial.
+ */
 export type DiscoveryReport = {
   schemaVersion: 1;
   ok: boolean;
@@ -121,6 +132,12 @@ async function executable(requested?: string): Promise<string> {
   }
   throw new Error('EXECUTABLE_UNAVAILABLE');
 }
+/**
+ * Inspect host paths or an existing Docker container without launching Codex,
+ * reading credentials or creating target files. Docker runs read-only shell and
+ * Python probes and rejects remote endpoints or a changed container generation.
+ * Returns failures as diagnostic codes; run can replace the Docker command reader.
+ */
 export async function discoverTarget(
   options: DiscoveryOptions,
   run: DockerRead = dockerRead,
@@ -231,6 +248,7 @@ export async function discoverTarget(
 }
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+/** Execute Docker with the supplied argument vector and return stdout, rejecting on failure. */
 export type DockerRead = (args: string[]) => Promise<string>;
 const runFile = promisify(execFile);
 const dockerRead: DockerRead = async (args) =>

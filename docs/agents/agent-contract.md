@@ -10,6 +10,12 @@ ADRs. Use [review-loop.md](review-loop.md) for review and repair. Skills supplem
 these sources; explicit user instructions take precedence. If a requested skill is
 unavailable or blocks work, report its name and the applicable instruction.
 
+Apply CONTRIBUTING.md's maintained-file and public-API documentation rules before
+adding code or documents. Keep task ledgers and investigation output in ignored
+`.scratch/` or the PR. Give new files an ongoing purpose; preserve future-spec
+inputs without duplicating issues or reports. Document exported APIs beside their
+declarations as part of implementation, not as a later cleanup task.
+
 ## Environment and privacy
 
 Local platform checks use native Windows and `wsl -d Ubuntu`. The work distro

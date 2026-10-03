@@ -5,6 +5,7 @@ dist/
 .npm-cache/
 .runtime/
 .scratch/
+ci-evidence/
 *.tgz
 # Preserve approved requirements and fixture provenance bytes.
 docs/requirements/

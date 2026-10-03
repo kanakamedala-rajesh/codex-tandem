@@ -5,3 +5,4 @@ dist/
 .npm-cache/
 .runtime/
 /.scratch/
+/ci-evidence/

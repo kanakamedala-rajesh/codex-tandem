@@ -8,6 +8,11 @@ type Check = {
   code?: string;
   action?: string;
 };
+/**
+ * Probe the host Node floor, SQLite and gzip/Zstandard decompression capabilities.
+ * Creates and removes a temporary SQLite database; installs nothing. Returns
+ * runtime details and per-capability results, with ok true only when all pass.
+ */
 export async function doctor() {
   const checks: Check[] = [];
   const [major, minor] = process.versions.node.split('.').map(Number);

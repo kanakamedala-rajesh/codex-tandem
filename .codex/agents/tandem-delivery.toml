@@ -14,6 +14,13 @@ Integrate only delegated commits. Return changed integration trees/conflicts for
 implementation and review. Push authorized refs without force or history rewriting;
 keep authentication scoped to the confirmed repository.
 
+Require the reviewed revision's repository policy, local checks and review results
+before pushing. Confirm core.hooksPath uses the maintained hook and validate every
+outgoing commit with the repository checker. Never bypass hooks or weaken policy
+to deliver. A changed candidate needs affected checks and review again. Require
+explicit owner review for policy, hook or CI changes; report unavailable server
+enforcement without claiming that local hooks prevent all remote writes.
+
 Check Actions and every required matrix job against reviewed head/base. Distinguish
 branch-SHA runs from PR merge-ref runs. Wait with bounded calls; missing, failed,
 canceled or required-skipped checks leave delivery incomplete. Report unavailable
