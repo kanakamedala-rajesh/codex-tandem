@@ -1,0 +1,301 @@
+{
+  "project": "kanakamedala-rajesh/codex-tandem",
+  "central": {
+    "number": 1,
+    "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/1"
+  },
+  "spec": {
+    "number": 2,
+    "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/2"
+  },
+  "gates": {
+    "G0": {
+      "number": 3,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3"
+    },
+    "G1": {
+      "number": 4,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/4"
+    },
+    "G2": {
+      "number": 5,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/5"
+    },
+    "G3": {
+      "number": 6,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/6"
+    },
+    "G4": {
+      "number": 7,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/7"
+    }
+  },
+  "tickets": {
+    "CT-01": {
+      "title": "CT-01 — Capture reusable behavior and accounting fixtures",
+      "number": 8,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/8",
+      "gate": "G0",
+      "blockers": []
+    },
+    "CT-02": {
+      "title": "CT-02 — Install a packed CLI and run host capability diagnostics",
+      "number": 9,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/9",
+      "gate": "G0",
+      "blockers": []
+    },
+    "CT-03": {
+      "title": "CT-03 — Discover targets without changing their environment",
+      "number": 10,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/10",
+      "gate": "G0",
+      "blockers": ["CT-02"]
+    },
+    "CT-04": {
+      "title": "CT-04 — Select a profile and pass through to a harmless child",
+      "number": 11,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/11",
+      "gate": "G0",
+      "blockers": ["CT-02"]
+    },
+    "CT-05": {
+      "title": "CT-05 — Qualify a minimal metadata bridge on the legacy target",
+      "number": 12,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/12",
+      "gate": "G0",
+      "blockers": ["CT-03"]
+    },
+    "CT-06": {
+      "title": "CT-06 — Probe A-to-B resume attribution feasibility",
+      "number": 13,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/13",
+      "gate": "G0",
+      "blockers": ["CT-04", "CT-05"]
+    },
+    "CT-07": {
+      "title": "CT-07 — Qualify initial package and launch behavior locally",
+      "number": 14,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/14",
+      "gate": "G0",
+      "blockers": ["CT-06"]
+    },
+    "CT-08": {
+      "title": "CT-08 — Review the compatibility gate",
+      "number": 15,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/15",
+      "gate": "G0",
+      "blockers": ["CT-01", "CT-07"]
+    },
+    "CT-09": {
+      "title": "CT-09 — Manage stable profiles through isolated login",
+      "number": 16,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/16",
+      "gate": "G1",
+      "blockers": ["CT-08"]
+    },
+    "CT-10": {
+      "title": "CT-10 — Guard canonical scopes and identify conflicting processes",
+      "number": 17,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/17",
+      "gate": "G1",
+      "blockers": ["CT-09"]
+    },
+    "CT-11": {
+      "title": "CT-11 — Activate credentials with refresh-safe crash recovery",
+      "number": 18,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/18",
+      "gate": "G1",
+      "blockers": ["CT-10"]
+    },
+    "CT-12": {
+      "title": "CT-12 — Stop only freshly verified conflicting processes",
+      "number": 19,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/19",
+      "gate": "G1",
+      "blockers": ["CT-11"]
+    },
+    "CT-13": {
+      "title": "CT-13 — Launch and resume locally with safe identity ownership",
+      "number": 20,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/20",
+      "gate": "G1",
+      "blockers": ["CT-12"]
+    },
+    "CT-14": {
+      "title": "CT-14 — Launch and supervise Codex inside the existing container",
+      "number": 21,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/21",
+      "gate": "G1",
+      "blockers": ["CT-13"]
+    },
+    "CT-15": {
+      "title": "CT-15 — Qualify safe-launch recovery and performance",
+      "number": 22,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/22",
+      "gate": "G1",
+      "blockers": ["CT-14"]
+    },
+    "CT-16": {
+      "title": "CT-16 — Capture bounded lifecycle metadata without altering Codex",
+      "number": 23,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/23",
+      "gate": "G2",
+      "blockers": ["CT-14"]
+    },
+    "CT-17": {
+      "title": "CT-17 — Replay captured events through a durable host receipt",
+      "number": 24,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/24",
+      "gate": "G2",
+      "blockers": ["CT-16"]
+    },
+    "CT-18": {
+      "title": "CT-18 — Attribute mixed-identity sessions by launch and turn attempt",
+      "number": 25,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/25",
+      "gate": "G2",
+      "blockers": ["CT-17"]
+    },
+    "CT-19": {
+      "title": "CT-19 — Attribute nested child work without inherited-history duplication",
+      "number": 26,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/26",
+      "gate": "G2",
+      "blockers": ["CT-18"]
+    },
+    "CT-20": {
+      "title": "CT-20 — Expose unknown, imported and conflicting attribution",
+      "number": 27,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/27",
+      "gate": "G2",
+      "blockers": ["CT-19"]
+    },
+    "CT-21": {
+      "title": "CT-21 — Qualify attribution against actual installed Codex",
+      "number": 28,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/28",
+      "gate": "G2",
+      "blockers": ["CT-15", "CT-20"]
+    },
+    "CT-22": {
+      "title": "CT-22 — Read rollout sources incrementally with bounded decoding",
+      "number": 29,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/29",
+      "gate": "G3",
+      "blockers": ["CT-01", "CT-02"]
+    },
+    "CT-23": {
+      "title": "CT-23 — Produce deterministic token totals from native and legacy observations",
+      "number": 30,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/30",
+      "gate": "G3",
+      "blockers": ["CT-22", "CT-20"]
+    },
+    "CT-24": {
+      "title": "CT-24 — Report usage, estimates and quota with shared time semantics",
+      "number": 31,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/31",
+      "gate": "G3",
+      "blockers": ["CT-23"]
+    },
+    "CT-25": {
+      "title": "CT-25 — Run one recoverable collector without delaying launch",
+      "number": 32,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/32",
+      "gate": "G3",
+      "blockers": ["CT-17", "CT-22"]
+    },
+    "CT-26": {
+      "title": "CT-26 — Serve authenticated local reports through a restricted API",
+      "number": 33,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/33",
+      "gate": "G3",
+      "blockers": ["CT-24", "CT-25"]
+    },
+    "CT-27": {
+      "title": "CT-27 — Browse sessions, attempts and child identity contributions",
+      "number": 34,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/34",
+      "gate": "G3",
+      "blockers": ["CT-21", "CT-26"]
+    },
+    "CT-28": {
+      "title": "CT-28 — Persist accessible presentation and consistent report filters",
+      "number": 35,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/35",
+      "gate": "G3",
+      "blockers": ["CT-27"]
+    },
+    "CT-29": {
+      "title": "CT-29 — Qualify accounting, dashboard performance and accessibility",
+      "number": 36,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/36",
+      "gate": "G3",
+      "blockers": ["CT-28"]
+    },
+    "CT-30": {
+      "title": "CT-30 — Preview and import existing profile and analytics state",
+      "number": 37,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/37",
+      "gate": "G4",
+      "blockers": ["CT-28"]
+    },
+    "CT-31": {
+      "title": "CT-31 — Back up, restore and upgrade with recoverable schema changes",
+      "number": 38,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/38",
+      "gate": "G4",
+      "blockers": ["CT-30"]
+    },
+    "CT-32": {
+      "title": "CT-32 — Diagnose and bound retained operational data",
+      "number": 39,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/39",
+      "gate": "G4",
+      "blockers": ["CT-25"]
+    },
+    "CT-33": {
+      "title": "CT-33 — Remove managed integration safely",
+      "number": 40,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/40",
+      "gate": "G4",
+      "blockers": ["CT-31", "CT-32"]
+    },
+    "CT-34": {
+      "title": "CT-34 — Verify privacy and source containment across the integrated product",
+      "number": 41,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/41",
+      "gate": "G4",
+      "blockers": ["CT-33"]
+    },
+    "CT-35": {
+      "title": "CT-35 — Prepare a reproducible release package and notices",
+      "number": 42,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/42",
+      "gate": "G4",
+      "blockers": ["CT-34"]
+    },
+    "CT-36": {
+      "title": "CT-36 — Qualify the final artifact locally on Windows and WSL2",
+      "number": 43,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/43",
+      "gate": "G4",
+      "blockers": ["CT-29", "CT-35"]
+    },
+    "CT-37": {
+      "title": "CT-37 — Qualify native Linux and remaining runtime/browser combinations",
+      "number": 44,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/44",
+      "gate": "G4",
+      "blockers": ["CT-35"]
+    },
+    "CT-38": {
+      "title": "CT-38 — Close traceability and prepare the release decision",
+      "number": 45,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/45",
+      "gate": "G4",
+      "blockers": ["CT-36", "CT-37"]
+    }
+  }
+}

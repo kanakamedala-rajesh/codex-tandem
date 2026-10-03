@@ -4,7 +4,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
-// Each verifier gets its own tarball, cache and installation, even when concurrent.
+/**
+ * Pack the current build and install its tarball offline into a private temporary
+ * directory, with lifecycle scripts disabled. Must run via npm run; global chooses
+ * an isolated global prefix. Calls verify with installation paths, pack metadata,
+ * install output and the tarball SHA-256, awaits it, then removes the scratch
+ * directory even on failure. Packing, installation and verifier errors propagate.
+ */
 export async function withTempPackage(verify, { global = false } = {}) {
   const npm = process.env.npm_execpath;
   if (!npm) throw new Error('Run package verification via npm run');

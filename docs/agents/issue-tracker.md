@@ -1,33 +1,30 @@
-# Issue tracker: GitLab
+# Issue tracker
 
-Specs and tickets live in venkata-sudha/codex-tandem on GitLab.
-Use glab from this repository.
+Use GitHub Issues in
+[kanakamedala-rajesh/codex-tandem](https://github.com/kanakamedala-rajesh/codex-tandem/issues)
+with `gh` or the GitHub connector. The default branch is `master`; inspect local
+remotes before delivery. The [central tracker](https://github.com/kanakamedala-rajesh/codex-tandem/issues/1)
+links the specification and G0–G4 gates.
 
-Read tickets with their comments before working on them.
-The central implementation tracker is
-[GitLab #1](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/1).
-Link G0–G4 gate Issues from this central tracker. Each gate owns native child
-Tasks for its implementation tickets. This namespace has no available Epic type;
-Issue children can only be Tasks. Preserve CT-to-GitLab mappings in
-`docs/planning/gitlab-map.json` and publish in dependency order.
+Resolve CT-01–CT-38 and gate IDs through `docs/planning/tracker-map.json`.
+CT identifiers are stable keys; GitHub issue and PR numbers share a sequence.
+Read a ticket and all comments before work, including qualification limits.
+Check explicit “Blocked by” links and current prerequisite state; `ready-for-agent`
+does not override blockers.
 
-Every implementation ticket must contain:
+Implementation tickets contain behavior/scope, requirement IDs, acceptance-test IDs,
+observable criteria, explicit blockers (or “None”), and required platform evidence.
+The approved baseline remains in `docs/requirements/`. Identify conflicting IDs
+when proposing changes; unperformed acceptance tests remain NOT EXECUTED.
 
-- End-to-end behavior and scope.
-- Requirement IDs from the authoritative requirements register.
-- Acceptance-test IDs and ticket-specific acceptance criteria.
-- Explicit blockers, or "None".
-- Required verification evidence and applicable platforms.
+Use paginated reads for comments and relationships:
 
-The current license does not support native blocking links (verified HTTP 403).
-Maintain explicit "Blocked by: #..." references in task descriptions and the
-blocked label while prerequisites are unresolved. Recheck license capabilities
-before adopting native blocking links.
-A ready-for-agent label does not override unresolved blockers.
+```sh
+gh issue view NUMBER --repo kanakamedala-rajesh/codex-tandem --comments
+gh api --paginate repos/kanakamedala-rajesh/codex-tandem/issues/NUMBER/comments
+```
 
-Preserve docs/requirements/ as the approved baseline. Record proposed
-changes separately and identify any conflicting requirement IDs.
-
-Plan G0–G4, detailing G0 first. Record tests not performed as NOT EXECUTED.
-
-MRs as a request surface: no.
+REST issue listings include PRs; distinguish the `pull_request` field. Inspect the
+current body before changing authorized checklist rows. After an ambiguous write,
+check remote state and comments before retrying. Ticket closure requires verified
+criterion evidence and authorization; closure alone does not prove a gate passed.

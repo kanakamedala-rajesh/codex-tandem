@@ -1,5 +1,10 @@
 import type { DiscoveryOptions } from './discovery.js';
-/** Read-only doctor options; no persisted target registration is performed. */
+/**
+ * Parse doctor flag/value pairs, ignoring --json. Infer docker when a container
+ * is supplied, otherwise local; return undefined when no discovery flags exist.
+ * Throws INVALID_ARGUMENTS for unknown, duplicate, missing or incompatible flags.
+ * Does not persist target registration.
+ */
 export function parseDiscoveryOptions(
   args: string[],
 ): DiscoveryOptions | undefined {

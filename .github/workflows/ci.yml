@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate (Node ${{ matrix.node }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.15.0', '22', '24']
+    container:
+      image: node:${{ matrix.node }}-bookworm
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Provision Python
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends python3
+      - name: Checkout candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Trust the checked-out workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Resolve runtime version
+        id: runtime
+        run: printf 'node=%s\n' "$(node --version)" >> "$GITHUB_OUTPUT"
+      - name: Cache npm downloads
+        id: npm-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .npm-cache
+          key: npm-${{ runner.os }}-bookworm-${{ steps.runtime.outputs.node }}-${{ hashFiles('package-lock.json') }}
+      - name: Record candidate and runtimes
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mkdir -p ci-evidence
+          {
+            printf 'event=%s\nsource_sha=%s\npr_head_sha=%s\npr_base_sha=%s\n' "$GITHUB_EVENT_NAME" "$GITHUB_SHA" "$PR_HEAD_SHA" "$PR_BASE_SHA"
+            printf 'image=node:%s-bookworm\nrun_id=%s\nrun_attempt=%s\n' '${{ matrix.node }}' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
+            node --version
+            npm --version
+            python3 --version
+          } | tee ci-evidence/result.txt
+      - name: Install locked development dependencies
+        run: npm ci --ignore-scripts --engine-strict --cache .npm-cache --prefer-offline
+      - name: Check repository policy throughout the change
+        env:
+          POLICY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          POLICY_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/check-repo.mjs --range "$POLICY_BASE..$POLICY_HEAD"
+      - name: Validate source
+        run: npm run validate
+      - name: Verify installed package
+        run: npm run verify:installed
+      - name: Verify accounting fixtures
+        run: node tools/verify-accounting-fixtures.mjs
+      - name: Test Python harnesses
+        run: python3 -B -m unittest discover -s test -p '*_test.py'
+      - name: Record outcome
+        if: always()
+        env:
+          VALIDATION_STATUS: ${{ job.status }}
+          CACHE_HIT: ${{ steps.npm-cache.outputs.cache-hit }}
+        run: |
+          mkdir -p ci-evidence
+          printf 'validation_status=%s\ncache_hit=%s\n' "$VALIDATION_STATUS" "$CACHE_HIT" >> ci-evidence/result.txt
+      - name: Retain validation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validation-node-${{ matrix.node }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-evidence/result.txt
+          if-no-files-found: error
+          retention-days: 14

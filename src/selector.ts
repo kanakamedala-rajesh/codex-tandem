@@ -1,4 +1,9 @@
 import { emitKeypressEvents } from 'node:readline';
+/**
+ * Choose from nonempty, validated synthetic profiles using raw TTY stdin and an
+ * alternate-screen stderr display. Returns the selected ID or null on cancellation.
+ * Restores terminal mode and pauses stdin on exit; rejects on terminal/I/O failure.
+ */
 export async function selectProfile(
   profiles: { id: string; label: string }[],
 ): Promise<string | null> {

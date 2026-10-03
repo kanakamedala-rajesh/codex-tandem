@@ -1,4 +1,8 @@
-/** Bounded G0 experiment contract; this does not infer account ownership. */
+/**
+ * Sanitized G0 turn-start metadata, without account-ownership attribution.
+ * UUIDs use lowercase hex; launch/generation labels use 1–64 ASCII letters,
+ * digits, underscores or hyphens. capturedAt is UTC with whole-second precision.
+ */
 export interface CaptureEvent {
   schemaVersion: 1;
   eventId: string;
@@ -9,6 +13,10 @@ export interface CaptureEvent {
   turnId: string;
   capturedAt: string;
 }
+/**
+ * Decode at most 4096 bytes of UTF-8 JSON and retain only CaptureEvent fields.
+ * Throws INVALID_CAPTURE_EVENT for malformed input or invalid field values.
+ */
 export function decodeCaptureEvent(bytes: Uint8Array): CaptureEvent {
   try {
     if (bytes.byteLength > 4096) throw new Error();
@@ -52,7 +60,13 @@ export function decodeCaptureEvent(bytes: Uint8Array): CaptureEvent {
 import { open, opendir } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { join } from 'node:path';
-/** Read-only bounded qualification snapshot. No durable acknowledgment or deletion. */
+/**
+ * Read committed UUID-named JSON files, sorted by eventId, without acknowledging
+ * or deleting them. Unrelated names are skipped but count toward the 256-entry
+ * limit; matching files must contain a valid event of at most 4096 bytes whose
+ * eventId matches the filename. Rejects on invalid events, excess entries or I/O
+ * failure; this snapshot supplies no durable receipt.
+ */
 export async function readCaptureInbox(
   directory: string,
 ): Promise<CaptureEvent[]> {
