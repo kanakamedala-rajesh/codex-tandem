@@ -26,9 +26,9 @@ Full static Spec review reported zero demonstrated defects. It independently
 compared every retained archive field with the private source backup, checked
 export/bundle checksums, all 38 link-only draft changes, unchanged historical
 evidence and the six source hashes in `validation.json`. Windows and Ubuntu
-verification passed within the migration scope. Final acceptance requires only
-the pinned GitHub Actions/rehearsal and tracker-selection evidence; reviewing
-those results does not restart the full code review.
+verification passed within the migration scope. The subsequent evidence
+confirmation below completes the hosted and tracker-selection coverage without
+restarting the full code review.
 
 M4 selection confirmation: PASS. The read-only exercise in `selection.json`
 preserves the same ready set (CT-09 and CT-22), selects CT-09 first and checks
@@ -49,5 +49,22 @@ C1 independent confirmation: RESOLVED with no direct regression. The intentional
 formatting failure in rehearsal run `37098012007` remains valid: all three jobs
 rejected the malformed JSON and uploaded their artifacts. C1 affects a later test,
 not that failure path. This demonstrates failure propagation, not enforced branch
-protection. Successful hosted runs remain pending; initial failed runs remain
-part of the evidence.
+protection. Initial failed runs remain part of the evidence.
+
+Final Spec evidence reconciliation: PASS at
+`5b638816c05064090b46c2efca426ed54f4530af`. The production push, PR merge-ref and
+positive rehearsal each passed all three Node jobs with cache misses and retained
+result artifacts; run identities and outcomes are in `github-ci.json`. The reviewer
+matched all nine downloaded result files with the delivery report, including PR
+head/base/merge-source binding, and confirmed the reviewed tool, workflow, test,
+selection and local-evidence hashes. Its own CLI context could not reread the
+private runs, so remote conclusions rely on the authenticated delivery evidence
+and matching downloaded artifacts, not an independent API read claim.
+
+Final documentation adds this verdict, the hosted evidence record and a README
+verification index only. The README hash in the earlier local validation record
+identifies the pre-index document; executable inputs are unchanged. Delivery must
+verify Actions on that final documentation commit before handoff. No further
+product checks, repair rounds or full reviews are required for this evidence-only
+delta. Merge, public visibility, protection setup and GitLab cutover remain with
+the owner; current private-repository protection is unavailable (HTTP 403).

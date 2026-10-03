@@ -64,6 +64,21 @@ not downloaded or uploaded. Preserve access to the archived GitLab project for
 those logs. This is an accepted retention boundary, not a claim that Actions
 contains historical GitLab logs.
 
+## Verification
+
+[Local validation](validation.json) passed on native Windows and development WSL
+`Ubuntu`. [Tracker selection](selection.json) found the same ready work on both
+trackers. [Hosted CI evidence](github-ci.json) records successful Node 22.15.0,
+22 and 24 runs for candidate `5b638816c05064090b46c2efca426ed54f4530af`, its PR
+merge result and the private rehearsal, including cache misses. A separate
+deliberately malformed fixture failed all three rehearsal jobs as expected.
+The [review ledger](review.md) records both resolved findings and their checks.
+
+Review [migration PR #48](https://github.com/kanakamedala-rajesh/codex-tandem/pull/48)
+and its latest exact-head checks before merging. Final evidence-only documentation
+commits retain the measured executable content and receive their own Actions runs.
+This migration does not expand the product's existing qualification claims.
+
 ## Reproduce reconciliation
 
 Offline checks, also run by GitHub Actions:
