@@ -17,6 +17,16 @@ await withTempPackage(
     assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0);
     for (const hook of ['preinstall', 'install', 'postinstall'])
       assert.equal(manifest.scripts[hook], undefined);
+    execFileSync(
+      process.execPath,
+      ['--test', 'test/profiles.test.mjs', 'test/profile-login.test.mjs'],
+      {
+        encoding: 'utf8',
+        env: { ...consumerEnv, TANDEM_TEST_PACKAGE: packageRoot },
+        timeout: 180000,
+        maxBuffer: 1048576,
+      },
+    );
     const entry = join(packageRoot, 'dist', 'cli.js');
     const direct = execFileSync(process.execPath, [entry, 'doctor', '--json'], {
       encoding: 'utf8',

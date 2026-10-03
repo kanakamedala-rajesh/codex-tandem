@@ -98,3 +98,62 @@ project modules and startup customization; unsupported layouts fail closed.
 Errors distinguish inaccessible, stopped, paused, replaced or racing containers,
 remote endpoints, missing bridges, invalid paths and project/mount escape.
 Read-only access observations do not qualify Windows credential ACLs.
+
+## Profile management
+
+```sh
+codex-tandem profiles manage
+codex-tandem profiles add --label Work --import /private/copied-auth.json
+codex-tandem profiles list --json
+codex-tandem profiles show --identity PROFILE_ID --json
+codex-tandem profiles rename --identity PROFILE_ID --label New-name --description Description
+codex-tandem profiles policy --codex-home /existing/codex-home --codex-executable /existing/codex
+codex-tandem profiles add --label Personal --codex-executable /existing/codex
+codex-tandem profiles login --identity PROFILE_ID --codex-executable /existing/codex
+codex-tandem profiles remove --identity PROFILE_ID --confirm PROFILE_ID
+```
+
+Manage profiles uses Up/Down and Enter to select profiles; Escape cancels selection.
+It asks for confirmation before deletion, different-account replacement and login.
+Commands use immutable profile IDs. Names are presentation metadata; available
+profiles cannot share a
+name. Reauthentication keeps a binding only when the local account/workspace and
+user consistency hints match. `--new-binding PROFILE_ID` explicitly approves a
+replacement; previous bindings remain retired historical records. Removing saved
+credentials requires `--confirm PROFILE_ID`, retains historical metadata and never
+changes the live Codex home or analytics. Retired credentials are removed.
+
+Only explicitly imported ChatGPT file credentials with supported local identity
+hints are accepted. Hints are not remotely verified identities; API-key, agent,
+unknown or inconsistent formats are blocked. Imports store an existing file and do
+not qualify its use on any target. Target policy must be checked before login or
+activation. JSON results contain profile labels and stable binding references,
+never credential values or provider account identifiers.
+
+Stores default to `~/.codex-tandem-windows` on Windows and `~/.codex-tandem` on
+POSIX, with `--state-home PATH` for an explicit private directory. Windows and WSL
+keep separate state. Credential files use effective current-user Windows ACL
+verification (SYSTEM and Administrators also allowed) or owner-only POSIX access.
+An existing insecure store, symlink, corrupt metadata or unresolved mutation lock
+blocks the operation. A crash can leave `profiles.lock`; diagnose ownership and
+recovery before removing it. There is no automatic stale-lock override.
+
+Login invokes the existing Codex in a restricted temporary home. First run
+`profiles policy` to inspect the proposed staging storage choice. A non-file mode
+requires `--approve-file-mode staging-file`; this approves a staging-only file-mode
+override and a restricted backup of the original configuration. Live configuration
+and credentials stay in their existing home. Cancellation/failure discards staging
+and preserves saved credentials. Login output uses stderr; JSON results stay on
+stdout. Native executables work directly. For a Node-hosted existing Codex entry,
+use `--codex-executable /path/to/node --codex-script /path/to/codex.js`; Windows
+command-processor shims require an explicit native executable or Node entry.
+
+Effective policy inspection uses bounded `config/read` and
+`configRequirements/read` RPCs on the existing Codex, with the same project and
+environment. It requires a supported explicit storage mode, compares staging auth
+constraints and blocks non-file managed requirements. Non-null managed/cloud
+requirements, enterprise-managed layers, custom provider routes, API login and
+unknown policy contracts remain unsupported; `POLICY_UNVERIFIABLE` distinguishes
+incomplete policy from `FILE_STORAGE_PROHIBITED`. Copying user configuration does
+not prove complete cloud-policy preservation. Real login and full platform/target
+qualification remain separate acceptance evidence.

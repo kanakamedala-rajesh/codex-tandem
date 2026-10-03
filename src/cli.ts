@@ -41,6 +41,9 @@ if (args[0] === 'doctor') {
       );
     process.exitCode = 2;
   }
+} else if (args[0] === 'profiles') {
+  const { profilesCommand } = await import('./profiles.js');
+  process.exitCode = await profilesCommand(args.slice(1));
 } else {
   const { run } = await import('./run.js');
   process.exitCode = await run(args[0] === 'run' ? args.slice(1) : args);

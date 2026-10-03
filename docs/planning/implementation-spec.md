@@ -102,3 +102,28 @@ acceptance families. Release preparation does not authorize publication.
 
 Baseline exclusions remain SRS §1.2. No Go runtime wrapper, manual attribution
 editor, automatic background pricing or mandatory dashboard redesign is added.
+
+## Profile storage and isolated login contract
+
+CT-09 owns the version-1 private profile manifest and per-binding credential files.
+Profiles and bindings have separate immutable IDs; label/description changes never
+alter binding history. Explicit replacement retires the previous binding and
+removes its selected saved credential after the manifest preserves the historical
+record. Confirmed removal marks a profile deleted before removing its credentials;
+an interrupted removal remains unavailable and can be retried. There is no analytics
+mutation or live-home activation in these operations.
+
+Explicit import stores existing credentials without choosing or qualifying a target.
+Every login and later activation must revalidate the selected target's effective
+storage and organizational policy. Staged login supports only policy that can be
+proved through the existing Codex RPC contract; unknown/cloud/managed provenance
+blocks staging rather than dropping restrictions. Preview and consent cover only
+the staging file-mode override, with a private recoverable configuration backup;
+target setup/activation changes remain the activation ticket's responsibility.
+The supported auth adapter uses opaque ChatGPT credentials and local account/workspace
+plus user consistency hints, never provider billing or remote-identity verification.
+
+The installed-package verifier runs profile CLI outcomes and focused isolated-login
+credential-file tests against the packed code. Synthetic fixtures and private
+Windows/POSIX permission checks do not qualify real login, native Linux, Docker,
+Smart App Control release behavior or complete T06/T07/T08/T23/T30/T37/T44 families.
