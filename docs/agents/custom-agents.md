@@ -19,7 +19,9 @@ You do not need to name an agent. AGENTS.md instructs the parent to use this map
 
 For the next issue, respect the user's gate/priority and explicit blockers; within
 equally ready work use planning order. Read the selected ticket and comments before
-dispatch. A label alone does not make an issue ready. Discover routine handoff details
+dispatch. Resolve the ticket and gate through `docs/planning/tracker-map.json` and
+the GitHub guidance in [issue-tracker.md](issue-tracker.md). A label alone does not
+make an issue ready. Discover routine handoff details
 instead of asking the user to fill out a form. The request to implement does not by
 itself authorize a merge, publication or unrelated tracker changes.
 
@@ -40,7 +42,7 @@ model or role was activated. The user can still name a role to override selectio
 | `tandem-standards-reviewer` | Independent standards and maintainability review                     | Findings tied to documented rules or concrete costs      |
 | `tandem-spec-reviewer`      | Independent ticket/contract and evidence review                      | Criterion coverage and demonstrated gaps                 |
 | `tandem-gate-reviewer`      | Integrated G0–G4 feasibility/completion decision                     | Gate matrix, verdict and downstream limitations          |
-| `tandem-delivery`           | Authorized integration, push, CI, GitLab bookkeeping, MR and wrap-up | Verified remote state and first unfinished step          |
+| `tandem-delivery`           | Authorized integration, push, CI, GitHub bookkeeping, PR and wrap-up | Verified remote state and first unfinished step          |
 
 Every role reads [agent-contract.md](agent-contract.md). The top-level agent owns
 coordination and user communication. Standards and Spec remain independent axes;
@@ -55,7 +57,7 @@ Each role explicitly sets a GPT-6 family model and reasoning effort:
 | Work                                          | Model         | Effort   |
 | --------------------------------------------- | ------------- | -------- |
 | Implementation, fixes, standards review       | `gpt-6.1-sol` | `high`   |
-| Validation execution, builds, GitLab delivery | `gpt-6-luna`  | `medium` |
+| Validation execution, builds, GitHub delivery | `gpt-6-luna`  | `medium` |
 | Final spec/evidence verification, gate review | `gpt-6-astra` | `high`   |
 
 Luna runs the scoped checks and reports observations; Astra decides whether the
@@ -110,10 +112,10 @@ Explicit names remain useful for precise delegation, with real ticket/revisions:
 > Use tandem-validator to verify this candidate on native Windows and development
 > Ubuntu. Use only the disposable container identified in the handoff for actual-target checks.
 
-> Use tandem-delivery to push the reviewed commit, verify its pipeline, record the
+> Use tandem-delivery to push the reviewed commit, verify its Actions run, record the
 > supplied acceptance evidence and close #16. Do not merge a request in this task.
 
-> Use tandem-delivery to create and merge the reviewed MR into the confirmed default
+> Use tandem-delivery to create and merge the reviewed PR into the confirmed default
 > branch, verify post-merge CI, then remove the merged local task branches.
 
 Include the ticket/gate, base and candidate, assigned path, owned files, evidence

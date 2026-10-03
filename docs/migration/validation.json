@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "candidate": {
+    "branch": "agent/github-migration",
+    "baseHead": "5330dbd397772b3b247f0e754c9516dce26b91a2",
+    "workingTree": "dirty; migration candidate changes present; no source commits made by validator",
+    "sourceSha256": {
+      "docs/migration/README.md": "cdf2024f22cf5b3b82cc1a4a9db400259f795682affecfa761dca06723169b2e",
+      "docs/migration/gitlab-records.json": "e0398f2861a334a36f1f470166579098e6e16cab9395cef15b0eccd1a5a00cc2",
+      "docs/migration/reconciliation.json": "23eeec57b013711781ae8d0b443fe55889cb18ecfac7844a0f8689a324f3c63c",
+      "docs/planning/tracker-map.json": "3f3e5d18c5b6a9ad7923296becfd2b0f44e9e9a9ef6f6d77bd43f66b568537c4",
+      "tools/verify-migration.py": "426b5bf929043df7c8458178ed27fc7d92dd92793940a3e1df8d91851a5b25f2",
+      "test/migration_test.py": "8338ac4bcc2b3180b43b4c0aa7d337004f9a92f3f8ac45e26c4cf45262b78fae"
+    },
+    "generatedInstalledPackageSha256": {
+      "windows": "e7af7194b7dcdda197f26bad0058c7b4d001581f45647b3c705c54dc897f4b28",
+      "ubuntu": "88ad25a0f0ff985b7e3ec200a2dc11d40c116f14ab358cadff1dd0bf98c16c3e"
+    }
+  },
+  "scope": "Approved GitHub migration integrity and repository checks only; no live product acceptance or remote writes",
+  "environments": {
+    "windows": {
+      "platform": "native Windows win32 x64",
+      "runtime": { "node": "v24.15.0", "npm": "11.12.1", "python": "3.12.14" },
+      "pythonExecutable": "bundled workspace Python runtime",
+      "dependencyInstall": "PASS: npm ci --ignore-scripts --engine-strict --cache .npm-cache --prefer-offline (authorized local execution); 100 packages, 0 vulnerabilities",
+      "commands": [
+        {
+          "command": "npm run validate",
+          "result": "PASS: format, lint, typecheck, build; 34 tests, 31 passed, 0 failed, 3 skipped"
+        },
+        {
+          "command": "npm run verify:installed",
+          "result": "PASS: package, discovery and capture; doctor direct/shim checks pass"
+        },
+        {
+          "command": "node tools/verify-accounting-fixtures.mjs",
+          "result": "PASS: 18 cases, 20 records; fixture SHA256 f2cedb916e0853d3587290065d6f87d98139596cc2e0af1faf123fcff2163efd"
+        },
+        {
+          "command": "bundled Python -B -m unittest discover -s test -p '*_test.py'",
+          "result": "PASS: 13 tests, 5 skipped"
+        },
+        {
+          "command": "node docs/qualification/g0/audit.mjs",
+          "result": "PASS: requirements 119/119; document integrity only"
+        },
+        {
+          "command": "bundled Python -B tools/verify-migration.py",
+          "result": "PASS: 45 issues, 2 MR archives, 17 comments, 38 parents, 47 blockers, 11 labels"
+        },
+        {
+          "command": "tomllib parse and model/reasoning-name checks for .codex/agents/*.toml",
+          "result": "PASS: all 7 TOML files"
+        },
+        {
+          "command": "npm run format:check",
+          "result": "PASS: final generated migration docs and validation source formatted"
+        }
+      ],
+      "notes": [
+        "An initial non-elevated dependency install and validation were blocked by sandbox ACLs on the existing npm cache/temp paths; the authorized local retries completed successfully.",
+        "The Windows npm install was restored after Ubuntu checks."
+      ]
+    },
+    "ubuntu": {
+      "platform": "development WSL Ubuntu; WSL2; x64",
+      "runtime": { "node": "v24.18.0", "npm": "11.12.1", "python": "3.12.3" },
+      "dependencyInstall": "PASS: npm ci --ignore-scripts --engine-strict --cache .npm-cache; 100 packages, 0 vulnerabilities",
+      "commands": [
+        {
+          "command": "npm run validate",
+          "result": "PASS: format, lint, typecheck, build; 34 tests, 32 passed, 0 failed, 2 skipped"
+        },
+        {
+          "command": "npm run verify:installed",
+          "result": "PASS: package, discovery and capture; doctor direct/shim checks pass"
+        },
+        {
+          "command": "node tools/verify-accounting-fixtures.mjs",
+          "result": "PASS: 18 cases, 20 records; fixture SHA256 f2cedb916e0853d3587290065d6f87d98139596cc2e0af1faf123fcff2163efd"
+        },
+        {
+          "command": "python3 -B -m unittest discover -s test -p '*_test.py'",
+          "result": "PASS: 13 tests, 0 skipped"
+        },
+        {
+          "command": "node docs/qualification/g0/audit.mjs",
+          "result": "PASS: requirements 119/119; document integrity only"
+        },
+        {
+          "command": "python3 -B tools/verify-migration.py",
+          "result": "PASS: 45 issues, 2 MR archives, 17 comments, 38 parents, 47 blockers, 11 labels"
+        },
+        {
+          "command": "tomllib parse and model/reasoning-name checks for .codex/agents/*.toml",
+          "result": "PASS: all 7 TOML files"
+        }
+      ]
+    }
+  },
+  "acceptanceMatrix": [
+    {
+      "case": "Windows repository checks and installed package",
+      "status": "PASS",
+      "reason": "Full validation and installed-package verification passed on native Windows."
+    },
+    {
+      "case": "Ubuntu repository checks and installed package",
+      "status": "PASS",
+      "reason": "Full validation and installed-package verification passed in development WSL Ubuntu."
+    },
+    {
+      "case": "Migration source reconciliation",
+      "status": "PASS",
+      "reason": "Offline integrity verifier reconciled all recorded archive counts with no errors on both platforms."
+    },
+    {
+      "case": "Fixture and G0 document integrity",
+      "status": "PASS",
+      "reason": "Fixture verifier and G0 audit passed on both platforms; these checks do not execute product acceptance."
+    },
+    {
+      "case": "Seven agent TOML files parse and model settings",
+      "status": "PASS",
+      "reason": "All seven files parsed and model/reasoning values passed the asserted checks on both platforms."
+    },
+    {
+      "case": "Other native Linux, protected work distro/container, disposable Docker generation and live migration",
+      "status": "NOT EXECUTED",
+      "reason": "Outside the assigned target and explicitly excluded from this migration validation."
+    },
+    {
+      "case": "Product acceptance families / live product qualification",
+      "status": "NOT APPLICABLE",
+      "reason": "This candidate migrates repository records; no product requalification is claimed."
+    }
+  ],
+  "skips": {
+    "windows": [
+      "Linux mount boundary test",
+      "Python startup-hook discovery test",
+      "POSIX signal forwarding test"
+    ],
+    "ubuntu": [
+      "Linux mount boundary test: /proc/sys bind mount unavailable in this environment; reserved for Docker qualification",
+      "Windows npm shim test"
+    ]
+  },
+  "cleanup": {
+    "temporaryPackageTests": "Harness-managed temporary package directories removed by the checks.",
+    "npmCache": "Workspace-local .npm-cache retained privately outside Git; not included in evidence.",
+    "disposableTargets": "None created or used.",
+    "remoteWrites": "None."
+  },
+  "review": "Observed check outcomes only; final acceptance judgment and any complex capability decisions belong to the Astra spec/gate reviewers."
+}

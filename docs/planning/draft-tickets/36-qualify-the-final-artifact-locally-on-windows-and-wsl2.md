@@ -1,9 +1,9 @@
 # CT-36: Qualify the final artifact locally on Windows and WSL2
 
-**Status:** Published as [GitLab #43](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/43). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #43](https://github.com/kanakamedala-rajesh/codex-tandem/issues/43). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Qualification / gate review
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Execute the final applicable acceptance matrix on both local platforms using the
 
 ## Blocked by
 
-CT-29 ([GitLab #36](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/36)), CT-35 ([GitLab #42](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/42)).
+CT-29 ([GitHub #36](https://github.com/kanakamedala-rajesh/codex-tandem/issues/36)), CT-35 ([GitHub #42](https://github.com/kanakamedala-rajesh/codex-tandem/issues/42)).
 
 - [CT-35](35-prepare-a-reproducible-release-package-and-notices.md) — Prepare a reproducible release package and notices
 

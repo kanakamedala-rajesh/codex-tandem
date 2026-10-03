@@ -14,10 +14,19 @@ document copies in `requirements/exports/`.
 
 ## Implementation planning
 
-The approved spec and 38 implementation tasks are published in GitLab.
-The [central G0–G4 tracker](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/1) links the five gate Issues,
-each with native child Tasks. The [publication mapping](planning/gitlab-map.json)
-records the exact issue IDs. Product acceptance tests remain NOT EXECUTED.
+The approved spec and 38 implementation tickets are mapped to GitHub Issues.
+The [central G0–G4 tracker](https://github.com/kanakamedala-rajesh/codex-tandem/issues/1)
+links the five gates and their implementation issues.
+The [active tracker map](planning/tracker-map.json) records exact GitHub IDs,
+hierarchy, blockers and source provenance. Product acceptance-test families retain
+their recorded qualification limits; importing a ticket does not execute its tests.
+The [GitLab map](planning/gitlab-map.json) and earlier qualification links remain
+historical evidence. The user retains migration merge, publication and cutover.
+
+The [migration record](migration/README.md) indexes source preservation,
+destination representations and reconciliation evidence. Historical merged MRs
+are archived issues [#46](https://github.com/kanakamedala-rajesh/codex-tandem/issues/46)
+and [#47](https://github.com/kanakamedala-rajesh/codex-tandem/issues/47), not native PRs.
 
 | Document                                                             | Purpose                                                                                |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |

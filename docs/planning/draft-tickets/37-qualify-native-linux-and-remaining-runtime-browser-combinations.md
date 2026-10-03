@@ -1,9 +1,9 @@
 # CT-37: Qualify native Linux and remaining runtime/browser combinations
 
-**Status:** Published as [GitLab #44](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/44). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #44](https://github.com/kanakamedala-rajesh/codex-tandem/issues/44). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Qualification / gate review
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Complete required native Linux and supported-version evidence beyond the local W
 
 ## Blocked by
 
-CT-35 ([GitLab #42](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/42)).
+CT-35 ([GitHub #42](https://github.com/kanakamedala-rajesh/codex-tandem/issues/42)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

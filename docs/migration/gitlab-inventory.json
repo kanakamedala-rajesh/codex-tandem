@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "capture_date": "2026-10-03",
+  "source": {
+    "host": "gitlab.com",
+    "project": "venkata-sudha/codex-tandem",
+    "project_id": 87154127,
+    "default_branch": "master",
+    "default_sha": "5330dbd397772b3b247f0e754c9516dce26b91a2",
+    "drift_check": {
+      "issues_start": 45,
+      "issues_end": 45,
+      "issue_content_equal": true,
+      "merge_requests_start": 2,
+      "merge_requests_end": 2,
+      "mr_content_equal": true,
+      "note": "Counts/content matched at start and end. Branch heads reconfirmed separately.",
+      "branch_heads_equal_at_capture_end": true
+    },
+    "authorized_source_operation": "Requested official GitLab project export; no content/configuration writes",
+    "end_branch_heads": {
+      "master": "5330dbd397772b3b247f0e754c9516dce26b91a2",
+      "agent/g0-compatibility": "0147e46aceda23c16f097c8876a978b558fc7f5c"
+    },
+    "source_content_mutations_by_capture_agent": 0,
+    "content_mutations": 0,
+    "export_requests": 1
+  },
+  "backup": {
+    "official_export": {
+      "status": "finished",
+      "file": "gitlab-export.tar.gz",
+      "bytes": 767814,
+      "sha256": "145C254B01E151C9D46143FEA6F3184798430D1AB947D9F4FBD3DE54A89ED6F0"
+    },
+    "git_bundle": {
+      "file": "gitlab.bundle",
+      "sha256": "1F90FDEC582AD5326FE1B308DD2667F861C892AAE6DCF34E1BBF45CA6543DC3F",
+      "verified": true,
+      "refs": [
+        "refs/heads/master",
+        "refs/heads/agent/g0-compatibility",
+        "refs/merge-requests/1/head",
+        "refs/merge-requests/1/merge",
+        "refs/merge-requests/2/head",
+        "refs/merge-requests/2/merge",
+        "HEAD"
+      ],
+      "includes_complete_history": true
+    },
+    "canonical_files": {
+      "issues": "issues.json",
+      "labels": "labels.json",
+      "merge_requests": "merge_requests.json",
+      "issue_notes_count": 45
+    },
+    "private_backup_location": "Restricted local storage outside the repository; exact path provided in delivery handoff",
+    "official_export_archive_entries": 27,
+    "archive_tags_on_github": {
+      "archive/gitlab/mr-1-merge": "39d5054d4f395beb0e2b123a02c585d963c17cfb",
+      "archive/gitlab/mr-2-merge": "b723b41dff78030c60f402360c605a4c2d7341d7"
+    }
+  },
+  "issues": {
+    "total": 45,
+    "open": 36,
+    "closed": 9,
+    "user_notes": 17,
+    "system_notes": 427,
+    "total_notes": 444
+  },
+  "merge_requests": {
+    "total": 2,
+    "iids": [2, 1],
+    "all_merged": 2,
+    "detail_files": "mr-{1,2}-{discussions,approvals,versions,commits,diffs}.json",
+    "merge_history": "Git bundle includes source MR head and merge refs"
+  },
+  "pipelines": {
+    "count": 8,
+    "jobs": 24,
+    "all_observed_jobs_success": true,
+    "exact_source_shas": [
+      "0147e46aceda23c16f097c8876a978b558fc7f5c",
+      "0299de5c52911c0c50c796ae1a40fbf03ca9447c",
+      "5330dbd397772b3b247f0e754c9516dce26b91a2",
+      "6969d659e67ea6d7e9c6edfd60717ebdcbbd0110",
+      "810401cd1c5be48eb32391a72a9e08f84b05a123",
+      "e4d7942c264c091effe45604bf10217ef5a42eef",
+      "ea83ac885a3ecdf52e27daed76c277db53c9a0ad",
+      "ff3b267eed77938039fb8d1527532eac533b1c27"
+    ],
+    "trace_artifact_entries": 24,
+    "trace_logs_downloaded": false,
+    "other_artifacts_downloaded": false,
+    "pipeline_ids": [
+      2908553391, 2908542094, 2908503228, 2908485495, 2908478014, 2908467785,
+      2907173779, 2906910689
+    ],
+    "trace_logs_policy": "Retain source logs in GitLab by user decision"
+  },
+  "other_inventory": {
+    "project_events": 92,
+    "snippets": 0,
+    "milestones": 0,
+    "releases": 0,
+    "wiki_pages": 0,
+    "protected_branches": 1,
+    "environments": 0,
+    "pipeline_schedules": 0,
+    "packages": 0,
+    "container_repositories": 0,
+    "boards": 0,
+    "effective_members": 1,
+    "pages": {
+      "domain_present": true,
+      "deployments": 0
+    },
+    "tags": 0,
+    "branches": ["master", "agent/g0-compatibility"],
+    "lfs_objects": 0,
+    "submodules": 0,
+    "historical_git_objects": {
+      "unique_objects": 421,
+      "blobs": 278,
+      "largest_blob_bytes": 120883,
+      "blobs_at_least_100MB": 0
+    },
+    "deploy_keys": 0,
+    "pipeline_triggers": 0,
+    "integrations": [
+      {
+        "id": 140500075,
+        "slug": "jira-cloud-app",
+        "active": true,
+        "push_events": true,
+        "merge_requests_events": true,
+        "linked_service_count": 0,
+        "deployment_gating": null,
+        "disposition": "Configuration metadata preserved; no linked Jira service reported. GitHub connection is not configured or claimed."
+      }
+    ]
+  },
+  "omissions": [
+    "Owner explicitly selected metadata only and retention of all 24 original CI job logs in GitLab. No job log payload was downloaded or uploaded; no additional artifact-file metadata was reported."
+  ],
+  "sensitive_metadata": {
+    "triggers": "Safe metadata read: zero triggers; no token fields output or persisted.",
+    "reason": "Secret-bearing raw collection was rejected. Safe metadata-only queries completed: project/group variables, hooks, triggers and deploy keys are empty. No variable values, trigger tokens or other credentials were output or saved.",
+    "traces": "User decision: retain logs in GitLab; do not download. 24 job metadata entries report trace artifacts.",
+    "ci_variable_metadata": {
+      "project_level": 0,
+      "namespace": "venkata-sudha",
+      "namespace_kind": "group",
+      "namespace_parent": null,
+      "namespace_level": 0,
+      "selected_values": false
+    },
+    "hooks": 0,
+    "deploy_keys": 0,
+    "integrations": "One active jira-cloud-app record, zero linked service IDs; metadata only."
+  },
+  "unresolved": [],
+  "commit_comments": {
+    "commits_on_default_branch": 20,
+    "additional_MR_merge_commits": 2,
+    "comments": 17,
+    "all_22_repository_history_commits_queried": true
+  },
+  "hierarchy": {
+    "source": "GitLab GraphQL native WorkItemWidgetHierarchy",
+    "central_tracker_1_children": [],
+    "spec_2_children": [],
+    "gates": {
+      "3": [8, 9, 10, 11, 12, 13, 14, 15],
+      "4": [16, 17, 18, 19, 20, 21, 22],
+      "5": [23, 24, 25, 26, 27, 28],
+      "6": [29, 30, 31, 32, 33, 34, 35, 36],
+      "7": [37, 38, 39, 40, 41, 42, 43, 44, 45]
+    },
+    "native_gate_child_task_count": 38
+  }
+}

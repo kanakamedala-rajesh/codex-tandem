@@ -1,9 +1,9 @@
 # CT-25: Run one recoverable collector without delaying launch
 
-**Status:** Published as [GitLab #32](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/32). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #32](https://github.com/kanakamedala-rajesh/codex-tandem/issues/32). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Start or reconnect a separately owned collector while Codex launches immediately
 
 ## Blocked by
 
-CT-17 ([GitLab #24](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/24)), CT-22 ([GitLab #29](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/29)).
+CT-17 ([GitHub #24](https://github.com/kanakamedala-rajesh/codex-tandem/issues/24)), CT-22 ([GitHub #29](https://github.com/kanakamedala-rajesh/codex-tandem/issues/29)).
 
 - [CT-22](22-read-rollout-sources-incrementally-with-bounded-decoding.md) — Read rollout sources incrementally with bounded decoding
 

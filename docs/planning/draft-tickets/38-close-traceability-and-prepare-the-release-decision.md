@@ -1,9 +1,9 @@
 # CT-38: Close traceability and prepare the release decision
 
-**Status:** Published as [GitLab #45](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/45). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #45](https://github.com/kanakamedala-rajesh/codex-tandem/issues/45). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Qualification / gate review
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Deliver a complete requirements-to-evidence record and an explicit release-ready
 
 ## Blocked by
 
-CT-36 ([GitLab #43](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/43)), CT-37 ([GitLab #44](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/44)).
+CT-36 ([GitHub #43](https://github.com/kanakamedala-rajesh/codex-tandem/issues/43)), CT-37 ([GitHub #44](https://github.com/kanakamedala-rajesh/codex-tandem/issues/44)).
 
 - [CT-37](37-qualify-native-linux-and-remaining-runtime-browser-combinations.md) — Qualify native Linux and remaining runtime/browser combinations
 

@@ -1,9 +1,9 @@
 # CT-28: Persist accessible presentation and consistent report filters
 
-**Status:** Published as [GitLab #35](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/35). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #35](https://github.com/kanakamedala-rajesh/codex-tandem/issues/35). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Provide keyboard-accessible filters and persistent appearance/session labels wit
 
 ## Blocked by
 
-CT-27 ([GitLab #34](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/34)).
+CT-27 ([GitHub #34](https://github.com/kanakamedala-rajesh/codex-tandem/issues/34)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

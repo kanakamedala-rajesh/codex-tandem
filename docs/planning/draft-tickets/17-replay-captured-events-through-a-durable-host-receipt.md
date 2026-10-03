@@ -1,9 +1,9 @@
 # CT-17: Replay captured events through a durable host receipt
 
-**Status:** Published as [GitLab #24](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/24). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #24](https://github.com/kanakamedala-rajesh/codex-tandem/issues/24). Ready for agent; unresolved blockers apply.
 **Gate:** G2
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #5](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #5](https://github.com/kanakamedala-rajesh/codex-tandem/issues/5). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Recover event backlogs without losing or duplicating committed effects, through 
 
 ## Blocked by
 
-CT-16 ([GitLab #23](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/23)).
+CT-16 ([GitHub #23](https://github.com/kanakamedala-rajesh/codex-tandem/issues/23)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

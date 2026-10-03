@@ -1,9 +1,9 @@
 # CT-12: Stop only freshly verified conflicting processes
 
-**Status:** Published as [GitLab #19](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/19). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #19](https://github.com/kanakamedala-rajesh/codex-tandem/issues/19). Ready for agent; unresolved blockers apply.
 **Gate:** G1
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #4](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/4). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #4](https://github.com/kanakamedala-rajesh/codex-tandem/issues/4). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Offer scoped graceful shutdown and separately approved force termination without
 
 ## Blocked by
 
-CT-11 ([GitLab #18](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/18)).
+CT-11 ([GitHub #18](https://github.com/kanakamedala-rajesh/codex-tandem/issues/18)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

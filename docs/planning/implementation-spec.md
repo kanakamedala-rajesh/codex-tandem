@@ -1,6 +1,6 @@
 # Codex Tandem implementation specification
 
-**Status:** Approved and published as [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2). Central tracker: [GitLab #1](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/1). Product acceptance tests remain NOT EXECUTED.
+**Status:** Approved and published as [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2). Central tracker: [GitHub #1](https://github.com/kanakamedala-rajesh/codex-tandem/issues/1). Product acceptance tests remain NOT EXECUTED.
 
 **Review order:** Read this specification, then the [ticket overview](ticket-plan.md). Each ticket links to a separate task with acceptance criteria and evidence requirements. The [traceability matrix](traceability.md) maps all 119 requirements and all 45 acceptance-test families.
 
@@ -164,7 +164,7 @@ The traceability matrix lists test families per requirement and ticket. A ticket
 
 Retain all baseline exclusions: automatic account rotation/quota avoidance, concurrent different identities in one credential scope, cross-device credential sync, remote Docker/Kubernetes/SSH targets, native desktop shells, custom OAuth/token refresh, provider proxies, cloud-wide billing claims, mandatory boot services, and redesign of Codex. Windows-to-WSL-to-Docker chaining is not an MVP requirement. macOS and ARM64 remain future qualification targets.
 
-Also exclude wrapping the Go executable, requiring its archive/toolchain, a new manual attribution editor, automatic background pricing requests, and a mandatory dashboard visual redesign. This review phase excludes product implementation, pushes, GitLab issue/sub-issue creation and package publication.
+Also exclude wrapping the Go executable, requiring its archive/toolchain, a new manual attribution editor, automatic background pricing requests, and a mandatory dashboard visual redesign. This review phase excludes product implementation, pushes, issue/sub-issue creation and package publication.
 
 ## Further Notes
 

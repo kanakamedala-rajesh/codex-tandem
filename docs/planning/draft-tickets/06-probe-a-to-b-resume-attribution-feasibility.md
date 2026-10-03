@@ -1,9 +1,9 @@
 # CT-06: Probe A-to-B resume attribution feasibility
 
-**Status:** Published as [GitLab #13](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/13). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #13](https://github.com/kanakamedala-rajesh/codex-tandem/issues/13). Ready for agent; unresolved blockers apply.
 **Gate:** G0
 **Kind:** Bounded feasibility experiment
-**Parent gate:** [GitLab #3](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #3](https://github.com/kanakamedala-rajesh/codex-tandem/issues/3). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Demonstrate whether the installed Codex can expose trustworthy launch/attempt bo
 
 ## Blocked by
 
-CT-04 ([GitLab #11](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/11)), CT-05 ([GitLab #12](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/12)).
+CT-04 ([GitHub #11](https://github.com/kanakamedala-rajesh/codex-tandem/issues/11)), CT-05 ([GitHub #12](https://github.com/kanakamedala-rajesh/codex-tandem/issues/12)).
 
 - [CT-05](05-qualify-a-minimal-metadata-bridge-on-the-legacy-target.md) — Qualify a minimal metadata bridge on the legacy target
 

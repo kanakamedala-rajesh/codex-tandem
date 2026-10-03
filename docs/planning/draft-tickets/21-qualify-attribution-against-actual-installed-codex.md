@@ -1,9 +1,9 @@
 # CT-21: Qualify attribution against actual installed Codex
 
-**Status:** Published as [GitLab #28](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/28). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #28](https://github.com/kanakamedala-rajesh/codex-tandem/issues/28). Ready for agent; unresolved blockers apply.
 **Gate:** G2
 **Kind:** Qualification / gate review
-**Parent gate:** [GitLab #5](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #5](https://github.com/kanakamedala-rajesh/codex-tandem/issues/5). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Publish the per-version/per-target capability matrix and G2 attribution qualific
 
 ## Blocked by
 
-CT-15 ([GitLab #22](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/22)), CT-20 ([GitLab #27](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/27)).
+CT-15 ([GitHub #22](https://github.com/kanakamedala-rajesh/codex-tandem/issues/22)), CT-20 ([GitHub #27](https://github.com/kanakamedala-rajesh/codex-tandem/issues/27)).
 
 - [CT-20](20-expose-unknown-imported-and-conflicting-attribution.md) — Expose unknown, imported and conflicting attribution
 

@@ -1,9 +1,9 @@
 # CT-33: Remove managed integration safely
 
-**Status:** Published as [GitLab #40](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/40). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #40](https://github.com/kanakamedala-rajesh/codex-tandem/issues/40). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Uninstall Tandem integration without erasing user changes, credentials or analyt
 
 ## Blocked by
 
-CT-31 ([GitLab #38](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/38)), CT-32 ([GitLab #39](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/39)).
+CT-31 ([GitHub #38](https://github.com/kanakamedala-rajesh/codex-tandem/issues/38)), CT-32 ([GitHub #39](https://github.com/kanakamedala-rajesh/codex-tandem/issues/39)).
 
 - [CT-32](32-diagnose-and-bound-retained-operational-data.md) — Diagnose and bound retained operational data
 

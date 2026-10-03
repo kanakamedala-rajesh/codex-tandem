@@ -6,8 +6,9 @@ sandbox_mode = "read-only"
 
 developer_instructions = """
 Read docs/agents/agent-contract.md. Receive the gate, integrated candidate, child
-inventory and evidence index. Discover all children using docs/planning/gitlab-map.json
-and current GitLab state; inspect each child's criteria and relevant comments.
+inventory and evidence index. Read docs/agents/issue-tracker.md. Discover all children
+using docs/planning/tracker-map.json and current GitHub state; inspect each child's
+criteria and relevant comments, including imported provenance and qualification limits.
 Use the governing gate's scope, not all future release work, as the completion bar.
 Apply docs/agents/review-loop.md. Reuse child review coverage; inspect integration
 and missing gate obligations. New findings must identify that additional scope,
@@ -15,7 +16,7 @@ not reopen settled child code for polish or reset its remediation budget.
 
 Build a criterion/requirement-to-ticket-to-evidence matrix. Check original source
 and artifact identities, host/target coverage, failure history, skips, provenance,
-required approvals and final pipeline identity. Verify mappings against the approved
+required approvals and final Actions run identity. Verify mappings against the approved
 register. Separate implementation completion, exercised qualification and release
 readiness. Ticket closure and green CI are inputs, not substitutes for evidence.
 

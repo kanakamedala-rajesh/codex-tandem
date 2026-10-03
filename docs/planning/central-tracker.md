@@ -3,22 +3,23 @@
 ## Purpose
 
 Track the complete Codex Tandem implementation through G0–G4. This is the central
-coordination ticket; it links the five gate Issues, each owning native child
-Tasks for implementation and qualification. The user approved this mapping
-because the namespace supports Issue → Task without an available Epic type.
+coordination ticket; it links the five gate issues and their implementation and
+qualification issues. The active mapping in `tracker-map.json` preserves CT
+identifiers, gate membership and source provenance from the approved GitLab plan.
+Explicit links preserve hierarchy where native GitHub sub-issues are unverified.
 
 The reviewed plan contains 38 tickets covering all 119 requirements and all 45
 acceptance-test families. CT identifiers below are planning identifiers, not
-GitLab issue numbers. Creating this tracker does not start product implementation
+GitHub issue numbers. Creating this tracker does not start product implementation
 or authorize package publication.
 
 ## Gate progress and linked issues
 
-- [ ] G0 — Compatibility and feasibility. [GitLab #3](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3).
-- [ ] G1 — Safe identity launcher. [GitLab #4](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/4).
-- [ ] G2 — Attribution backbone. [GitLab #5](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5).
-- [ ] G3 — Accounting and dashboard. [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6).
-- [ ] G4 — Hardening, migration and release qualification. [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7).
+- [ ] G0 — Compatibility and feasibility. [GitHub #3](https://github.com/kanakamedala-rajesh/codex-tandem/issues/3).
+- [ ] G1 — Safe identity launcher. [GitHub #4](https://github.com/kanakamedala-rajesh/codex-tandem/issues/4).
+- [ ] G2 — Attribution backbone. [GitHub #5](https://github.com/kanakamedala-rajesh/codex-tandem/issues/5).
+- [ ] G3 — Accounting and dashboard. [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6).
+- [ ] G4 — Hardening, migration and release qualification. [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7).
 
 | Gate | Planned tickets | Required outcome                                                                                                                                      | Qualification focus                                                           |
 | ---- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
@@ -64,9 +65,9 @@ conversation content out of Git, issue bodies and exports.
 
 ## Work ordering and tracking rules
 
-1. Keep the G0–G4 linked gate Issues and their native child Tasks indexed here.
+1. Keep the G0–G4 linked gate issues and their implementation issues indexed here.
 2. Publish implementation tickets under the relevant gate in dependency order,
-   retaining a mapping from CT identifiers to GitLab issue IDs.
+   retaining a mapping from CT identifiers to GitHub issue IDs in `tracker-map.json`.
 3. Every implementation ticket includes requirement IDs, acceptance-test IDs,
    explicit blockers, acceptance criteria and required platform evidence.
 4. Use ticket blockers to select work. Gate membership alone does not serialize
@@ -104,13 +105,14 @@ The repository's approved requirements baseline remains authoritative:
 The reviewed local drafts are `docs/planning/implementation-spec.md`,
 `docs/planning/ticket-plan.md`, `docs/planning/traceability.md` and the individual
 CT ticket drafts. Accepted clarifications are recorded in
-`docs/agents/planning-decisions.md`. These local planning files have not been
-pushed; this tracker is self-contained and does not imply they are remotely available.
+`docs/agents/planning-decisions.md`. Use the mapped remote issues and their comments
+for current states and qualification decisions; these files retain approved scope.
 
 ## Publication status
 
-Approved specification: [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2). All five gate Issues and 38 native
-child Tasks are published. Every task includes requirement IDs, acceptance-test
-IDs, blockers and required verification evidence. Native blocking links are
-unavailable on this license; explicit issue references and blocked labels apply.
-Product acceptance tests remain NOT EXECUTED.
+Approved specification and all five gates plus 38 implementation issues are indexed
+in `tracker-map.json`. Every ticket retains requirement IDs, acceptance-test IDs,
+blockers and required verification evidence. Explicit issue references and blocked
+labels preserve prerequisites; native dependencies require destination verification.
+Migration does not change qualification results or close product issues. The user
+owns the migration PR merge, public visibility and GitLab deprecation.

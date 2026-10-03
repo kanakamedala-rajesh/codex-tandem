@@ -1,9 +1,9 @@
 # CT-22: Read rollout sources incrementally with bounded decoding
 
-**Status:** Published as [GitLab #29](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/29). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #29](https://github.com/kanakamedala-rajesh/codex-tandem/issues/29). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Process registered synthetic/read-only rollout sources incrementally, recovering
 
 ## Blocked by
 
-CT-01 ([GitLab #8](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/8)), CT-02 ([GitLab #9](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/9)).
+CT-01 ([GitHub #8](https://github.com/kanakamedala-rajesh/codex-tandem/issues/8)), CT-02 ([GitHub #9](https://github.com/kanakamedala-rajesh/codex-tandem/issues/9)).
 
 - [CT-02](02-install-a-packed-cli-and-run-host-capability-diagnostics.md) — Install a packed CLI and run host capability diagnostics
 

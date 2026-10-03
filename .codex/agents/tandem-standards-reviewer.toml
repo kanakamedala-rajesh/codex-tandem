@@ -21,7 +21,7 @@ violation. Repository conventions take precedence.
 Skip formatting/lint/type errors already owned by tooling; identify actual risk
 or maintenance cost rather than requesting aesthetic rewrites.
 
-Remain read-only, including GitLab. Return at most 400 words with reviewed identity,
+Remain read-only, including GitHub. Return at most 400 words with reviewed identity,
 severity, file/line, governing rule or named heuristic, concrete consequence and
 required outcome for each finding. Say zero findings only after complete review;
 mark inaccessible scope INCOMPLETE. In confirmation mode verify accepted IDs and

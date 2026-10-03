@@ -1,9 +1,9 @@
 # CT-16: Capture bounded lifecycle metadata without altering Codex
 
-**Status:** Published as [GitLab #23](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/23). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #23](https://github.com/kanakamedala-rajesh/codex-tandem/issues/23). Ready for agent; unresolved blockers apply.
 **Gate:** G2
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #5](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #5](https://github.com/kanakamedala-rajesh/codex-tandem/issues/5). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Install previewed minimal hooks that publish sanitized, versioned metadata durab
 
 ## Blocked by
 
-CT-14 ([GitLab #21](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/21)).
+CT-14 ([GitHub #21](https://github.com/kanakamedala-rajesh/codex-tandem/issues/21)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

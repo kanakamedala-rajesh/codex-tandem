@@ -1,9 +1,9 @@
 # CT-32: Diagnose and bound retained operational data
 
-**Status:** Published as [GitLab #39](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/39). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #39](https://github.com/kanakamedala-rajesh/codex-tandem/issues/39). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Explain runtime/source/target/recovery health through redacted diagnostics while
 
 ## Blocked by
 
-CT-25 ([GitLab #32](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/32)).
+CT-25 ([GitHub #32](https://github.com/kanakamedala-rajesh/codex-tandem/issues/32)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

@@ -1,9 +1,9 @@
 # CT-09: Manage stable profiles through isolated login
 
-**Status:** Published as [GitLab #16](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/16). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #16](https://github.com/kanakamedala-rajesh/codex-tandem/issues/16). Ready for agent; unresolved blockers apply.
 **Gate:** G1
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #4](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/4). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #4](https://github.com/kanakamedala-rajesh/codex-tandem/issues/4). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Add, inspect, rename, reauthenticate and remove profiles while preserving valid 
 
 ## Blocked by
 
-CT-08 ([GitLab #15](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/15)).
+CT-08 ([GitHub #15](https://github.com/kanakamedala-rajesh/codex-tandem/issues/15)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

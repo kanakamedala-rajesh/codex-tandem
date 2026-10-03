@@ -1,9 +1,9 @@
 # CT-31: Back up, restore and upgrade with recoverable schema changes
 
-**Status:** Published as [GitLab #38](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/38). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #38](https://github.com/kanakamedala-rajesh/codex-tandem/issues/38). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Create consistent non-secret analytics backups and recover safely through restor
 
 ## Blocked by
 
-CT-30 ([GitLab #37](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/37)).
+CT-30 ([GitHub #37](https://github.com/kanakamedala-rajesh/codex-tandem/issues/37)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

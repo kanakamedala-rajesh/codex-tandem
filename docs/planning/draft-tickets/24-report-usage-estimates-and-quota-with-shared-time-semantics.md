@@ -1,9 +1,9 @@
 # CT-24: Report usage, estimates and quota with shared time semantics
 
-**Status:** Published as [GitLab #31](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/31). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #31](https://github.com/kanakamedala-rajesh/codex-tandem/issues/31). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Expose CLI reports and safe exports with identity-correct quotas and transparent
 
 ## Blocked by
 
-CT-23 ([GitLab #30](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/30)).
+CT-23 ([GitHub #30](https://github.com/kanakamedala-rajesh/codex-tandem/issues/30)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

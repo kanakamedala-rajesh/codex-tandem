@@ -176,3 +176,30 @@ the user's ownership confirmation is the recorded basis for this project's
 authorized donor work, not a claim that the archive includes an MIT license.
 
 All application acceptance tests remain NOT EXECUTED.
+
+## Accepted GitHub migration: October 3, 2026
+
+The user approved migration to the private personal repository
+[kanakamedala-rajesh/codex-tandem](https://github.com/kanakamedala-rajesh/codex-tandem)
+with `master` retained as the default branch. GitHub issues and Actions are the
+prepared destination workflow. Use `docs/planning/tracker-map.json` for active
+GitHub identities and preserve `gitlab-map.json` plus the original GitLab records
+as historical provenance. CT identifiers, requirements, qualification limits and
+the bounded review policy remain unchanged.
+
+The accepted non-Enterprise route copies Git history and imports issues/comments
+with original attribution/date in their text. Historical merged MRs and pipelines
+have archive representations; new GitHub timestamps, PRs and Actions runs cannot
+replace their original identities. Migration is not product implementation and
+must preserve imported issue states without closing-keyword side effects.
+
+The user will merge the migration PR, make GitHub public and later deprecate
+GitLab. Keep GitLab CI until that cutover and avoid dual tracker writes. Private
+repository protection returned HTTP 403 because the destination requires an
+eligible plan or public visibility; required-check enforcement remains unavailable
+until the owner enables it. The prepared Actions workflow and manual checks do
+not establish enforced branch protection or a completed cutover.
+
+Migration acceptance still requires the verified map, reconciliation, exact
+candidate Actions evidence and separate native Windows/development Ubuntu checks.
+Earlier planning/discovery entries above remain historical source records.

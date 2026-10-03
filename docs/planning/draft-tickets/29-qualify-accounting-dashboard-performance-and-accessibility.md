@@ -1,9 +1,9 @@
 # CT-29: Qualify accounting, dashboard performance and accessibility
 
-**Status:** Published as [GitLab #36](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/36). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #36](https://github.com/kanakamedala-rajesh/codex-tandem/issues/36). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Qualification / gate review
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Demonstrate G3 accounting/report correctness and resource budgets under collecti
 
 ## Blocked by
 
-CT-28 ([GitLab #35](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/35)).
+CT-28 ([GitHub #35](https://github.com/kanakamedala-rajesh/codex-tandem/issues/35)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

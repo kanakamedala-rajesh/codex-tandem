@@ -1,9 +1,9 @@
 # CT-08: Review the compatibility gate
 
-**Status:** Published as [GitLab #15](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/15). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #15](https://github.com/kanakamedala-rajesh/codex-tandem/issues/15). Ready for agent; unresolved blockers apply.
 **Gate:** G0
 **Kind:** Qualification / gate review
-**Parent gate:** [GitLab #3](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #3](https://github.com/kanakamedala-rajesh/codex-tandem/issues/3). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Publish an evidence-backed G0 decision identifying which guarantees are feasible
 
 ## Blocked by
 
-CT-01 ([GitLab #8](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/8)), CT-07 ([GitLab #14](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/14)).
+CT-01 ([GitHub #8](https://github.com/kanakamedala-rajesh/codex-tandem/issues/8)), CT-07 ([GitHub #14](https://github.com/kanakamedala-rajesh/codex-tandem/issues/14)).
 
 - [CT-07](07-qualify-initial-package-and-launch-behavior-locally.md) — Qualify initial package and launch behavior locally
 

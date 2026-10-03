@@ -1,9 +1,9 @@
 # CT-27: Browse sessions, attempts and child identity contributions
 
-**Status:** Published as [GitLab #34](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/34). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #34](https://github.com/kanakamedala-rajesh/codex-tandem/issues/34). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Show sessions with mixed identities, expandable attempts/children and honest evi
 
 ## Blocked by
 
-CT-21 ([GitLab #28](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/28)), CT-26 ([GitLab #33](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/33)).
+CT-21 ([GitHub #28](https://github.com/kanakamedala-rajesh/codex-tandem/issues/28)), CT-26 ([GitHub #33](https://github.com/kanakamedala-rajesh/codex-tandem/issues/33)).
 
 - [CT-26](26-serve-authenticated-local-reports-through-a-restricted-api.md) — Serve authenticated local reports through a restricted API
 

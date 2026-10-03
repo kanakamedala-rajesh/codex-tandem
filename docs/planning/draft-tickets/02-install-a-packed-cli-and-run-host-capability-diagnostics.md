@@ -1,9 +1,9 @@
 # CT-02: Install a packed CLI and run host capability diagnostics
 
-**Status:** Published as [GitLab #9](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/9). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #9](https://github.com/kanakamedala-rajesh/codex-tandem/issues/9). Ready for agent; unresolved blockers apply.
 **Gate:** G0
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #3](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #3](https://github.com/kanakamedala-rajesh/codex-tandem/issues/3). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 

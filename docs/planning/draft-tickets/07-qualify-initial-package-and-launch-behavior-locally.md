@@ -1,9 +1,9 @@
 # CT-07: Qualify initial package and launch behavior locally
 
-**Status:** Published as [GitLab #14](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/14). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #14](https://github.com/kanakamedala-rajesh/codex-tandem/issues/14). Ready for agent; unresolved blockers apply.
 **Gate:** G0
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #3](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #3](https://github.com/kanakamedala-rajesh/codex-tandem/issues/3). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Establish the initial Windows and WSL2 compatibility evidence before committing 
 
 ## Blocked by
 
-CT-06 ([GitLab #13](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/13)).
+CT-06 ([GitHub #13](https://github.com/kanakamedala-rajesh/codex-tandem/issues/13)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

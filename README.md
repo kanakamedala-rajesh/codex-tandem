@@ -1,5 +1,11 @@
 # Codex Tandem
 
+Repository and tracker:
+[kanakamedala-rajesh/codex-tandem](https://github.com/kanakamedala-rajesh/codex-tandem).
+Clone with `git clone https://github.com/kanakamedala-rajesh/codex-tandem.git`;
+the default branch remains `master`. The repository is private during migration;
+publication and GitLab deprecation follow the user's verified cutover.
+
 Requires trusted host Node >=22.15.0, including built-in SQLite and Zstandard.
 Newer compatible Node majors are allowed; use a maintained, patched release.
 

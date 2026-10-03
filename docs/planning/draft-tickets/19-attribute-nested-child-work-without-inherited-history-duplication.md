@@ -1,9 +1,9 @@
 # CT-19: Attribute nested child work without inherited-history duplication
 
-**Status:** Published as [GitLab #26](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/26). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #26](https://github.com/kanakamedala-rajesh/codex-tandem/issues/26). Ready for agent; unresolved blockers apply.
 **Gate:** G2
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #5](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #5](https://github.com/kanakamedala-rajesh/codex-tandem/issues/5). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Resolve parent/child observations using verified execution relationships while c
 
 ## Blocked by
 
-CT-18 ([GitLab #25](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/25)).
+CT-18 ([GitHub #25](https://github.com/kanakamedala-rajesh/codex-tandem/issues/25)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

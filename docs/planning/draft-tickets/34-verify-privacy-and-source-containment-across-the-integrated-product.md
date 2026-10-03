@@ -1,9 +1,9 @@
 # CT-34: Verify privacy and source containment across the integrated product
 
-**Status:** Published as [GitLab #41](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/41). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #41](https://github.com/kanakamedala-rajesh/codex-tandem/issues/41). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Demonstrate that secrets/content and untrusted paths cannot escape through captu
 
 ## Blocked by
 
-CT-33 ([GitLab #40](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/40)).
+CT-33 ([GitHub #40](https://github.com/kanakamedala-rajesh/codex-tandem/issues/40)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

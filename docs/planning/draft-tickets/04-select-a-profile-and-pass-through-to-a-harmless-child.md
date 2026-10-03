@@ -1,9 +1,9 @@
 # CT-04: Select a profile and pass through to a harmless child
 
-**Status:** Published as [GitLab #11](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/11). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #11](https://github.com/kanakamedala-rajesh/codex-tandem/issues/11). Ready for agent; unresolved blockers apply.
 **Gate:** G0
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #3](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #3](https://github.com/kanakamedala-rajesh/codex-tandem/issues/3). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Demonstrate selector behavior and argument/terminal transparency using disposabl
 
 ## Blocked by
 
-CT-02 ([GitLab #9](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/9)).
+CT-02 ([GitHub #9](https://github.com/kanakamedala-rajesh/codex-tandem/issues/9)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

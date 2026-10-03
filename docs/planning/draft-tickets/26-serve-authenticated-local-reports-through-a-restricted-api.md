@@ -1,9 +1,9 @@
 # CT-26: Serve authenticated local reports through a restricted API
 
-**Status:** Published as [GitLab #33](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/33). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #33](https://github.com/kanakamedala-rajesh/codex-tandem/issues/33). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Let an authenticated local browser read the same reports as the CLI while denyin
 
 ## Blocked by
 
-CT-24 ([GitLab #31](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/31)), CT-25 ([GitLab #32](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/32)).
+CT-24 ([GitHub #31](https://github.com/kanakamedala-rajesh/codex-tandem/issues/31)), CT-25 ([GitHub #32](https://github.com/kanakamedala-rajesh/codex-tandem/issues/32)).
 
 - [CT-25](25-run-one-recoverable-collector-without-delaying-launch.md) — Run one recoverable collector without delaying launch
 

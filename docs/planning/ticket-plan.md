@@ -1,7 +1,9 @@
 # Implementation ticket plan
 
-**Status:** Approved and published on October 2, 2026. Central [GitLab #1](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/1) links the five gate Issues; each gate owns its native child Tasks.
-The [GitLab mapping](gitlab-map.json) records all published IDs.
+**Status:** Approved and published on October 2, 2026. The central tracker links the five gate issues and their implementation issues.
+The [active tracker map](tracker-map.json) records GitHub IDs and original source provenance.
+Draft status lines retain their planning publication snapshot. Read the mapped
+issues and comments for current states, blockers and qualification decisions.
 
 Read the [implementation spec](implementation-spec.md) first.
 Every numbered item below links to its local task record with requirement IDs, test IDs,
@@ -10,7 +12,7 @@ covers all 119 requirements and all 45 test families.
 
 ## How to read the dependencies
 
-- CT identifiers remain stable planning identifiers mapped to GitLab IDs.
+- CT identifiers remain stable planning identifiers mapped to GitHub IDs.
 - "Blocked by" names actual prerequisites; numbering is a valid dependency order,
   not a requirement to do unrelated tasks serially.
 - Gate G0/G1/G2/G3/G4 identifies where a deliverable is assessed. Fixture-based CT-22
@@ -210,6 +212,8 @@ blocked. Independent fixture groundwork can continue; incomplete tests do not be
 
 ## Publication
 
-Specification: [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2). All 38 tasks are open. Native blocking links
-are unavailable on this license; each task lists the actual GitLab prerequisites.
+The specification and all 38 implementation issues are indexed in
+`tracker-map.json`; read current issue states and comments before selecting work.
+Each ticket lists actual mapped prerequisites; explicit links and blocked labels
+remain authoritative until native dependencies have been verified.
 Applicable local Windows and WSL2 validation remains mandatory.

@@ -1,9 +1,9 @@
 # CT-11: Activate credentials with refresh-safe crash recovery
 
-**Status:** Published as [GitLab #18](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/18). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #18](https://github.com/kanakamedala-rajesh/codex-tandem/issues/18). Ready for agent; unresolved blockers apply.
 **Gate:** G1
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #4](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/4). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #4](https://github.com/kanakamedala-rajesh/codex-tandem/issues/4). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Switch identities through a recoverable transaction that preserves the latest ma
 
 ## Blocked by
 
-CT-10 ([GitLab #17](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/17)).
+CT-10 ([GitHub #17](https://github.com/kanakamedala-rajesh/codex-tandem/issues/17)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

@@ -13,6 +13,7 @@ Before submitting changes, run:
 npm run validate
 npm run verify:installed
 node tools/verify-accounting-fixtures.mjs
+python3 -B -m unittest discover -s test -p '*_test.py'
 ```
 
 `validate` checks formatting, lint, TypeScript types, builds, then runs tests in
@@ -36,13 +37,34 @@ code and documentation are checked by default, including future qualification
 summaries. If evidence needs updating, create a new result tied to the new source
 and artifact hashes; never rewrite historical qualification to match new formatting.
 
-GitLab CI runs the same validation and installed-package checks in official Node
-22.15.0, maintained Node 22 and Node 24 Linux images on `saas-linux-small-amd64`.
-The floor job also enforces all transitive development-package engine requirements.
-Only the npm download cache is reused, keyed by lockfile and Node version;
-`node_modules` and compiled output are rebuilt. CI does not publish packages,
-deploy, use project secrets or replace Windows/WSL and real-target qualification.
-The fixed 22.15.0 job checks compatibility, not a recommendation to use an old patch.
+On Windows use `python` in place of `python3` for the Python harness checks.
+GitHub Actions runs the same validation contract in official Node 22.15.0,
+maintained Node 22 and Node 24 Bookworm containers on an Ubuntu runner. Python is
+installed explicitly. PRs targeting `master` and pushes to every branch run all
+three jobs, including migration branches. Required-check names are
+`validate (Node 22.15.0)`, `validate (Node 22)` and `validate (Node 24)`.
+PR runs validate the merge ref; push runs validate the branch SHA. Record the head,
+base and measured source SHA when using results as review evidence.
+
+The floor job enforces all transitive development-package engine requirements.
+Only npm downloads are cached, keyed by OS, actual Node runtime and lockfile;
+`node_modules` and compiled output are rebuilt. Actions have commit pins and
+read-only default permissions; checkout credentials are not persisted. Each run
+retains source/runtime/result metadata for 14 days. Logs remain in the run; version
+sanitized acceptance evidence separately for long-term interpretation. CI does not
+publish packages, deploy, use project secrets or replace Windows/WSL and actual
+target qualification. Actions additionally runs `python3 -B tools/verify-migration.py`
+to reconcile the committed migration records without network access or credentials.
+The fixed 22.15.0 job checks compatibility, not a
+recommendation to use an old patch. GitLab CI stays active until the user's cutover.
+
+Submit PRs to `master` in
+[kanakamedala-rajesh/codex-tandem](https://github.com/kanakamedala-rajesh/codex-tandem).
+Use the active [tracker map](docs/planning/tracker-map.json) for issue references.
+Migration PRs use ordinary issue links so imported product issues stay in their
+verified states. Merge, public visibility and GitLab deprecation remain user actions.
+Private-repository required-check enforcement depends on the destination plan;
+report unavailable protection explicitly and verify all three checks manually.
 
 Dependency upgrades should remain exact in `package.json` and `package-lock.json`.
 Verify engine compatibility at the floor, run both local environments, and inspect

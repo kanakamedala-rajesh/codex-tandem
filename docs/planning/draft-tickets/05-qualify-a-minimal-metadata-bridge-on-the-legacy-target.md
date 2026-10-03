@@ -1,9 +1,9 @@
 # CT-05: Qualify a minimal metadata bridge on the legacy target
 
-**Status:** Published as [GitLab #12](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/12). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #12](https://github.com/kanakamedala-rajesh/codex-tandem/issues/12). Ready for agent; unresolved blockers apply.
 **Gate:** G0
 **Kind:** Bounded feasibility experiment
-**Parent gate:** [GitLab #3](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #3](https://github.com/kanakamedala-rajesh/codex-tandem/issues/3). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Run a bounded capture experiment that emits sanitized durable metadata using onl
 
 ## Blocked by
 
-CT-03 ([GitLab #10](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/10)).
+CT-03 ([GitHub #10](https://github.com/kanakamedala-rajesh/codex-tandem/issues/10)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

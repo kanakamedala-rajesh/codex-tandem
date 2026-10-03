@@ -1,9 +1,9 @@
 # CT-35: Prepare a reproducible release package and notices
 
-**Status:** Published as [GitLab #42](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/42). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #42](https://github.com/kanakamedala-rajesh/codex-tandem/issues/42). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Produce the final inspected tarball and release metadata without publishing it.
 
 ## Blocked by
 
-CT-34 ([GitLab #41](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/41)).
+CT-34 ([GitHub #41](https://github.com/kanakamedala-rajesh/codex-tandem/issues/41)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

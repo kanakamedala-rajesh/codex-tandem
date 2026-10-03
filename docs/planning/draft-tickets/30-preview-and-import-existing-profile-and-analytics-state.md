@@ -1,9 +1,9 @@
 # CT-30: Preview and import existing profile and analytics state
 
-**Status:** Published as [GitLab #37](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/37). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #37](https://github.com/kanakamedala-rajesh/codex-tandem/issues/37). Ready for agent; unresolved blockers apply.
 **Gate:** G4
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #7](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #7](https://github.com/kanakamedala-rajesh/codex-tandem/issues/7). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Import existing codex-as/codex-report state through a backed-up preview while pr
 
 ## Blocked by
 
-CT-28 ([GitLab #35](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/35)).
+CT-28 ([GitHub #35](https://github.com/kanakamedala-rajesh/codex-tandem/issues/35)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

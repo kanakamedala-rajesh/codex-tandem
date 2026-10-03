@@ -1,9 +1,9 @@
 # CT-20: Expose unknown, imported and conflicting attribution
 
-**Status:** Published as [GitLab #27](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/27). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #27](https://github.com/kanakamedala-rajesh/codex-tandem/issues/27). Ready for agent; unresolved blockers apply.
 **Gate:** G2
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #5](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #5](https://github.com/kanakamedala-rajesh/codex-tandem/issues/5). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Make incomplete or contradictory ownership explicit and support audited determin
 
 ## Blocked by
 
-CT-19 ([GitLab #26](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/26)).
+CT-19 ([GitHub #26](https://github.com/kanakamedala-rajesh/codex-tandem/issues/26)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

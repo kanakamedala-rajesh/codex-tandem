@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Specs and tickets live in GitLab Issues. Before creating, reading,
+Specs and tickets live in GitHub Issues. Before creating, reading,
 or updating tickets, read docs/agents/issue-tracker.md.
 
 ### Triage labels
@@ -17,7 +17,7 @@ read docs/agents/domain.md.
 ### Project agents
 
 The top-level agent routes ticket implementation, fixes, validation, reviews,
-gate decisions and GitLab delivery through docs/agents/custom-agents.md without
+gate decisions and GitHub delivery through docs/agents/custom-agents.md without
 requiring the user to name a role. "Implement next open issue" selects a ready,
 unblocked ticket and delegates it to tandem-implementer. Small ad hoc edits stay
 with the current agent. Specialists return to the parent; they do not route again.

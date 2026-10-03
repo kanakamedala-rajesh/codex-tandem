@@ -1,9 +1,9 @@
 # CT-15: Qualify safe-launch recovery and performance
 
-**Status:** Published as [GitLab #22](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/22). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #22](https://github.com/kanakamedala-rajesh/codex-tandem/issues/22). Ready for agent; unresolved blockers apply.
 **Gate:** G1
 **Kind:** Qualification / gate review
-**Parent gate:** [GitLab #4](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/4). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #4](https://github.com/kanakamedala-rajesh/codex-tandem/issues/4). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Verify the integrated launcher meets G1 safety and latency requirements on the r
 
 ## Blocked by
 
-CT-14 ([GitLab #21](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/21)).
+CT-14 ([GitHub #21](https://github.com/kanakamedala-rajesh/codex-tandem/issues/21)).
 
 These are completion prerequisites. Missing environment access, credentials for a scoped test,
 or an unresolved capability result is an additional explicit blocker, not permission to assume

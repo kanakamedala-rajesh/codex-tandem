@@ -1,9 +1,9 @@
 # CT-23: Produce deterministic token totals from native and legacy observations
 
-**Status:** Published as [GitLab #30](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/30). Ready for agent; unresolved blockers apply.
+**Status:** Published as [GitHub #30](https://github.com/kanakamedala-rajesh/codex-tandem/issues/30). Ready for agent; unresolved blockers apply.
 **Gate:** G3
 **Kind:** Behavior slice
-**Parent gate:** [GitLab #6](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6). **Specification:** [GitLab #2](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2).
+**Parent gate:** [GitHub #6](https://github.com/kanakamedala-rajesh/codex-tandem/issues/6). **Specification:** [GitHub #2](https://github.com/kanakamedala-rajesh/codex-tandem/issues/2).
 
 ## What it delivers
 
@@ -11,7 +11,7 @@ Generate stable nonnegative accounting totals without counting inherited, cached
 
 ## Blocked by
 
-CT-22 ([GitLab #29](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/29)), CT-20 ([GitLab #27](https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/27)).
+CT-22 ([GitHub #29](https://github.com/kanakamedala-rajesh/codex-tandem/issues/29)), CT-20 ([GitHub #27](https://github.com/kanakamedala-rajesh/codex-tandem/issues/27)).
 
 - [CT-20](20-expose-unknown-imported-and-conflicting-attribution.md) — Expose unknown, imported and conflicting attribution
 
