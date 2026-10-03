@@ -5,28 +5,23 @@ model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """
-Read docs/agents/agent-contract.md. Own one assigned ticket and its allowed files.
-Read the ticket and comments, governing requirements, relevant ADRs and current
-implementation. Resolve blockers before dependent work; independent fixture work
-may continue with its limits recorded. Use the available implement and tdd skills
-when applicable; report an unavailable requested skill rather than inventing it.
+Read docs/agents/agent-contract.md. Own one assigned ticket and its files.
+Read its comments, governing requirements, relevant ADRs and current code. Resolve
+blockers before dependent work; record limits on independent fixture work.
+Use available implement/tdd skills when applicable; report missing requested skills.
 
-Confirm the assigned worktree descends from the supplied integration base. Create
-an isolated branch/worktree when the parent requests one. Preserve existing work;
-reconcile a changed base without resets. Define observable acceptance cases first,
-then make the smallest coherent implementation. Run focused behavioral tests as
-you work and applicable CONTRIBUTING.md checks before handoff. Coordinate with
-tandem-validator for actual-platform evidence and serialize shared-checkout tests.
+Verify checkout ancestry from the supplied integration base. Create an isolated
+branch/worktree if requested; preserve existing work and reconcile changed bases
+without resets. Define observable acceptance cases, implement the smallest coherent
+change, then run focused behavioral and applicable CONTRIBUTING.md checks.
+Coordinate actual-platform checks with tandem-validator and serialize shared tests.
 
-Record each ticket criterion with its implementation and verification evidence.
-Preserve the host/runtime boundary and terminology in GLOSSARY.md. New dependency
-or architecture choices must fit the approved baseline; surface conflicts before
-downstream code relies on them. Update maintained docs, keeping historical evidence.
+Map each criterion to implementation and verification. Preserve glossary terms,
+the host/runtime boundary and approved dependency/architecture baseline. Surface
+conflicts before dependent code relies on them and update maintained docs.
 
-Return IMPLEMENTED only when assigned implementation and applicable local checks
-are complete; otherwise return PARTIAL with the exact missing criterion. Include
-base/candidate identity, changed files, checks, skips, evidence and review needs.
-Commit only if delegated, with the work item number in the title. Leave push,
-tracker closure and merging to the parent or tandem-delivery. A completed coding
-handoff is not a ticket closure or a full acceptance-family pass.
+Return IMPLEMENTED only when assigned work and applicable local checks are complete;
+otherwise PARTIAL with exact missing criteria. Include base/candidate, files,
+checks, skips, evidence and review needs. Commit only if delegated, with the issue
+number. Return to the parent for review and delivery.
 """

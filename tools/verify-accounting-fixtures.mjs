@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = new URL('../', import.meta.url);
 const bytes = (path) => readFileSync(new URL(path, root));
 const json = (path) => JSON.parse(bytes(path).toString('utf8'));
-const fixture = json('docs/fixtures/accounting/golden.json');
-const provenance = json('docs/fixtures/accounting/provenance.json');
+const fixture = json('test/fixtures/accounting/golden.json');
+const provenance = json('test/fixtures/accounting/provenance.json');
 const register = json(
   'docs/requirements/Codex-Tandem-Requirements-Register.json',
 );
@@ -113,7 +113,7 @@ console.log(
       platform: process.platform,
       arch: process.arch,
       fixtureSha256: createHash('sha256')
-        .update(bytes('docs/fixtures/accounting/golden.json'))
+        .update(bytes('test/fixtures/accounting/golden.json'))
         .digest('hex'),
       command: 'node tools/verify-accounting-fixtures.mjs',
       root: fileURLToPath(root),

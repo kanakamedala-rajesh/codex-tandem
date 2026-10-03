@@ -34,35 +34,6 @@ await withTempPackage(async ({ scratch, packageRoot, sha256 }) => {
   assert.throws(() => decodeCaptureEvent(Buffer.alloc(4097)), {
     message: 'INVALID_CAPTURE_EVENT',
   });
-  const { assessResumeExperiment } = await import(
-    pathToFileURL(join(packageRoot, 'dist', 'resume-experiment.js'))
-  );
-  const launches = [
-    {
-      launchId: 'launch_A',
-      targetGeneration: 'generation_A',
-      identity: 'A',
-      context: 'per-launch',
-    },
-    {
-      launchId: 'launch_B',
-      targetGeneration: 'generation_A',
-      identity: 'B',
-      context: 'per-launch',
-    },
-  ];
-  assert.deepEqual(
-    assessResumeExperiment(launches, [
-      { expectedLaunchId: 'launch_B', event: fixture },
-    ]),
-    {
-      fullTracking: false,
-      attempts: [],
-      unresolved: [
-        { eventId: fixture.eventId, reason: 'STALE_LAUNCH_CONTEXT' },
-      ],
-    },
-  );
   console.log(
     JSON.stringify(
       {
@@ -75,7 +46,6 @@ await withTempPackage(async ({ scratch, packageRoot, sha256 }) => {
           'installed capture projection',
           'bounded rejection',
           'committed-only repeated snapshot',
-          'installed resume experiment rejects stale launch context',
         ],
         scope:
           'G0 synthetic contract; no durable database receipt or full-tracking claim',

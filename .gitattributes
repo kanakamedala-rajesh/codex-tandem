@@ -4,6 +4,3 @@
 # Windows command scripts require CRLF in the working tree.
 *.bat text eol=crlf
 *.cmd text eol=crlf
-
-# Preserve packaged documents without text conversion or text diffs.
-*.docx binary

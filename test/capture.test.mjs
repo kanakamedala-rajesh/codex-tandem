@@ -67,9 +67,7 @@ test('capture contract rejects calendar dates that normalize to a different day'
 });
 test('actual Codex metadata including the crash-before-completion event is readable without raw content', async () => {
   const events = await readCaptureInbox(
-    fileURLToPath(
-      new URL('../docs/qualification/ct05/actual-events/', import.meta.url),
-    ),
+    fileURLToPath(new URL('./fixtures/capture/', import.meta.url)),
   );
   assert.equal(events.length, 4);
   const crash = events.find(

@@ -6,9 +6,7 @@ dist/
 .runtime/
 .scratch/
 *.tgz
-# Approved baseline and byte-qualified historical records: preserve original bytes.
+# Preserve approved requirements and fixture provenance bytes.
 docs/requirements/
-docs/fixtures/accounting/
-docs/evidence/ct03/
-docs/qualification/ct05/
-docs/validation/ct02/
+test/fixtures/accounting/golden.json
+test/fixtures/accounting/provenance.json

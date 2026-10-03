@@ -1,1027 +1,301 @@
 {
-  "schema_version": 1,
-  "provider": "github",
   "project": "kanakamedala-rajesh/codex-tandem",
-  "source_project": "venkata-sudha/codex-tandem",
-  "source_project_id": 87154127,
   "central": {
-    "id": 5686534368,
-    "node_id": "I_kwDOU5qRHc8AAAABUvGg4A",
     "number": 1,
-    "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/1",
-    "iid": 1,
-    "source": {
-      "id": "gid://gitlab/WorkItem/205189586",
-      "iid": 1,
-      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/1"
-    }
+    "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/1"
   },
   "spec": {
-    "title": "Codex Tandem: approved implementation specification",
-    "id": 5686534563,
-    "node_id": "I_kwDOU5qRHc8AAAABUvGhow",
     "number": 2,
-    "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/2",
-    "iid": 2,
-    "source": {
-      "id": "gid://gitlab/WorkItem/205190975",
-      "iid": 2,
-      "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/2"
-    }
+    "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/2"
   },
   "gates": {
-    "G2": {
-      "title": "G2 — Attribution backbone",
-      "id": 5686535062,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGjlg",
-      "number": 5,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/5",
-      "iid": 5,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205190985",
-        "iid": 5,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/5"
-      }
-    },
-    "G3": {
-      "title": "G3 — Accounting and dashboard",
-      "id": 5686535239,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGkRw",
-      "number": 6,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/6",
-      "iid": 6,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205190989",
-        "iid": 6,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/6"
-      }
-    },
-    "G4": {
-      "title": "G4 — Hardening, migration and release qualification",
-      "id": 5686535404,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGk7A",
-      "number": 7,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/7",
-      "iid": 7,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205190992",
-        "iid": 7,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/7"
-      }
-    },
     "G0": {
-      "title": "G0 — Compatibility and feasibility",
-      "id": 5686534736,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGiUA",
       "number": 3,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3",
-      "iid": 3,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205190977",
-        "iid": 3,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/3"
-      }
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3"
     },
     "G1": {
-      "title": "G1 — Safe identity launcher",
-      "id": 5686534916,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGjBA",
       "number": 4,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/4",
-      "iid": 4,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205190981",
-        "iid": 4,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/4"
-      }
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/4"
+    },
+    "G2": {
+      "number": 5,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/5"
+    },
+    "G3": {
+      "number": 6,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/6"
+    },
+    "G4": {
+      "number": 7,
+      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/7"
     }
   },
   "tickets": {
     "CT-01": {
       "title": "CT-01 — Capture reusable behavior and accounting fixtures",
-      "blockers": [],
-      "gate": "G0",
-      "id": 5686535568,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGlkA",
       "number": 8,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/8",
-      "iid": 8,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191005",
-        "iid": 8,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/8"
-      }
+      "gate": "G0",
+      "blockers": []
     },
     "CT-02": {
-      "blockers": [],
-      "gate": "G0",
       "title": "CT-02 — Install a packed CLI and run host capability diagnostics",
-      "id": 5686535711,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGmHw",
       "number": 9,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/9",
-      "iid": 9,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191028",
-        "iid": 9,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/9"
-      }
+      "gate": "G0",
+      "blockers": []
     },
     "CT-03": {
-      "blockers": ["CT-02"],
-      "gate": "G0",
       "title": "CT-03 — Discover targets without changing their environment",
-      "id": 5686535868,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGmvA",
       "number": 10,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/10",
-      "iid": 10,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191030",
-        "iid": 10,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/10"
-      }
+      "gate": "G0",
+      "blockers": ["CT-02"]
     },
     "CT-04": {
-      "blockers": ["CT-02"],
-      "gate": "G0",
       "title": "CT-04 — Select a profile and pass through to a harmless child",
-      "id": 5686535991,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGnNw",
       "number": 11,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/11",
-      "iid": 11,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191033",
-        "iid": 11,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/11"
-      }
+      "gate": "G0",
+      "blockers": ["CT-02"]
     },
     "CT-05": {
-      "blockers": ["CT-03"],
-      "gate": "G0",
       "title": "CT-05 — Qualify a minimal metadata bridge on the legacy target",
-      "id": 5686536160,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGn4A",
       "number": 12,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/12",
-      "iid": 12,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191039",
-        "iid": 12,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/12"
-      }
+      "gate": "G0",
+      "blockers": ["CT-03"]
     },
     "CT-06": {
-      "blockers": ["CT-04", "CT-05"],
-      "gate": "G0",
       "title": "CT-06 — Probe A-to-B resume attribution feasibility",
-      "id": 5686536327,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGohw",
       "number": 13,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/13",
-      "iid": 13,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191047",
-        "iid": 13,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/13"
-      }
+      "gate": "G0",
+      "blockers": ["CT-04", "CT-05"]
     },
     "CT-07": {
-      "blockers": ["CT-06"],
-      "gate": "G0",
       "title": "CT-07 — Qualify initial package and launch behavior locally",
-      "id": 5686536486,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGpJg",
       "number": 14,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/14",
-      "iid": 14,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191048",
-        "iid": 14,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/14"
-      }
+      "gate": "G0",
+      "blockers": ["CT-06"]
     },
     "CT-08": {
-      "blockers": ["CT-01", "CT-07"],
-      "gate": "G0",
       "title": "CT-08 — Review the compatibility gate",
-      "id": 5686536657,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGp0Q",
       "number": 15,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/15",
-      "iid": 15,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191050",
-        "iid": 15,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/15"
-      }
+      "gate": "G0",
+      "blockers": ["CT-01", "CT-07"]
     },
     "CT-09": {
-      "blockers": ["CT-08"],
-      "gate": "G1",
       "title": "CT-09 — Manage stable profiles through isolated login",
-      "id": 5686536816,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGqcA",
       "number": 16,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/16",
-      "iid": 16,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191055",
-        "iid": 16,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/16"
-      }
+      "gate": "G1",
+      "blockers": ["CT-08"]
     },
     "CT-10": {
-      "blockers": ["CT-09"],
-      "gate": "G1",
       "title": "CT-10 — Guard canonical scopes and identify conflicting processes",
-      "id": 5686536967,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGrBw",
       "number": 17,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/17",
-      "iid": 17,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191058",
-        "iid": 17,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/17"
-      }
+      "gate": "G1",
+      "blockers": ["CT-09"]
     },
     "CT-11": {
-      "blockers": ["CT-10"],
-      "gate": "G1",
       "title": "CT-11 — Activate credentials with refresh-safe crash recovery",
-      "id": 5686537134,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGrrg",
       "number": 18,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/18",
-      "iid": 18,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191061",
-        "iid": 18,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/18"
-      }
+      "gate": "G1",
+      "blockers": ["CT-10"]
     },
     "CT-12": {
-      "blockers": ["CT-11"],
-      "gate": "G1",
       "title": "CT-12 — Stop only freshly verified conflicting processes",
-      "id": 5686537271,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGsNw",
       "number": 19,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/19",
-      "iid": 19,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191066",
-        "iid": 19,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/19"
-      }
+      "gate": "G1",
+      "blockers": ["CT-11"]
     },
     "CT-13": {
-      "blockers": ["CT-12"],
-      "gate": "G1",
       "title": "CT-13 — Launch and resume locally with safe identity ownership",
-      "id": 5686537419,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGsyw",
       "number": 20,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/20",
-      "iid": 20,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191069",
-        "iid": 20,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/20"
-      }
+      "gate": "G1",
+      "blockers": ["CT-12"]
     },
     "CT-14": {
-      "blockers": ["CT-13"],
-      "gate": "G1",
       "title": "CT-14 — Launch and supervise Codex inside the existing container",
-      "id": 5686537553,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGtUQ",
       "number": 21,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/21",
-      "iid": 21,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191077",
-        "iid": 21,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/21"
-      }
+      "gate": "G1",
+      "blockers": ["CT-13"]
     },
     "CT-15": {
-      "blockers": ["CT-14"],
-      "gate": "G1",
       "title": "CT-15 — Qualify safe-launch recovery and performance",
-      "id": 5686537706,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGt6g",
       "number": 22,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/22",
-      "iid": 22,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191081",
-        "iid": 22,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/22"
-      }
+      "gate": "G1",
+      "blockers": ["CT-14"]
     },
     "CT-16": {
       "title": "CT-16 — Capture bounded lifecycle metadata without altering Codex",
-      "blockers": ["CT-14"],
-      "gate": "G2",
-      "id": 5686537859,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGugw",
       "number": 23,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/23",
-      "iid": 23,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191105",
-        "iid": 23,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/23"
-      }
+      "gate": "G2",
+      "blockers": ["CT-14"]
     },
     "CT-17": {
       "title": "CT-17 — Replay captured events through a durable host receipt",
-      "blockers": ["CT-16"],
-      "gate": "G2",
-      "id": 5686538030,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGvLg",
       "number": 24,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/24",
-      "iid": 24,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191112",
-        "iid": 24,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/24"
-      }
+      "gate": "G2",
+      "blockers": ["CT-16"]
     },
     "CT-18": {
       "title": "CT-18 — Attribute mixed-identity sessions by launch and turn attempt",
-      "blockers": ["CT-17"],
-      "gate": "G2",
-      "id": 5686538171,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGvuw",
       "number": 25,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/25",
-      "iid": 25,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191116",
-        "iid": 25,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/25"
-      }
+      "gate": "G2",
+      "blockers": ["CT-17"]
     },
     "CT-19": {
       "title": "CT-19 — Attribute nested child work without inherited-history duplication",
-      "blockers": ["CT-18"],
-      "gate": "G2",
-      "id": 5686538318,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGwTg",
       "number": 26,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/26",
-      "iid": 26,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191121",
-        "iid": 26,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/26"
-      }
+      "gate": "G2",
+      "blockers": ["CT-18"]
     },
     "CT-20": {
       "title": "CT-20 — Expose unknown, imported and conflicting attribution",
-      "blockers": ["CT-19"],
-      "gate": "G2",
-      "id": 5686538471,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGw5w",
       "number": 27,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/27",
-      "iid": 27,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191123",
-        "iid": 27,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/27"
-      }
+      "gate": "G2",
+      "blockers": ["CT-19"]
     },
     "CT-21": {
       "title": "CT-21 — Qualify attribution against actual installed Codex",
-      "blockers": ["CT-15", "CT-20"],
-      "gate": "G2",
-      "id": 5686538623,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGxfw",
       "number": 28,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/28",
-      "iid": 28,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191126",
-        "iid": 28,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/28"
-      }
+      "gate": "G2",
+      "blockers": ["CT-15", "CT-20"]
     },
     "CT-22": {
       "title": "CT-22 — Read rollout sources incrementally with bounded decoding",
-      "blockers": ["CT-01", "CT-02"],
-      "gate": "G3",
-      "id": 5686538777,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGyGQ",
       "number": 29,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/29",
-      "iid": 29,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191131",
-        "iid": 29,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/29"
-      }
+      "gate": "G3",
+      "blockers": ["CT-01", "CT-02"]
     },
     "CT-23": {
       "title": "CT-23 — Produce deterministic token totals from native and legacy observations",
-      "blockers": ["CT-22", "CT-20"],
-      "gate": "G3",
-      "id": 5686538931,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGysw",
       "number": 30,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/30",
-      "iid": 30,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191134",
-        "iid": 30,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/30"
-      }
+      "gate": "G3",
+      "blockers": ["CT-22", "CT-20"]
     },
     "CT-24": {
       "title": "CT-24 — Report usage, estimates and quota with shared time semantics",
-      "blockers": ["CT-23"],
-      "gate": "G3",
-      "id": 5686539074,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGzQg",
       "number": 31,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/31",
-      "iid": 31,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191138",
-        "iid": 31,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/31"
-      }
+      "gate": "G3",
+      "blockers": ["CT-23"]
     },
     "CT-25": {
       "title": "CT-25 — Run one recoverable collector without delaying launch",
-      "blockers": ["CT-17", "CT-22"],
-      "gate": "G3",
-      "id": 5686539201,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGzwQ",
       "number": 32,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/32",
-      "iid": 32,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191141",
-        "iid": 32,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/32"
-      }
+      "gate": "G3",
+      "blockers": ["CT-17", "CT-22"]
     },
     "CT-26": {
       "title": "CT-26 — Serve authenticated local reports through a restricted API",
-      "blockers": ["CT-24", "CT-25"],
-      "gate": "G3",
-      "id": 5686539346,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG0Ug",
       "number": 33,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/33",
-      "iid": 33,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191145",
-        "iid": 33,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/33"
-      }
+      "gate": "G3",
+      "blockers": ["CT-24", "CT-25"]
     },
     "CT-27": {
       "title": "CT-27 — Browse sessions, attempts and child identity contributions",
-      "blockers": ["CT-21", "CT-26"],
-      "gate": "G3",
-      "id": 5686539500,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG07A",
       "number": 34,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/34",
-      "iid": 34,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191148",
-        "iid": 34,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/34"
-      }
+      "gate": "G3",
+      "blockers": ["CT-21", "CT-26"]
     },
     "CT-28": {
       "title": "CT-28 — Persist accessible presentation and consistent report filters",
-      "blockers": ["CT-27"],
-      "gate": "G3",
-      "id": 5686539657,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG1iQ",
       "number": 35,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/35",
-      "iid": 35,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191153",
-        "iid": 35,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/35"
-      }
+      "gate": "G3",
+      "blockers": ["CT-27"]
     },
     "CT-29": {
       "title": "CT-29 — Qualify accounting, dashboard performance and accessibility",
-      "blockers": ["CT-28"],
-      "gate": "G3",
-      "id": 5686539828,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG2NA",
       "number": 36,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/36",
-      "iid": 36,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191157",
-        "iid": 36,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/36"
-      }
+      "gate": "G3",
+      "blockers": ["CT-28"]
     },
     "CT-30": {
-      "gate": "G4",
       "title": "CT-30 — Preview and import existing profile and analytics state",
-      "blockers": ["CT-28"],
-      "id": 5686540100,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG3RA",
       "number": 37,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/37",
-      "iid": 37,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191272",
-        "iid": 37,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/37"
-      }
+      "gate": "G4",
+      "blockers": ["CT-28"]
     },
     "CT-31": {
-      "gate": "G4",
       "title": "CT-31 — Back up, restore and upgrade with recoverable schema changes",
-      "blockers": ["CT-30"],
-      "id": 5686540311,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG4Fw",
       "number": 38,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/38",
-      "iid": 38,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191273",
-        "iid": 38,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/38"
-      }
+      "gate": "G4",
+      "blockers": ["CT-30"]
     },
     "CT-32": {
-      "gate": "G4",
       "title": "CT-32 — Diagnose and bound retained operational data",
-      "blockers": ["CT-25"],
-      "id": 5686540452,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG4pA",
       "number": 39,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/39",
-      "iid": 39,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191276",
-        "iid": 39,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/39"
-      }
+      "gate": "G4",
+      "blockers": ["CT-25"]
     },
     "CT-33": {
-      "gate": "G4",
       "title": "CT-33 — Remove managed integration safely",
-      "blockers": ["CT-31", "CT-32"],
-      "id": 5686540617,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG5SQ",
       "number": 40,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/40",
-      "iid": 40,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191278",
-        "iid": 40,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/40"
-      }
+      "gate": "G4",
+      "blockers": ["CT-31", "CT-32"]
     },
     "CT-34": {
-      "gate": "G4",
       "title": "CT-34 — Verify privacy and source containment across the integrated product",
-      "blockers": ["CT-33"],
-      "id": 5686540790,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG59g",
       "number": 41,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/41",
-      "iid": 41,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191279",
-        "iid": 41,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/41"
-      }
+      "gate": "G4",
+      "blockers": ["CT-33"]
     },
     "CT-35": {
-      "gate": "G4",
       "title": "CT-35 — Prepare a reproducible release package and notices",
-      "blockers": ["CT-34"],
-      "id": 5686540950,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG6lg",
       "number": 42,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/42",
-      "iid": 42,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191280",
-        "iid": 42,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/42"
-      }
+      "gate": "G4",
+      "blockers": ["CT-34"]
     },
     "CT-36": {
-      "gate": "G4",
       "title": "CT-36 — Qualify the final artifact locally on Windows and WSL2",
-      "blockers": ["CT-29", "CT-35"],
-      "id": 5686541120,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG7QA",
       "number": 43,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/43",
-      "iid": 43,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191283",
-        "iid": 43,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/43"
-      }
+      "gate": "G4",
+      "blockers": ["CT-29", "CT-35"]
     },
     "CT-37": {
-      "gate": "G4",
       "title": "CT-37 — Qualify native Linux and remaining runtime/browser combinations",
-      "blockers": ["CT-35"],
-      "id": 5686541300,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG79A",
       "number": 44,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/44",
-      "iid": 44,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191287",
-        "iid": 44,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/44"
-      }
+      "gate": "G4",
+      "blockers": ["CT-35"]
     },
     "CT-38": {
-      "gate": "G4",
       "title": "CT-38 — Close traceability and prepare the release decision",
-      "blockers": ["CT-36", "CT-37"],
-      "id": 5686541444,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG8hA",
       "number": 45,
       "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/45",
-      "iid": 45,
-      "source": {
-        "id": "gid://gitlab/WorkItem/205191288",
-        "iid": 45,
-        "url": "https://gitlab.com/venkata-sudha/codex-tandem/-/work_items/45"
-      }
+      "gate": "G4",
+      "blockers": ["CT-36", "CT-37"]
     }
-  },
-  "records": {
-    "issue:1": {
-      "id": 5686534368,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGg4A",
-      "number": 1,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/1"
-    },
-    "issue:2": {
-      "id": 5686534563,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGhow",
-      "number": 2,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/2"
-    },
-    "issue:3": {
-      "id": 5686534736,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGiUA",
-      "number": 3,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3"
-    },
-    "issue:4": {
-      "id": 5686534916,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGjBA",
-      "number": 4,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/4"
-    },
-    "issue:5": {
-      "id": 5686535062,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGjlg",
-      "number": 5,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/5"
-    },
-    "issue:6": {
-      "id": 5686535239,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGkRw",
-      "number": 6,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/6"
-    },
-    "issue:7": {
-      "id": 5686535404,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGk7A",
-      "number": 7,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/7"
-    },
-    "issue:8": {
-      "id": 5686535568,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGlkA",
-      "number": 8,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/8"
-    },
-    "issue:9": {
-      "id": 5686535711,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGmHw",
-      "number": 9,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/9"
-    },
-    "issue:10": {
-      "id": 5686535868,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGmvA",
-      "number": 10,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/10"
-    },
-    "issue:11": {
-      "id": 5686535991,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGnNw",
-      "number": 11,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/11"
-    },
-    "issue:12": {
-      "id": 5686536160,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGn4A",
-      "number": 12,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/12"
-    },
-    "issue:13": {
-      "id": 5686536327,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGohw",
-      "number": 13,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/13"
-    },
-    "issue:14": {
-      "id": 5686536486,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGpJg",
-      "number": 14,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/14"
-    },
-    "issue:15": {
-      "id": 5686536657,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGp0Q",
-      "number": 15,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/15"
-    },
-    "issue:16": {
-      "id": 5686536816,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGqcA",
-      "number": 16,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/16"
-    },
-    "issue:17": {
-      "id": 5686536967,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGrBw",
-      "number": 17,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/17"
-    },
-    "issue:18": {
-      "id": 5686537134,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGrrg",
-      "number": 18,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/18"
-    },
-    "issue:19": {
-      "id": 5686537271,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGsNw",
-      "number": 19,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/19"
-    },
-    "issue:20": {
-      "id": 5686537419,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGsyw",
-      "number": 20,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/20"
-    },
-    "issue:21": {
-      "id": 5686537553,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGtUQ",
-      "number": 21,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/21"
-    },
-    "issue:22": {
-      "id": 5686537706,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGt6g",
-      "number": 22,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/22"
-    },
-    "issue:23": {
-      "id": 5686537859,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGugw",
-      "number": 23,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/23"
-    },
-    "issue:24": {
-      "id": 5686538030,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGvLg",
-      "number": 24,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/24"
-    },
-    "issue:25": {
-      "id": 5686538171,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGvuw",
-      "number": 25,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/25"
-    },
-    "issue:26": {
-      "id": 5686538318,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGwTg",
-      "number": 26,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/26"
-    },
-    "issue:27": {
-      "id": 5686538471,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGw5w",
-      "number": 27,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/27"
-    },
-    "issue:28": {
-      "id": 5686538623,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGxfw",
-      "number": 28,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/28"
-    },
-    "issue:29": {
-      "id": 5686538777,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGyGQ",
-      "number": 29,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/29"
-    },
-    "issue:30": {
-      "id": 5686538931,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGysw",
-      "number": 30,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/30"
-    },
-    "issue:31": {
-      "id": 5686539074,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGzQg",
-      "number": 31,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/31"
-    },
-    "issue:32": {
-      "id": 5686539201,
-      "node_id": "I_kwDOU5qRHc8AAAABUvGzwQ",
-      "number": 32,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/32"
-    },
-    "issue:33": {
-      "id": 5686539346,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG0Ug",
-      "number": 33,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/33"
-    },
-    "issue:34": {
-      "id": 5686539500,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG07A",
-      "number": 34,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/34"
-    },
-    "issue:35": {
-      "id": 5686539657,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG1iQ",
-      "number": 35,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/35"
-    },
-    "issue:36": {
-      "id": 5686539828,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG2NA",
-      "number": 36,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/36"
-    },
-    "issue:37": {
-      "id": 5686540100,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG3RA",
-      "number": 37,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/37"
-    },
-    "issue:38": {
-      "id": 5686540311,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG4Fw",
-      "number": 38,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/38"
-    },
-    "issue:39": {
-      "id": 5686540452,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG4pA",
-      "number": 39,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/39"
-    },
-    "issue:40": {
-      "id": 5686540617,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG5SQ",
-      "number": 40,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/40"
-    },
-    "issue:41": {
-      "id": 5686540790,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG59g",
-      "number": 41,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/41"
-    },
-    "issue:42": {
-      "id": 5686540950,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG6lg",
-      "number": 42,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/42"
-    },
-    "issue:43": {
-      "id": 5686541120,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG7QA",
-      "number": 43,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/43"
-    },
-    "issue:44": {
-      "id": 5686541300,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG79A",
-      "number": 44,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/44"
-    },
-    "issue:45": {
-      "id": 5686541444,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG8hA",
-      "number": 45,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/45"
-    },
-    "mr:1": {
-      "id": 5686541596,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG9HA",
-      "number": 46,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/46"
-    },
-    "mr:2": {
-      "id": 5686541785,
-      "node_id": "I_kwDOU5qRHc8AAAABUvG92Q",
-      "number": 47,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/47"
-    }
-  },
-  "comments": {
-    "3948285427": {
-      "id": 5965552315,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/1#issuecomment-5965552315"
-    },
-    "3944777376": {
-      "id": 5965552614,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3#issuecomment-5965552614"
-    },
-    "3944889270": {
-      "id": 5965552811,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3#issuecomment-5965552811"
-    },
-    "3945498171": {
-      "id": 5965553040,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3#issuecomment-5965553040"
-    },
-    "3948285192": {
-      "id": 5965553285,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/3#issuecomment-5965553285"
-    },
-    "3944732927": {
-      "id": 5965553851,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/8#issuecomment-5965553851"
-    },
-    "3944737022": {
-      "id": 5965554111,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/9#issuecomment-5965554111"
-    },
-    "3944974411": {
-      "id": 5965554334,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/10#issuecomment-5965554334"
-    },
-    "3945052207": {
-      "id": 5965554558,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/11#issuecomment-5965554558"
-    },
-    "3945088019": {
-      "id": 5965554751,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/11#issuecomment-5965554751"
-    },
-    "3945344740": {
-      "id": 5965554969,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/12#issuecomment-5965554969"
-    },
-    "3945985106": {
-      "id": 5965555280,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/13#issuecomment-5965555280"
-    },
-    "3946174581": {
-      "id": 5965555627,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/14#issuecomment-5965555627"
-    },
-    "3948161913": {
-      "id": 5965555850,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/14#issuecomment-5965555850"
-    },
-    "3948243584": {
-      "id": 5965556053,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/14#issuecomment-5965556053"
-    },
-    "3948263125": {
-      "id": 5965556269,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/14#issuecomment-5965556269"
-    },
-    "3948285036": {
-      "id": 5965556498,
-      "url": "https://github.com/kanakamedala-rajesh/codex-tandem/issues/15#issuecomment-5965556498"
-    }
-  },
-  "hierarchy": "Central tracker links gates; every gate owns verified native GitHub sub-issues. CT blockers have verified native dependency edges.",
-  "historical_mrs": "Merged GitLab MRs are closed archive issues, not native GitHub PRs."
+  }
 }
