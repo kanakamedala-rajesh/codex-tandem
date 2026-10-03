@@ -24,3 +24,4 @@ validate:
     - npm run validate
     - npm run verify:installed
     - node tools/verify-accounting-fixtures.mjs
+    - python3 -B -m unittest discover -s test -p '*_test.py'

@@ -10,6 +10,7 @@ import unittest
 BRIDGE = pathlib.Path(os.environ.get('CT05_BRIDGE', str(pathlib.Path(__file__).resolve().parents[1] / 'tools/capture/bridge.py')))
 SESSION = '22222222-2222-4222-8222-222222222222'
 TURN = '33333333-3333-4333-8333-333333333333'
+@unittest.skipUnless(os.name == 'posix', 'bridge requires a qualified private POSIX spool')
 class BridgeContract(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='ct05-contract-',dir=os.environ.get('CT05_SPOOL_PARENT'))

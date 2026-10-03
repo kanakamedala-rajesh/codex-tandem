@@ -1,0 +1,36 @@
+{
+  "tests": {
+    "skip": 2,
+    "pass": 31,
+    "total": 33,
+    "fail": 0
+  },
+  "terminal": {
+    "cases": 34,
+    "restored": true,
+    "scope": "host synthetic selector and child, not Docker/native Codex",
+    "naturalExit": true,
+    "p95FirstFrameMs": 41.37
+  },
+  "accounting": "PASS",
+  "platform": "linux",
+  "node": "24.18.0",
+  "python": {
+    "fail": 0,
+    "pass": 6,
+    "total": 6
+  },
+  "validate": "PASS",
+  "installedChecks": "PASS",
+  "host": "WSL Ubuntu",
+  "machine": {
+    "system": "Linux",
+    "kernel": "6.6.87.2-microsoft-standard-WSL2",
+    "architecture": "x86_64",
+    "python": "3.12.3",
+    "npm": "11.16.0",
+    "distribution": "Ubuntu",
+    "inventoryCollectedSeparatelyFromTests": true
+  },
+  "evidencePhase": "Initial pre-repair observations; current selector qualification is recorded separately in selector-fix.json"
+}

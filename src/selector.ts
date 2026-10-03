@@ -27,13 +27,18 @@ export async function selectProfile(
     const finish = (value: string | null, error?: unknown) => {
       if (done) return;
       done = true;
-      try {
-        cleanup();
-      } catch (e) {
-        error ??= e;
-      }
-      if (error) reject(error);
-      else resolve(value);
+      // Let the current console read finish before restoring cooked mode.
+      // On Windows, restoring it inside keypress can deliver the confirming
+      // Enter again to the child as an empty input line.
+      setImmediate(() => {
+        try {
+          cleanup();
+        } catch (e) {
+          error ??= e;
+        }
+        if (error) reject(error);
+        else resolve(value);
+      });
     };
     const fail = (error: Error) => finish(null, error);
     const cancel = () => finish(null);
