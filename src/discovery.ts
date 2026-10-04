@@ -8,6 +8,7 @@ import {
   isAbsolute,
   join,
   relative,
+  posix,
   resolve,
   sep,
 } from 'node:path';
@@ -23,6 +24,8 @@ export type DiscoveryOptions = {
   dockerContext?: string;
   /** Full container ID expected by the caller; a replacement fails discovery. */
   expectedGeneration?: string;
+  /** Docker daemon identity expected by the operator; context aliases must resolve to this daemon. */
+  expectedDaemonId?: string;
   user?: string;
   projectRoot?: string;
   project?: string;
@@ -54,6 +57,8 @@ export type DiscoveryReport = {
   paths?: Paths;
   context?: string;
   generation?: string;
+  /** Stable daemon identity observed for this Docker discovery snapshot. */
+  daemonId?: string;
   credentialScope?: string;
 };
 const initial = (target: string): DiscoveryReport => ({
@@ -138,6 +143,9 @@ async function executable(requested?: string): Promise<string> {
  * Inspect host paths or an existing Docker container without launching Codex,
  * reading credentials or creating target files. Docker runs read-only shell and
  * Python probes and rejects remote endpoints or a changed container generation.
+ * An optional daemon pin is checked before entering a container; daemon and
+ * container identities are rechecked before paths and scope are published.
+ * These snapshots do not provide an atomic discovery-to-activation guarantee.
  * Returns failures as diagnostic codes; run can replace the Docker command reader.
  */
 export async function discoverTarget(
@@ -301,6 +309,9 @@ async function discoverDocker(
     );
     if (typeof daemon !== 'string' || !/^[a-zA-Z0-9:_-]{8,200}$/.test(daemon))
       throw new Error('DOCKER_DAEMON_ID_UNAVAILABLE');
+    if (options.expectedDaemonId && options.expectedDaemonId !== daemon)
+      throw new Error('DOCKER_DAEMON_CHANGED_REVALIDATE');
+    report.daemonId = daemon;
     const instance = JSON.parse(
       await run([
         ...args,
@@ -386,13 +397,30 @@ async function discoverDocker(
       !data.paths ||
       !['home', 'codexHome', 'projectRoot', 'project', 'executable'].every(
         (k) =>
-          boundedText(data.paths[k], 4096) && data.paths[k].startsWith('/'),
+          boundedText(data.paths[k], 4096) &&
+          data.paths[k].startsWith('/') &&
+          posix.normalize(data.paths[k]) === data.paths[k],
       ) ||
       typeof data.paths.codexHomeExists !== 'boolean' ||
       typeof data.permissions?.projectReadable !== 'boolean' ||
       typeof data.permissions?.codexHomeWritable !== 'boolean'
     )
       throw new Error('TARGET_PROJECTION_INVALID');
+    const containedProject = posix.relative(
+      data.paths.projectRoot,
+      data.paths.project,
+    );
+    if (
+      containedProject === '..' ||
+      containedProject.startsWith('../') ||
+      posix.isAbsolute(containedProject)
+    )
+      throw new Error('TARGET_PROJECTION_INVALID');
+    const afterDaemon = JSON.parse(
+      await run([...args, 'info', '--format', '{{json .ID}}']),
+    );
+    if (afterDaemon !== daemon)
+      throw new Error('DOCKER_DAEMON_CHANGED_DURING_DISCOVERY');
     const after = JSON.parse(
       await run([
         ...args,
@@ -456,6 +484,8 @@ async function discoverDocker(
         'CONTAINER_CHANGED_DURING_DISCOVERY',
         'REMOTE_DOCKER_UNSUPPORTED',
         'DOCKER_DAEMON_ID_UNAVAILABLE',
+        'DOCKER_DAEMON_CHANGED_REVALIDATE',
+        'DOCKER_DAEMON_CHANGED_DURING_DISCOVERY',
       ].includes(code)
         ? code
         : 'DOCKER_CONTEXT_OR_CONTAINER_INACCESSIBLE',

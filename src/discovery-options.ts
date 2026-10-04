@@ -14,6 +14,7 @@ export function parseDiscoveryOptions(
     '--container': 'container',
     '--docker-context': 'dockerContext',
     '--expected-generation': 'expectedGeneration',
+    '--expected-daemon': 'expectedDaemonId',
     '--user': 'user',
     '--project-root': 'projectRoot',
     '--project': 'project',
@@ -44,6 +45,7 @@ export function parseDiscoveryOptions(
     (options.container ||
       options.dockerContext ||
       options.expectedGeneration ||
+      options.expectedDaemonId ||
       options.user)
   )
     throw new Error('INVALID_ARGUMENTS');

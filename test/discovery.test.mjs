@@ -485,3 +485,135 @@ test(
     }
   },
 );
+
+test('a pinned Docker daemon refuses a wrong context before container inspection', async () => {
+  const report = await discoverTarget(
+    {
+      target: 'docker',
+      container: 'alias',
+      dockerContext: 'test',
+      expectedDaemonId: 'approved-daemon',
+    },
+    async (args) => {
+      if (args[0] === 'context')
+        return JSON.stringify('unix:///var/run/docker.sock');
+      if (args.includes('info')) return JSON.stringify('other-daemon');
+      throw new Error(
+        'container inspection must not occur on the wrong daemon',
+      );
+    },
+  );
+  assert.equal(report.ok, false);
+  assert.deepEqual(report.diagnostics, ['DOCKER_DAEMON_CHANGED_REVALIDATE']);
+  assert.equal(report.paths, undefined);
+});
+
+const ct14DockerFixture = async (args) => {
+  if (args[0] === 'context')
+    return JSON.stringify('unix:///var/run/docker.sock');
+  if (args.includes('info')) return JSON.stringify('approved-daemon');
+  if (args.includes('inspect'))
+    return JSON.stringify({ id: 'a'.repeat(64), running: true, paused: false });
+  if (args.at(-1) === 'command -v python3 || command -v python')
+    return '/usr/bin/python3';
+  return JSON.stringify({
+    user: 'worker',
+    paths: {
+      home: '/home/worker',
+      codexHome: '/home/worker/.codex',
+      codexHomeExists: true,
+      projectRoot: '/work',
+      project: '/work/project',
+      executable: '/usr/bin/codex',
+    },
+    jsonProjection: true,
+    durableFacility: true,
+    permissions: { projectReadable: true, codexHomeWritable: true },
+  });
+};
+
+test('a daemon replaced during Docker path discovery cannot publish usable target paths', async () => {
+  let reads = 0;
+  const report = await discoverTarget(
+    {
+      target: 'docker',
+      container: 'alias',
+      dockerContext: 'test',
+      expectedDaemonId: 'approved-daemon',
+    },
+    async (args) => {
+      if (args.includes('info') && ++reads > 1)
+        return JSON.stringify('other-daemon');
+      return ct14DockerFixture(args);
+    },
+  );
+  assert.equal(report.ok, false);
+  assert.deepEqual(report.diagnostics, [
+    'DOCKER_DAEMON_CHANGED_DURING_DISCOVERY',
+  ]);
+  assert.equal(report.paths, undefined);
+  assert.equal(report.credentialScope, undefined);
+});
+
+test('Docker projection cannot admit an outside-root or noncanonical project', async () => {
+  for (const project of [
+    '/outside',
+    '/workbench',
+    '/work/../outside',
+    '/work//project',
+  ]) {
+    const report = await discoverTarget(
+      {
+        target: 'docker',
+        container: 'alias',
+        dockerContext: 'test',
+        projectRoot: '/work',
+      },
+      async (args) => {
+        const raw = await ct14DockerFixture(args);
+        if (!args.includes('/usr/bin/python3')) return raw;
+        const data = JSON.parse(raw);
+        data.paths.project = project;
+        return JSON.stringify(data);
+      },
+    );
+    assert.equal(report.ok, false, project);
+    assert.deepEqual(
+      report.diagnostics,
+      ['TARGET_PROJECTION_INVALID'],
+      project,
+    );
+    assert.equal(report.paths, undefined);
+  }
+});
+
+test('doctor discovery options consume the daemon pin and reject it for a local target', async () => {
+  const { parseDiscoveryOptions } =
+    await import('../dist/discovery-options.js');
+  const options = parseDiscoveryOptions([
+    '--target',
+    'docker',
+    '--container',
+    'alias',
+    '--expected-daemon',
+    'approved-daemon',
+    '--expected-generation',
+    'a'.repeat(64),
+    '--json',
+  ]);
+  assert.equal(options.expectedDaemonId, 'approved-daemon');
+  assert.equal(options.expectedGeneration, 'a'.repeat(64));
+  const report = await discoverTarget(options, ct14DockerFixture);
+  assert.equal(report.ok, true);
+  assert.equal(report.daemonId, 'approved-daemon');
+  assert.throws(
+    () =>
+      parseDiscoveryOptions([
+        '--target',
+        'local',
+        '--expected-daemon',
+        'approved-daemon',
+      ]),
+    { message: 'INVALID_ARGUMENTS' },
+  );
+});

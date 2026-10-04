@@ -152,12 +152,15 @@ that canonical root. Missing Codex homes are reported without creation.
 
 Docker discovery supports an existing Linux container through a local Unix socket
 or Windows named pipe. `--expected-generation FULL_CONTAINER_ID` rejects container
-replacement. Probes pin the immutable container ID and recheck its name. Context
+replacement. `--expected-daemon DAEMON_ID` also rejects a context resolving to a
+different daemon before container inspection. Probes pin the immutable container
+ID, recheck the daemon identity after path projection and recheck the container
+name. Project metadata must remain canonical and contained within its root. Context
 aliases on one daemon share a credential-scope key. No lifecycle, credential,
 permission or security changes occur; container Node and Codex are not executed.
 
 Schema version 1 adds `targetDiscovery`: `ok`, `target`, `user`, canonical
-`paths`, `credentialScope` and Docker `context`/`generation`. Bridge metadata
+`paths`, `credentialScope` and Docker `context`/`daemonId`/`generation`. Bridge metadata
 reports existing JSON/durable-capture facilities without proving durable writes
 or hook trust. `fullTracking` remains false and `trust` unverified. Discovery
 scope keys do not implement activation locks.

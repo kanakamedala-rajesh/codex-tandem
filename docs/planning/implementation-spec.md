@@ -350,3 +350,22 @@ container lifecycle shortcut is implemented. Docker generation/remote stopping i
 CT-14; local synthetic/installed subcases do not pass complete T10/T11/T15/T20
 families or qualify arbitrary Codex server context, native Linux/legacy targets,
 Windows Smart App Control, or the outstanding launch latency budget.
+
+## Docker discovery pinning
+
+The read-only `doctor` adapter accepts `--expected-daemon DAEMON_ID` independently
+of identity selection, alongside `--expected-generation FULL_CONTAINER_ID`.
+A daemon mismatch fails before container inspection or execution. Successful
+Docker reports expose `daemonId`; context aliases resolving to that same daemon
+and container retain one scope key. Discovery rechecks daemon identity after path
+projection and the container state/name before publishing usable paths and scope.
+Projected paths must be canonical POSIX paths with the project contained within
+its root. Target Python still performs physical symlink and mount checks; lexical
+metadata validation on the host does not replace those checks.
+
+These read-only checks are snapshots, without an atomic discovery-to-activation
+boundary. Production Docker activation, selected-file transport, remote process
+ownership, terminal behavior and legacy build compatibility remain CT-14 work.
+Host contract fixtures do not qualify the target's credential durability, policy,
+process facilities or actual toolchain; target capability observations are required
+before those dependent lifecycle contracts can be established.
