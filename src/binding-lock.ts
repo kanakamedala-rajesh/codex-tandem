@@ -8,15 +8,23 @@ import {
   verifyPrivate,
   writePrivate,
 } from './private-files.js';
+import {
+  verifyRetainedDockerScope,
+  type DockerRuntime,
+} from './docker-runtime.js';
 
 type MutationKind =
-  'binding-mutation' | 'profile-mutation' | 'mutation-recovery';
+  | 'binding-mutation'
+  | 'profile-mutation'
+  | 'mutation-recovery'
+  | 'docker-binding';
 type MutationOwner = {
   schemaVersion: 1;
   kind: MutationKind;
   scope: string;
   nonce: string;
   owner: ProcessIdentity;
+  remoteScope?: string;
 };
 /** Resolve the shared physical binding and its lock directory. Absent destinations are allowed; existing hardlinked or non-file bindings are refused. */
 export async function bindingScope(
@@ -57,18 +65,33 @@ async function readOwner(path: string): Promise<MutationOwner> {
     if (
       !value ||
       value.schemaVersion !== 1 ||
-      !['binding-mutation', 'profile-mutation', 'mutation-recovery'].includes(
-        value.kind,
-      ) ||
+      ![
+        'binding-mutation',
+        'profile-mutation',
+        'mutation-recovery',
+        'docker-binding',
+      ].includes(value.kind) ||
       Object.keys(value).some(
         (key) =>
-          !['schemaVersion', 'kind', 'scope', 'nonce', 'owner'].includes(key),
+          ![
+            'schemaVersion',
+            'kind',
+            'scope',
+            'nonce',
+            'owner',
+            'remoteScope',
+          ].includes(key),
       ) ||
       typeof value.scope !== 'string' ||
       value.scope.length > 4096 ||
       !value.scope ||
       typeof value.nonce !== 'string' ||
       !/^[a-f0-9]{64}$/.test(value.nonce) ||
+      (value.kind === 'docker-binding'
+        ? typeof value.remoteScope !== 'string' ||
+          !value.remoteScope.startsWith('docker:') ||
+          value.remoteScope.length > 8192
+        : value.remoteScope !== undefined) ||
       !value.owner ||
       !Number.isSafeInteger(value.owner.pid) ||
       value.owner.pid < 1 ||
@@ -107,6 +130,8 @@ async function acquireMutation(
   kind: MutationKind,
   busy: string,
   depth = 0,
+  remoteScope?: string,
+  remoteRuntime?: DockerRuntime,
 ): Promise<BindingLease> {
   const owner = await processIdentity(process.pid);
   if (!owner) throw new Error('PROCESS_IDENTITY_UNAVAILABLE');
@@ -116,6 +141,7 @@ async function acquireMutation(
     scope,
     nonce: randomBytes(32).toString('hex'),
     owner,
+    ...(remoteScope ? { remoteScope } : {}),
   };
   try {
     await privateDirectory(lockPath, { exclusive: true });
@@ -134,6 +160,12 @@ async function acquireMutation(
     }
     if (previous.kind !== kind || previous.scope !== scope)
       throw new Error(busy, { cause: error });
+    // Native host absence never proves that a Docker child or its server stopped.
+    if (previous.kind === 'docker-binding') {
+      if (!remoteRuntime || previous.remoteScope !== remoteScope)
+        throw new Error('BINDING_BUSY', { cause: error });
+      await verifyRetainedDockerScope(remoteRuntime, remoteScope!);
+    }
     if (previous.owner.environment !== owner.environment)
       throw new Error('LOCK_ENVIRONMENT_FOREIGN', { cause: error });
     await ownerGone(previous, busy);
@@ -149,6 +181,8 @@ async function acquireMutation(
       const old = await lstat(lockPath, { bigint: true });
       await sameOwner(lockPath, previous);
       await ownerGone(previous, busy);
+      if (previous.kind === 'docker-binding')
+        await verifyRetainedDockerScope(remoteRuntime!, remoteScope!);
       const retired = lockPath + '.retired-' + randomUUID();
       await rename(lockPath, retired);
       const moved = await lstat(retired, { bigint: true });
@@ -209,6 +243,29 @@ async function acquireMutation(
 export async function acquireBindingLease(path: string): Promise<BindingLease> {
   const { binding, lockPath } = await bindingScope(path);
   return acquireMutation(lockPath, binding, 'binding-mutation', 'BINDING_BUSY');
+}
+/** Protect a saved binding used by a Docker credential scope. Its retained record is never reclaimed from host-process absence; callers release only after fresh in-container absence verification. A crashed client leaves the binding blocked pending explicit remote diagnosis. */
+export async function acquireDockerBindingLease(
+  path: string,
+  remoteScope: string,
+  remoteRuntime?: DockerRuntime,
+): Promise<BindingLease> {
+  if (
+    !remoteScope.startsWith('docker:') ||
+    remoteScope.length > 8192 ||
+    /[\p{Cc}\p{Cf}]/u.test(remoteScope)
+  )
+    throw new Error('DOCKER_SCOPE_INVALID');
+  const { binding, lockPath } = await bindingScope(path);
+  return acquireMutation(
+    lockPath,
+    binding,
+    'docker-binding',
+    'BINDING_BUSY',
+    0,
+    remoteScope,
+    remoteRuntime,
+  );
 }
 /** Serialize guard recovery under a nonce and native-owner lease. Known dead recovery owners may be reclaimed through at most two nested mutexes; ambiguous or replaced ownership remains held. */
 export async function acquireRecoveryMutex(

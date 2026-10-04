@@ -4,3 +4,4 @@ await copyFile(
   'dist/windows-process-reader.ps1',
 );
 await copyFile('src/windows-process-stop.ps1', 'dist/windows-process-stop.ps1');
+await copyFile('src/docker-runtime.py', 'dist/docker-runtime.py');

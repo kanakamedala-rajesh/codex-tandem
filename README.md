@@ -6,7 +6,7 @@ It is being built against the [approved requirements](docs/README.md) in
 
 The current package provides host capability checks, read-only target discovery,
 a synthetic G0 selector/child wrapper, private profiles, guarded local credential
-activation/recovery, managed local launch/resume and bounded metadata capture groundwork. These
+activation/recovery, managed local and named Docker launch/resume and bounded metadata capture groundwork. These
 features do not establish full tracking, complete G0 acceptance or release support.
 
 ## Build and install
@@ -114,6 +114,93 @@ observed child exit returns 2 and reports retained ownership for diagnosis.
 `message`); Codex streams remain untouched. SQLite and compression are absent from
 the launch imports. Native Linux, actual-target capture, complete acceptance
 families and the outstanding Windows launch latency budget remain unqualified.
+
+## Named Docker launch and resume
+
+Named targets select an existing Linux container independently of the saved
+identity. Register a JSON configuration with the fields below; use actual observed
+daemon/container identities and existing absolute target paths. Host and target
+roots are explicit physical mappings, without mounting the host credential store.
+
+```json
+{
+  "id": "legacy-build",
+  "type": "docker",
+  "dockerContext": "desktop-linux",
+  "daemonId": "OBSERVED_DAEMON_ID",
+  "containerSelector": "existing-container",
+  "expectedContainerId": "FULL_64_HEX_CONTAINER_ID",
+  "user": "cnh",
+  "home": "/home/cnh",
+  "codexHome": "/home/cnh/.codex",
+  "codexExecutable": "/home/cnh/.local/bin/codex",
+  "bridgeInterpreter": "/usr/bin/python3",
+  "workspaceMappings": [
+    { "hostRoot": "/host/project", "targetRoot": "/target/project" }
+  ]
+}
+```
+
+```sh
+codex-tandem targets add --config target.json --json
+codex-tandem targets list --json
+codex-tandem targets check --id legacy-build --json
+codex-tandem targets edit --config target.json --confirm-id legacy-build --json
+codex-tandem targets remove --id legacy-build --confirm-id legacy-build --json
+codex-tandem run --target legacy-build --identity PROFILE_ID --project /host/project -- CODEX_ARGUMENTS
+codex-tandem resume --last --target legacy-build --identity PROFILE_ID --project /host/project
+codex-tandem processes --target legacy-build --project /host/project --json
+codex-tandem processes stop --target legacy-build --project /host/project
+```
+
+`--state-home` uses the same private installation as profiles. Registration and
+each operation revalidate the local Docker endpoint, daemon, immutable container,
+user, home, existing executable and physical project. Stopped, paused, replaced or
+inaccessible targets fail; Tandem never starts or recreates containers. A native
+Windows Docker context and a WSL context can reach the same daemon through different
+local endpoints; each installation retains its own named configuration and live state.
+Root targets are refused. Local executable/script/home overrides do not apply to a
+named target. An optional absolute `environmentWrapper` in the configuration receives
+the existing Codex executable and unchanged arguments without shell interpolation.
+Existing target Python 3.5+ and standard-library durability/process facilities are
+required; no Node, SQLite, collector or dashboard runs in the container.
+
+Only the selected credentials cross private control stdin. The target writes owner
+only staging and `auth.json`, with file fsync, atomic replacement and directory fsync.
+Outgoing refreshes are saved before replacement; incomplete journals reconcile current
+validated bytes and retain ambiguous alternatives. File-backed effective policy is
+checked through the existing target Codex; unsupported managed/provider/storage policy
+blocks before activation. Raw directory arguments retain their argv and original spawn
+cwd; every resolution is pinned within its registered root. Target resume follows the
+same bounded metadata rules as local resume and returns an explicit project-scoped UUID.
+
+A remote supervisor retains verified descendants, including adopted children after
+client loss. An unreachable Docker client does not prove those processes exited;
+remote and saved-binding ownership remain blocking until remote absence is verified.
+The supervisor reaps children rather than using container lifecycle operations. A
+persisted child remains owned after supervisor loss; missing roots without a durable
+completion record leave descendant absence unproved and block recovery. External
+Codex scope comes from its own `CODEX_HOME` or `HOME`; unknown scope blocks switching.
+Controllers hold an owner-only, permanent file inode with a non-inherited kernel lock
+through recovery and every credential request. Guard protocol 2 is required; legacy
+or unknown guard protocols are refused with credentials and journals preserved. Real
+interactive launches use Docker TTY; controls and piped launches do not. Codex streams
+and observed exit status propagate, with separate diagnostics for sync/release failures.
+
+Process inspection does not acquire or release the remote guard. Unknown Codex,
+unproved ownership and PID1 remain blocking. Stop displays the scope, native creation
+identities and a process consent key, then asks separately for graceful and force
+approval. Noninteractive stop requires `--confirm-scope SCOPE` and
+`--confirm-processes CONSENT_KEY` from the preceding inspection; force additionally
+requires `--confirm-force CONSENT_KEY` for the surviving set. Changed ownership or
+process identities invalidate consent. Supervisors, PID1 and unrelated builds are
+excluded from signals; cancellation returns 130 and live/unknown survivors return 2.
+Stopping never releases credentials itself.
+
+Host fixtures establish their protocol cases only. Actual legacy credential recovery,
+terminal behavior, existing Codex/toolchain execution and native Linux qualification
+require separate platform evidence; registration and `codex --version` do not qualify
+those acceptance families. Full capture and launch latency remain separate gates.
 
 ## Synthetic selector
 
@@ -300,8 +387,8 @@ reuse these stores, including with a different `--analytics-path`. First adoptio
 claims unmarked, unlocked state; unresolved existing locks or incomplete markers
 block adoption. There is no automatic relabeling or migration. Physical path aliases
 are resolved without changing case; hardlinked binding/database files are refused.
-These guards currently accept local homes and existing binding files. Docker target
-ownership and transfer remain separate work.
+Local guards accept native homes and existing binding files. Named Docker process
+inspection and ownership use the separate remote adapter described above.
 
 The compiler-free Windows text helper currently reads supported native AMD64
 processes. Unsupported architecture, inaccessible memory or inconsistent native

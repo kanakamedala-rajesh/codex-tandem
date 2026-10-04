@@ -1,5 +1,5 @@
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import {
   acquireGuard,
@@ -7,7 +7,12 @@ import {
   type GuardOptions,
   stopScopedProcesses,
 } from './scope-guard.js';
-/** Inspect local conflicts, offer separately confirmed scoped stops with sanitized executable paths and blocking reasons, or hold a diagnostic credential guard. An explicit home overrides CODEX_HOME and the native user's default. Stop cancellation returns 130; surviving or unknown processes block safety. Never changes credentials or launches Codex. */
+import { readDockerTargets, mappedDockerProject } from './docker-targets.js';
+import {
+  inspectDockerProcesses,
+  stopDockerProcesses,
+} from './docker-processes.js';
+/** Inspect local or named Docker conflicts, offer separately confirmed scoped stops, or hold a local diagnostic guard. Docker resolves the configured project mapping and never takes over its remote guard. Stop cancellation returns 130; surviving or unknown processes block safety. Never changes credentials or launches Codex. */
 export async function guardCommand(
   command: 'guard' | 'processes',
   args: string[],
@@ -28,6 +33,10 @@ export async function guardCommand(
           '--analytics-path',
           '--codex-executable',
           '--target',
+          '--project',
+          '--confirm-scope',
+          '--confirm-processes',
+          '--confirm-force',
         ].includes(args[i]) ||
         !args[i + 1] ||
         values.has(args[i])
@@ -35,8 +44,113 @@ export async function guardCommand(
         throw new Error('INVALID_ARGUMENTS');
       values.set(args[i], args[++i]);
     }
-    if (values.has('--target') && values.get('--target') !== 'local')
-      throw new Error('TARGET_NOT_IMPLEMENTED');
+    const stateHome =
+      values.get('--state-home') ??
+      join(
+        homedir(),
+        process.platform === 'win32'
+          ? '.codex-tandem-windows'
+          : '.codex-tandem',
+      );
+    if (values.has('--target') && values.get('--target') !== 'local') {
+      if (
+        command !== 'processes' ||
+        args.includes('--hold') ||
+        [
+          '--codex-home',
+          '--binding',
+          '--analytics-path',
+          '--codex-executable',
+        ].some((k) => values.has(k))
+      )
+        throw new Error('INVALID_ARGUMENTS');
+      const target = (await readDockerTargets(stateHome)).find(
+        (t) => t.id === values.get('--target'),
+      );
+      if (!target) throw new Error('TARGET_NOT_FOUND');
+      const project = await mappedDockerProject(
+        target,
+        resolve(values.get('--project') ?? process.cwd()),
+      );
+      if (!stop) {
+        if (
+          ['--confirm-scope', '--confirm-processes', '--confirm-force'].some(
+            (k) => values.has(k),
+          )
+        )
+          throw new Error('INVALID_ARGUMENTS');
+        process.stdout.write(
+          JSON.stringify({
+            schemaVersion: 1,
+            ok: true,
+            ...(await inspectDockerProcesses(target, project)),
+          }) + '\n',
+        );
+        return 0;
+      }
+      const interactive = !!(
+        process.stdin.isTTY &&
+        process.stdout.isTTY &&
+        process.stderr.isTTY &&
+        !json
+      );
+      const input = interactive
+        ? createInterface({ input: process.stdin })
+        : undefined;
+      const answers = input?.[Symbol.asyncIterator]();
+      try {
+        const result = await stopDockerProcesses(
+          target,
+          project,
+          async (prompt) => {
+            process.stderr.write(
+              `Docker scope: ${prompt.scope}\n${prompt.processes.map((p) => `PID ${p.pid}; creation ${p.creation}; ${p.role}; executable ${JSON.stringify(p.executable.replace(/[\p{Cc}\p{Cf}]/gu, '?').slice(0, 4096))}`).join('\n')}\n${prompt.consequences}\nProcess consent key: ${prompt.consentKey}\n`,
+            );
+            if (!answers)
+              return (
+                values.get('--confirm-scope') === prompt.scope &&
+                values.get(
+                  prompt.phase === 'graceful'
+                    ? '--confirm-processes'
+                    : '--confirm-force',
+                ) === prompt.consentKey
+              );
+            process.stderr.write(
+              `Type ${prompt.phase === 'graceful' ? 'stop' : 'force'} to approve this ${prompt.phase} action; anything else cancels: `,
+            );
+            const answer = await answers.next();
+            return (
+              !answer.done &&
+              answer.value === (prompt.phase === 'graceful' ? 'stop' : 'force')
+            );
+          },
+        );
+        process.stdout.write(
+          JSON.stringify({
+            schemaVersion: 1,
+            ok: result.status === 'stopped',
+            ...result,
+          }) + '\n',
+        );
+        return result.status === 'cancelled'
+          ? 130
+          : result.status === 'stopped'
+            ? 0
+            : 2;
+      } finally {
+        input?.close();
+        if (input) process.stdin.pause();
+      }
+    }
+    if (
+      [
+        '--project',
+        '--confirm-scope',
+        '--confirm-processes',
+        '--confirm-force',
+      ].some((k) => values.has(k))
+    )
+      throw new Error('INVALID_ARGUMENTS');
     const options: GuardOptions = {
       stateHome:
         values.get('--state-home') ??

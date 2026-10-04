@@ -283,7 +283,10 @@ export async function run(
     return 2;
   };
   if (!options.includes('--target') && !usableTerminal)
-    return error('TARGET_REQUIRED', 'Specify --target local.');
+    return error(
+      'TARGET_REQUIRED',
+      'Specify --target local or a registered Docker target ID.',
+    );
   if (!options.includes('--identity') && !usableTerminal)
     return error(
       'IDENTITY_REQUIRED',
@@ -331,8 +334,6 @@ export async function run(
         throw new Error('INVALID_ARGUMENTS');
       values.set(options[i], options[++i]);
     }
-    if ((values.get('--target') ?? 'local') !== 'local')
-      throw new Error('TARGET_UNSUPPORTED');
     if (operation === 'resume' && !resumeSelection)
       throw new Error('RESUME_SELECTION_REQUIRED');
     let childArgs = boundary < 0 ? [] : args.slice(boundary + 1);
@@ -364,6 +365,30 @@ export async function run(
       if (!profiles.length) throw new Error('NO_PROFILES');
       profileId = (await selectProfile(profiles)) ?? undefined;
       if (!profileId) return 130;
+    }
+    if ((values.get('--target') ?? 'local') !== 'local') {
+      if (
+        ['--codex-home', '--codex-executable', '--codex-script'].some((flag) =>
+          values.has(flag),
+        )
+      )
+        throw new Error('TARGET_OVERRIDE_CONFLICT');
+      if (invocation.last) throw new Error('RESUME_SCOPE_UNPROVEN');
+      const { runDockerTarget } = await import('./docker-run.js');
+      return await runDockerTarget({
+        stateHome,
+        profileId,
+        targetId: values.get('--target')!,
+        hostProject: values.get('--project') ?? process.cwd(),
+        args: childArgs,
+        policyArguments: invocation.configArguments,
+        directories: invocation.directories,
+        resume: resumeSelection,
+        rawResume,
+        untracked,
+        interactive: !!usableTerminal,
+        error,
+      });
     }
     const initialProject = await realpath(
       resolve(values.get('--project') ?? process.cwd()),

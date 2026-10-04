@@ -503,7 +503,7 @@ prefix = getattr(sys, 'base_prefix', sys.prefix).rstrip('/')
 version = '%d.%d' % sys.version_info[:2]
 stdlib = [prefix + '/lib/python' + version, prefix + '/lib64/python' + version]
 safe_paths = stdlib + [path + '/lib-dynload' for path in stdlib] + [prefix + '/lib/python%d%d.zip' % sys.version_info[:2]]
-sys.path[:] = [path for path in sys.path if path.startswith('/') and path in safe_paths]
+sys.path[:] = [path.rstrip('/') for path in sys.path if path.startswith('/') and path.rstrip('/') in safe_paths]
 import os, json, pwd, re
 try:
  root_arg, project_arg, codex_arg, exe_arg = sys.argv[1:]

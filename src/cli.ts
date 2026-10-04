@@ -44,6 +44,9 @@ if (args[0] === 'doctor') {
 } else if (args[0] === 'guard' || args[0] === 'processes') {
   const { guardCommand } = await import('./guard-command.js');
   process.exitCode = await guardCommand(args[0], args.slice(1));
+} else if (args[0] === 'targets') {
+  const { dockerTargetsCommand } = await import('./docker-targets.js');
+  process.exitCode = await dockerTargetsCommand(args.slice(1));
 } else if (args[0] === 'profiles') {
   const { profilesCommand } = await import('./profiles.js');
   process.exitCode = await profilesCommand(args.slice(1));

@@ -437,7 +437,7 @@ test(
         join(userSite, 'fixture.pth'),
         `import builtins; builtins.open(${JSON.stringify(sentinel)},'w').write('executed')\n`,
       );
-      const run = async (args, home = userInfo().homedir) => {
+      const run = async (args, home = userInfo().homedir, trailing = false) => {
         if (args[0] === 'context')
           return JSON.stringify('unix:///var/run/docker.sock');
         if (args.includes('info')) return JSON.stringify('daemon-fixture');
@@ -449,20 +449,23 @@ test(
           });
         if (args.at(-1) === 'command -v python3 || command -v python')
           return '/usr/bin/python3';
-        return execFileSync(
-          '/usr/bin/python3',
-          args.slice(args.indexOf('/usr/bin/python3') + 1),
-          {
-            cwd: root,
-            env: {
-              ...process.env,
-              HOME: home,
-              PYTHONPATH: root,
-              PYTHONUSERBASE: root,
-            },
-            encoding: 'utf8',
+        const pythonArgs = args.slice(args.indexOf('/usr/bin/python3') + 1);
+        if (trailing) {
+          const script = pythonArgs.indexOf('-c') + 1;
+          pythonArgs[script] =
+            `import sys; sys.path[:]=[p+'/' if p.startswith('/') else p for p in sys.path]+[${JSON.stringify(root)}]\n` +
+            pythonArgs[script];
+        }
+        return execFileSync('/usr/bin/python3', pythonArgs, {
+          cwd: root,
+          env: {
+            ...process.env,
+            HOME: home,
+            PYTHONPATH: root,
+            PYTHONUSERBASE: root,
           },
-        );
+          encoding: 'utf8',
+        });
       };
       const options = {
         target: 'docker',
@@ -474,6 +477,11 @@ test(
       const report = await discoverTarget(options, run);
       assert.equal(await readFile(sentinel, 'utf8'), 'untouched');
       assert.equal(report.ok, true, JSON.stringify(report));
+      const trailingReport = await discoverTarget(options, (args) =>
+        run(args, userInfo().homedir, true),
+      );
+      assert.equal(trailingReport.ok, true, JSON.stringify(trailingReport));
+      assert.equal(await readFile(sentinel, 'utf8'), 'untouched');
       const mismatchedHome = await discoverTarget(options, (args) =>
         run(args, root),
       );

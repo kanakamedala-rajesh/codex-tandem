@@ -25,6 +25,82 @@ type Policy = {
   providers: unknown;
   baseUrl: unknown;
 };
+function projectedPolicy(value: unknown): Policy {
+  const v = value as {
+    config?: Record<string, unknown>;
+    managed?: unknown;
+    requirements?: unknown;
+  };
+  if (
+    !v ||
+    !v.config ||
+    v.managed !== false ||
+    !Object.hasOwn(v, 'requirements')
+  )
+    throw new Error('POLICY_UNVERIFIABLE');
+  const config = v.config,
+    requirements = v.requirements as {
+      cliAuthCredentialsStore?: unknown;
+    } | null;
+  if (
+    requirements?.cliAuthCredentialsStore &&
+    requirements.cliAuthCredentialsStore !== 'file'
+  )
+    throw new Error('FILE_STORAGE_PROHIBITED');
+  if (requirements !== null) throw new Error('POLICY_UNVERIFIABLE');
+  const mode = config.cli_auth_credentials_store,
+    method = config.forced_login_method ?? null,
+    workspace = config.forced_chatgpt_workspace_id ?? null;
+  const safeText = (value: unknown) =>
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= 256 &&
+    !/[\p{Cc}\p{Cf}]/u.test(value);
+  if (
+    !['file', 'keyring', 'auto', 'ephemeral'].includes(String(mode)) ||
+    (method !== null && !['chatgpt', 'api'].includes(String(method))) ||
+    (workspace !== null &&
+      !(
+        safeText(workspace) ||
+        (Array.isArray(workspace) &&
+          workspace.length > 0 &&
+          workspace.every(safeText))
+      )) ||
+    (config.model_provider && config.model_provider !== 'openai') ||
+    (config.model_providers &&
+      (typeof config.model_providers !== 'object' ||
+        Object.keys(config.model_providers).length > 0))
+  )
+    throw new Error('POLICY_UNVERIFIABLE');
+  if (method === 'api') throw new Error('AUTH_METHOD_UNSUPPORTED');
+  return {
+    mode: String(mode),
+    forcedMethod: method,
+    forcedWorkspace: workspace,
+    provider: config.model_provider ?? null,
+    providers: config.model_providers ?? null,
+    baseUrl: config.chatgpt_base_url ?? null,
+  };
+}
+function activationPolicy(policy: Policy, account: string): void {
+  if (policy.mode !== 'file') throw new Error('FILE_STORAGE_REQUIRED');
+  if (
+    policy.forcedWorkspace !== null &&
+    !(
+      Array.isArray(policy.forcedWorkspace)
+        ? policy.forcedWorkspace
+        : [policy.forcedWorkspace]
+    ).includes(account)
+  )
+    throw new Error('WORKSPACE_POLICY_MISMATCH');
+}
+/** Require proven file-backed effective Codex policy from a bounded allowlisted local or remote RPC projection. Managed/unknown requirements, unsupported providers and mismatched workspaces are refused without configuration mutation. */
+export function verifyProjectedActivationPolicy(
+  value: unknown,
+  account: string,
+): void {
+  activationPolicy(projectedPolicy(value), account);
+}
 async function inspect(
   command: CodexCommand,
   home: string,
@@ -107,50 +183,17 @@ async function inspect(
               !Object.hasOwn(message.result, 'requirements')
             )
               return kill('POLICY_UNVERIFIABLE');
-            const requirements = message.result.requirements;
-            if (
-              requirements?.cliAuthCredentialsStore &&
-              requirements.cliAuthCredentialsStore !== 'file'
-            )
-              return kill('FILE_STORAGE_PROHIBITED');
-            if (requirements !== null) return kill('POLICY_UNVERIFIABLE');
-            const mode = config.cli_auth_credentials_store;
-            if (
-              !['file', 'keyring', 'auto', 'ephemeral'].includes(String(mode))
-            )
-              return kill('POLICY_UNVERIFIABLE');
-            const method = config.forced_login_method ?? null;
-            const workspace = config.forced_chatgpt_workspace_id ?? null;
-            const safeText = (value: unknown) =>
-              typeof value === 'string' &&
-              value.length > 0 &&
-              value.length <= 256 &&
-              !/[\p{Cc}\p{Cf}]/u.test(value);
-            if (
-              (method !== null &&
-                !['chatgpt', 'api'].includes(String(method))) ||
-              (workspace !== null &&
-                !(
-                  safeText(workspace) ||
-                  (Array.isArray(workspace) &&
-                    workspace.length > 0 &&
-                    workspace.every(safeText))
-                )) ||
-              (config.model_provider && config.model_provider !== 'openai') ||
-              (config.model_providers &&
-                (typeof config.model_providers !== 'object' ||
-                  Object.keys(config.model_providers).length > 0))
-            )
-              return kill('POLICY_UNVERIFIABLE');
-            if (method === 'api') return kill('AUTH_METHOD_UNSUPPORTED');
-            result = {
-              mode: String(mode),
-              forcedMethod: config.forced_login_method ?? null,
-              forcedWorkspace: config.forced_chatgpt_workspace_id ?? null,
-              provider: config.model_provider ?? null,
-              providers: config.model_providers ?? null,
-              baseUrl: config.chatgpt_base_url ?? null,
-            };
+            try {
+              result = projectedPolicy({
+                config,
+                managed: false,
+                requirements: message.result.requirements,
+              });
+            } catch (error) {
+              return kill(
+                error instanceof Error ? error.message : 'POLICY_UNVERIFIABLE',
+              );
+            }
             child.kill();
           }
         } catch {
@@ -232,16 +275,7 @@ export async function verifyActivationPolicy(
     options.cwd,
     options.policyArguments,
   );
-  if (policy.mode !== 'file') throw new Error('FILE_STORAGE_REQUIRED');
-  if (
-    policy.forcedWorkspace !== null &&
-    !(
-      Array.isArray(policy.forcedWorkspace)
-        ? policy.forcedWorkspace
-        : [policy.forcedWorkspace]
-    ).includes(account)
-  )
-    throw new Error('WORKSPACE_POLICY_MISMATCH');
+  activationPolicy(policy, account);
 }
 /**
  * Run explicitly requested Codex login in a restricted staging home and return

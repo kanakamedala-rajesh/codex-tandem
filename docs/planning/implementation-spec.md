@@ -364,8 +364,65 @@ its root. Target Python still performs physical symlink and mount checks; lexica
 metadata validation on the host does not replace those checks.
 
 These read-only checks are snapshots, without an atomic discovery-to-activation
-boundary. Production Docker activation, selected-file transport, remote process
-ownership, terminal behavior and legacy build compatibility remain CT-14 work.
-Host contract fixtures do not qualify the target's credential durability, policy,
-process facilities or actual toolchain; target capability observations are required
-before those dependent lifecycle contracts can be established.
+boundary. Host contract fixtures do not qualify the target's credential durability,
+policy, process facilities or actual toolchain.
+
+## Named Docker execution
+
+`docker-targets` owns private named configurations independent of identity profiles.
+Configurations pin the local Docker context's daemon and full container identity,
+existing nonroot user/home/Codex executable, Python interpreter and explicit physical
+workspace mappings. `targets add/edit/check` revalidates the observed target; edits
+and removal require the exact target ID. Windows and WSL keep independent installation
+configuration and live stores even when their local endpoints reach the same daemon.
+
+`docker-runtime` uses shell-free Docker exec with existing target Python 3.5+ and a
+bundled inline standard-library bridge. Private control stdin transfers only selected
+credentials and bounded metadata; command argv/environment contain no credentials.
+`docker-activation` reuses the existing manifest, saved-binding leases, credential
+identity validation and effective policy contract. Its target journal owns private
+staging, active reference, transaction phases and immutable launch records. Every
+replacement preserves outgoing matching refreshes first and uses target file fsync,
+same-directory atomic replacement and directory fsync. Interrupted state reconciles
+current validated bytes; ambiguous bindings and contradictory versions remain errors.
+
+`docker-run` maps the actual host project, pins original target cwd and each raw
+directory resolution, and rechecks physical identities before policy and execution.
+The target supervisor verifies committed activation and invocation paths, then starts
+the existing Codex with unchanged argv and the configured environment wrapper. Target
+resume reads only bounded session metadata under the selected physical home and
+project; UUID selection precedes credential replacement. Raw `--last` remains refused;
+Tandem `resume --last` passes an explicit proved UUID.
+
+The remote guard protocol 2 records exact controller creation identity and nonce.
+An immutable owner-only `.tandem-docker-owner.lock` inode holds a non-inherited
+exclusive kernel `flock` throughout acquisition, recovery and credential requests.
+The file is never unlinked or renamed; controller death releases only the kernel
+lock. Legacy or unknown guard protocols block recovery without mutating credentials
+or journal records. A later protocol-2 controller must prove the old owner absent
+and the remote process inventory idle before recovery. Native saved-binding leases marked
+with this Docker scope cannot be recovered using host client death alone. A fresh
+production remote runtime must prove the same scope idle before stale binding recovery.
+The target supervisor uses verified subreaper facilities, tracks native descendant
+identities and waits for adopted children before exit. Persisted child identities
+retain ownership independently after supervisor loss. If no recorded root remains,
+a non-exited record blocks inventory because detached descendant absence is unproved.
+External Codex scope uses its own `CODEX_HOME`, falling back only to its own `HOME`;
+missing or relative scope blocks switching. Unknown or inaccessible Codex ownership
+blocks switching; process argv and arbitrary environment values are omitted.
+
+`docker-processes` supplies read-only inspection and separately consented scoped
+stopping through the existing `processes` command. It neither takes over nor releases
+remote ownership. Consent binds the daemon/container/home and exact observed process
+identities; a changed owner or process set refuses the action. Graceful and force
+decisions are separate. Signals exclude PID1, unrelated processes and supervisors;
+supervisors retain their ability to reap descendants. POSIX identity checks are
+cooperative rather than kernel-pinned process handles. Cancellation changes nothing.
+
+Stopped, paused, replaced, inaccessible or path-changed targets fail without automatic
+restart or replacement. Docker TTY is requested only for real interactive launches;
+pipes retain non-TTY streams. Observed child status propagates independently of explicit
+post-exit sync/release diagnostics. Collection, SQLite, accounting and dashboard startup
+stay on the host and off the launch path. Actual durability interruption cases, terminal
+behavior, Codex/toolchain use, native Linux and performance qualification remain separate
+evidence obligations; a registered configuration or version probe is not qualification.

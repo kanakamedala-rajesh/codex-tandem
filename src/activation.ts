@@ -76,6 +76,10 @@ async function privateBytes(path: string): Promise<Buffer> {
     await handle.close();
   }
 }
+/** Read bounded owner-only saved credential bytes through verified native file identity. Links, hardlinks, changed files and inaccessible permissions throw without exposing contents. */
+export async function readPrivateCredential(path: string): Promise<Buffer> {
+  return privateBytes(path);
+}
 function matches(bytes: Buffer, binding: Binding): boolean {
   const actual = credentialIdentity(bytes);
   return (
@@ -198,6 +202,21 @@ function transactionRecord(
   if ((v.phase === 'complete') !== (v.resolved !== null))
     throw new Error('ACTIVATION_STATE_INVALID');
   return v;
+}
+/** Validate private activation metadata for the exact canonical home and target generation. Missing records are allowed; malformed, foreign or contradictory transaction state throws. */
+export function validateActivationState(
+  value: { active: unknown; transaction: unknown },
+  home: string,
+  generation: string,
+): { active: Active | undefined; transaction: Transaction | undefined } {
+  return {
+    active: activeRecord(value.active ?? undefined, home, generation),
+    transaction: transactionRecord(
+      value.transaction ?? undefined,
+      home,
+      generation,
+    ),
+  };
 }
 async function optionalBytes(path: string) {
   try {

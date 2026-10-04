@@ -14,8 +14,12 @@ await withTempPackage(
     for (const file of packed.files)
       assert.match(
         file.path,
-        /^(dist\/.*\.js|dist\/windows-process-(reader|stop)\.ps1|package\.json|README\.md)$/,
+        /^(dist\/.*\.js|dist\/windows-process-(reader|stop)\.ps1|dist\/docker-runtime\.py|package\.json|README\.md)$/,
       );
+    assert.equal(
+      readFileSync(join(packageRoot, 'dist', 'docker-runtime.py'), 'utf8'),
+      readFileSync('src/docker-runtime.py', 'utf8'),
+    );
     const manifest = JSON.parse(readFileSync('package.json', 'utf8'));
     assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0);
     for (const hook of ['preinstall', 'install', 'postinstall'])

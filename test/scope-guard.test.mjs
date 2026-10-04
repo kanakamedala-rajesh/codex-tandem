@@ -436,6 +436,7 @@ test('guard recovery preserves replaced and nonce-changed recovery ownership', a
   const lock = join(options.stateHome, 'manager.lock'),
     recovery = lock + '.recovery';
   const nativeRename = fs.rename;
+  let retainedOwner;
   try {
     await Promise.race([
       once(manager, 'message'),
@@ -443,8 +444,63 @@ test('guard recovery preserves replaced and nonce-changed recovery ownership', a
         throw new Error('manager fixture failed');
       }),
     ]);
+    if (process.platform === 'win32') {
+      // Keep the real process object alive after exit so native helper churn cannot
+      // recycle its PID before this fixture reaches the injected rename boundary.
+      const pin = `$ErrorActionPreference='Stop'
+$p=[System.Diagnostics.Process]::GetProcessById([int]$env:TANDEM_FIXTURE_OWNER_PID)
+try { $null=$p.Handle; [Console]::WriteLine('pinned'); [Console]::Out.Flush(); $null=[Console]::In.ReadLine() }
+finally { $p.Dispose() }`;
+      retainedOwner = spawn(
+        join(
+          process.env.SystemRoot ?? 'C:\\Windows',
+          'System32',
+          'WindowsPowerShell',
+          'v1.0',
+          'powershell.exe',
+        ),
+        [
+          '-NoLogo',
+          '-NoProfile',
+          '-NonInteractive',
+          '-EncodedCommand',
+          Buffer.from(pin, 'utf16le').toString('base64'),
+        ],
+        {
+          env: {
+            ...process.env,
+            TANDEM_FIXTURE_OWNER_PID: String(manager.pid),
+          },
+          stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: true,
+        },
+      );
+      let timer;
+      try {
+        await Promise.race([
+          once(retainedOwner.stdout, 'data').then(([data]) => {
+            assert.equal(data.toString().trim(), 'pinned');
+          }),
+          once(retainedOwner, 'exit').then(() => {
+            throw new Error('FIXTURE_OWNER_HANDLE_FAILED');
+          }),
+          new Promise((_, reject) => {
+            timer = setTimeout(
+              () => reject(new Error('FIXTURE_OWNER_HANDLE_TIMEOUT')),
+              10000,
+            );
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
     manager.kill();
     await once(manager, 'exit');
+    const { processIdentity } = await import(
+      new URL('dist/processes.js', packageRoot)
+    );
+    assert.equal(await processIdentity(manager.pid), null);
     const before = await fs.readFile(join(lock, 'owner.json'), 'utf8');
     for (const replace of [true, false]) {
       let replacement;
@@ -505,7 +561,33 @@ test('guard recovery preserves replaced and nonce-changed recovery ownership', a
       manager.kill();
       await once(manager, 'exit');
     }
-    await rm(root, { recursive: true, force: true });
+    try {
+      if (
+        retainedOwner?.exitCode === null &&
+        retainedOwner.signalCode === null
+      ) {
+        const finished = once(retainedOwner, 'exit');
+        retainedOwner.stdin.end();
+        let timer;
+        try {
+          await Promise.race([
+            finished.then(([code]) => {
+              assert.equal(code, 0);
+            }),
+            new Promise((_, reject) => {
+              timer = setTimeout(() => {
+                retainedOwner.kill();
+                reject(new Error('FIXTURE_OWNER_HANDLE_TIMEOUT'));
+              }, 10000);
+            }),
+          ]);
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   }
 });
 
