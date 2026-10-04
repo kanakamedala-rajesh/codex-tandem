@@ -277,3 +277,49 @@ executed cases. Ranges and fault kinds permit serialized resumption; only the fu
 set establishes this scoped matrix. Synthetic Windows/Ubuntu subcases do not pass
 entire T08/T09/T19/T29/T37/T40 families, native Linux/legacy targets, Smart App
 Control, hardware-power-loss behavior or the outstanding Windows launch budget.
+
+## Scoped local stopping
+
+CT-12's `stopScopedProcesses` and `processes stop` consume CT-10 private managed
+records and native inventory. Unknown owners, unregistered old-context servers,
+PID 1 and the caller are never eligible. No per-launch background-server reuse
+adapter is qualified; a conflict remains blocked until verified approved stopping
+or cancellation. This command neither activates credentials nor releases guard
+ownership; the owning manager still must prove idle before release/switch.
+
+The consent callback must display the canonical local home/generation, exact
+process identities, sanitized executable paths, blocking reasons and consequences
+for each graceful and force decision. The stop inventory uses the recorded selector;
+omitting a caller selector cannot hide a registered child, and an incompatible
+explicit selector is refused. Every registered child is independently checked, and
+stopped success requires native absence for all recorded children. Initial
+cancellation performs no process or
+credential mutation. After approval, the flow rechecks the unchanged private
+owner record/nonce, executable identity, physical home generation and the complete
+approved process set. Each action also obtains fresh native creation/ownership
+evidence. New, inaccessible or changed owners block action; consent never applies
+to additional or reused processes. A vanished approved process is confirmed absent.
+
+POSIX sends normal SIGTERM first and waits a bounded interval (default 1500 ms,
+caller range 100–10000 ms). Survivors require a separate displayed force decision
+and fresh verification before SIGKILL. Node's Windows SIGTERM is forced and is not
+used as a graceful mechanism. The external Windows stop command reports graceful
+shutdown unqualified, then separately offers force. Its compiler-free helper
+reuses the native reader, checks creation/SID, executable and nonce/home evidence,
+and terminates an opened, creation-checked process handle; PID reuse cannot retarget
+that handle. Both the process and selected home are opened and checked against the
+stored NTFS volume/file ID, so aliases resolve physically; inaccessible homes and
+unqualified filesystems such as ReFS remain blocked. POSIX performs the native
+creation check immediately before the signal syscall but has no Node-exposed
+kernel-pinned PID handle, so it does not establish an atomic lookup-to-signal
+guarantee. The owning stdio launch pipe may
+support EOF shutdown for a tested Codex version, but this external command does
+not own another server's pipe and does not claim that capability.
+
+Consent denial leaves survivors blocking. Successful native termination is still
+followed by absence verification; uncertain/live processes remain in the result
+and guard release stays blocked. No broad-name/tree kill, container PID 1 action or
+container lifecycle shortcut is implemented. Docker generation/remote stopping is
+CT-14; local synthetic/installed subcases do not pass complete T10/T11/T15/T20
+families or qualify arbitrary Codex server context, native Linux/legacy targets,
+Windows Smart App Control, or the outstanding launch latency budget.

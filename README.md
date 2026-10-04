@@ -190,13 +190,14 @@ remain recovery errors and preserve saved versions for diagnosis.
 
 Exit 0 reports `activated`, `recovered` or `synced`; failure exits 2 with a redacted
 code and recovery status. These outcomes describe credentials, not a successful
-Codex launch. Full managed launching, stopping, Docker activation and release
+Codex launch. Full managed launching, Docker activation and release
 qualification remain separate work.
 
 ## Local scope guards
 
 ```sh
 codex-tandem processes --codex-home /existing/codex-home --json
+codex-tandem processes stop --codex-home /existing/codex-home --json
 codex-tandem guard --state-home /private/tandem-state --codex-home /existing/codex-home --binding /private/saved-binding.json --hold --json
 ```
 
@@ -204,6 +205,19 @@ codex-tandem guard --state-home /private/tandem-state --codex-home /existing/cod
 unrelated or unknown. Only positive native evidence of a different physical home
 proves unrelatedness; inaccessible evidence stays blocking. JSON returns bounded
 process metadata, without command lines, environment values or credential bytes.
+`processes stop` displays the canonical local home, generation and verified process
+set, then requires `stop` approval. Cancel or EOF returns 130 without changing
+credentials or processes. POSIX requests SIGTERM first; a surviving process needs
+a separate `force` confirmation before SIGKILL. This external Windows command has
+no qualified graceful mechanism and explains that before separately offering
+handle-bound force. Declining force leaves survivors blocking activation (exit 2).
+Successful stopping returns 0 and leaves guard ownership for its manager to release.
+Unknown/unregistered servers are refused, including stale launch contexts. Stop
+rechecks native creation identity, private ownership and physical home/executable
+generation after each decision; it never kills by name or assumes server reuse.
+Windows force verifies both home handles against the stored NTFS directory identity,
+including aliases; other filesystems remain unqualified and blocked. POSIX signals
+follow fresh identity checks but do not use a kernel-pinned PID handle.
 `guard --hold` exercises the same installation, canonical home and binding lease
 used by the host API. Enter, EOF or interruption requests release. A changed owner
 or surviving registered child retains protection and reports recovery required.
@@ -221,7 +235,7 @@ ownership and transfer remain separate work.
 The compiler-free Windows text helper currently reads supported native AMD64
 processes. Unsupported architecture, inaccessible memory or inconsistent native
 layout/creation evidence stays unknown. Linux uses native `/proc` evidence. Native
-platform checks and packed-package checks qualify individual guard cases; complete
-stop, Docker, containment and launch performance acceptance remain separate. Native
+platform checks and packed-package checks qualify individual guard and stop cases;
+complete Docker, containment and launch performance acceptance remain separate. Native
 Windows guard acquisition currently takes seconds and does not meet SRS §14's
 100 ms/250 ms latency budgets.

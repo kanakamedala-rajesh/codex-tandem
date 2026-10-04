@@ -15,6 +15,10 @@ function New-NativeReader {
     $definitions = @(
         @('OpenProcess', 'kernel32.dll', [IntPtr], @([uint32], [bool], [uint32])),
         @('CloseHandle', 'kernel32.dll', [bool], @([IntPtr])),
+        @('TerminateProcess', 'kernel32.dll', [bool], @([IntPtr], [uint32])),
+        @('CreateFileW', 'kernel32.dll', [IntPtr], @([string], [uint32], [uint32], [IntPtr], [uint32], [uint32], [IntPtr])),
+        @('GetFileInformationByHandle', 'kernel32.dll', [bool], @([IntPtr], [IntPtr])),
+        @('GetVolumeInformationByHandleW', 'kernel32.dll', [bool], @([IntPtr], [Text.StringBuilder], [uint32], [IntPtr], [IntPtr], [IntPtr], [Text.StringBuilder], [uint32])),
         @('IsWow64Process2', 'kernel32.dll', [bool], @([IntPtr], [uint16].MakeByRefType(), [uint16].MakeByRefType())),
         @('GetProcessTimes', 'kernel32.dll', [bool], @([IntPtr], [long].MakeByRefType(), [long].MakeByRefType(), [long].MakeByRefType(), [long].MakeByRefType())),
         @('GetExitCodeProcess', 'kernel32.dll', [bool], @([IntPtr], [uint32].MakeByRefType())),
@@ -180,6 +184,7 @@ function Read-ProcessRow([int]$processId) {
     finally { if ($handle -ne [IntPtr]::Zero) { [void]$script:native::CloseHandle($handle) } }
 }
 
+if ($env:TANDEM_PROCESS_LIBRARY -eq 'stop') { return }
 try {
     if (!$env:TANDEM_PROCESS_PIDS -or $env:TANDEM_PROCESS_PIDS.Length -gt 2048) { throw 'INPUT_INVALID' }
     $ids = ConvertFrom-Json -InputObject $env:TANDEM_PROCESS_PIDS

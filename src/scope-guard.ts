@@ -7,6 +7,11 @@ import { claimPrivateState } from './private-state.js';
 import { realpath, stat, lstat, rm, rename, open } from 'node:fs/promises';
 import { join, resolve, isAbsolute } from 'node:path';
 import { randomUUID, randomBytes } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { setTimeout as delay } from 'node:timers/promises';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import {
   privateDirectory,
   writePrivate,
@@ -373,6 +378,315 @@ export async function processesForScope(options: {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
   return inspectProcesses({ ...options, codexHome: home }, managed);
+}
+
+/** The exact local process set and consequences displayed before a stop decision. Force is always a separate decision. */
+export type StopConfirmation = {
+  phase: 'graceful' | 'force';
+  codexHome: string;
+  targetGeneration: string;
+  processes: ScopedProcess[];
+  consequences: string;
+};
+/** A stop outcome; remaining processes continue to block activation and lease release. */
+export type StopResult = {
+  status: 'cancelled' | 'stopped' | 'remaining';
+  stopped: number[];
+  remaining: number[];
+};
+/** Offer local stop decisions using the recorded inventory selector and private managed ownership evidence. An explicit selector must match that record; every registered child is checked before stopped success. The callback must display the complete scope/consequences before returning consent; force always has its own callback. Rechecks native identities, owner records and filesystem generation before action; ambiguity rejects without adopting owners. Never reads/changes credentials, releases guards or reuses server context. Windows graceful stop is unqualified; its forced action requires native AMD64 and NTFS home identity. POSIX signals follow an immediate native check, without an atomic PID handle. */
+export async function stopScopedProcesses(
+  options: {
+    codexHome: string;
+    codexExecutable?: string;
+    gracePeriodMs?: number;
+  },
+  confirm: (prompt: StopConfirmation) => Promise<boolean>,
+): Promise<StopResult> {
+  const gracePeriodMs = options.gracePeriodMs ?? 1500;
+  if (
+    !Number.isSafeInteger(gracePeriodMs) ||
+    gracePeriodMs < 100 ||
+    gracePeriodMs > 10000
+  )
+    throw new Error('STOP_TIMEOUT_INVALID');
+  const home = await realpath(resolve(options.codexHome));
+  const environment = await operatingEnvironment();
+  const homeInfo = await stat(home, { bigint: true });
+  const targetGeneration = `${environment}:${homeInfo.dev}:${homeInfo.ino}`;
+  const ownerPath = join(home, '.tandem-home.lock', 'owner.json');
+  const owner = await record(ownerPath).catch((error) => {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
+  });
+  if (owner) {
+    if (
+      owner.owner.environment !== environment ||
+      owner.home !== home ||
+      owner.homeIdentity !== `${homeInfo.dev}:${homeInfo.ino}`
+    )
+      throw new Error('LOCK_OWNER_INVALID');
+    await verifyInventory(owner.inventory);
+    if (
+      options.codexExecutable !== undefined &&
+      (await realpath(resolve(options.codexExecutable))) !==
+        owner.inventory.codexExecutable
+    )
+      throw new Error('PROCESS_SELECTOR_MISMATCH');
+  }
+  const scopeOptions = {
+    codexHome: home,
+    codexExecutable: owner
+      ? (owner.inventory.codexExecutable ?? undefined)
+      : options.codexExecutable,
+  };
+  const inspect = async () => {
+    const rows = (
+      await inspectProcesses(scopeOptions, owner?.processes ?? [])
+    ).filter((p) => p.ownership !== 'unrelated');
+    // A selector or disappearing inventory row cannot hide a registered live child.
+    for (const registered of owner?.processes ?? []) {
+      const identity = await processIdentity(registered.pid);
+      if (!identity) continue;
+      if (
+        identity.creation !== registered.creation ||
+        identity.environment !== registered.environment
+      )
+        throw new Error('PID_REUSED');
+      if (
+        !rows.some(
+          (row) =>
+            row.pid === registered.pid &&
+            row.ownership === 'managed' &&
+            row.creation === registered.creation &&
+            row.environment === registered.environment &&
+            row.executable === registered.executable,
+        )
+      )
+        throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
+    }
+    return rows;
+  };
+  const processes = await inspect();
+  if (
+    processes.some(
+      (p) => p.ownership !== 'managed' || p.pid <= 1 || p.pid === process.pid,
+    )
+  )
+    throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
+  if (!processes.length) {
+    await childrenGone(owner?.processes ?? []);
+    return { status: 'stopped', stopped: [], remaining: [] };
+  }
+  if (!owner) throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
+  const revalidate = async () => {
+    const currentHome = await realpath(resolve(options.codexHome));
+    const currentInfo = await stat(currentHome, { bigint: true });
+    if (
+      currentHome !== home ||
+      `${environment}:${currentInfo.dev}:${currentInfo.ino}` !==
+        targetGeneration
+    )
+      throw new Error('SCOPE_PATH_CHANGED');
+    await verifyInventory(owner.inventory);
+    const currentOwner = await record(ownerPath);
+    if (JSON.stringify(currentOwner) !== JSON.stringify(owner))
+      throw new Error('LOCK_OWNER_CHANGED');
+    const rows = await inspect();
+    for (const row of rows) {
+      const approved = processes.find((p) => p.pid === row.pid);
+      if (
+        !approved ||
+        row.ownership !== 'managed' ||
+        row.creation !== approved.creation ||
+        row.environment !== approved.environment ||
+        row.executable !== approved.executable
+      )
+        throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
+    }
+    for (const approved of processes) {
+      const identity = await processIdentity(approved.pid);
+      if (
+        identity &&
+        (identity.creation !== approved.creation ||
+          identity.environment !== approved.environment)
+      )
+        throw new Error('PID_REUSED');
+      if (identity && !rows.some((p) => p.pid === approved.pid))
+        throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
+    }
+    return rows;
+  };
+  if (
+    !(await confirm({
+      phase: 'graceful',
+      codexHome: home,
+      targetGeneration,
+      processes,
+      consequences:
+        'Stop only these verified processes. Running work may be interrupted; credentials and guard ownership remain unchanged.',
+    }))
+  )
+    return {
+      status: 'cancelled',
+      stopped: [],
+      remaining: processes.map((p) => p.pid),
+    };
+  let remaining = await revalidate();
+  if (process.platform !== 'win32') {
+    for (const approved of remaining) {
+      const current = await revalidate();
+      if (!current.some((p) => p.pid === approved.pid)) continue;
+      const identity = await processIdentity(approved.pid);
+      if (!identity) continue;
+      if (
+        identity.creation !== approved.creation ||
+        identity.environment !== approved.environment
+      )
+        throw new Error('PID_REUSED');
+      try {
+        process.kill(approved.pid, 'SIGTERM');
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ESRCH')
+          throw new Error('STOP_FAILED', { cause: error });
+      }
+    }
+  }
+  const survivors = async (rows: ScopedProcess[]) => {
+    const live: ScopedProcess[] = [];
+    for (const row of rows) {
+      const actual = await processIdentity(row.pid);
+      if (actual) {
+        if (
+          actual.creation !== row.creation ||
+          actual.environment !== row.environment
+        )
+          throw new Error('PID_REUSED');
+        live.push(row);
+      }
+    }
+    return live;
+  };
+  const deadline = Date.now() + gracePeriodMs;
+  do {
+    remaining = await survivors(remaining);
+    if (
+      !remaining.length ||
+      Date.now() >= deadline ||
+      process.platform === 'win32'
+    )
+      break;
+    await delay(50);
+  } while (remaining.length);
+  const stopped = processes
+    .filter((p) => !remaining.some((row) => row.pid === p.pid))
+    .map((p) => p.pid);
+  if (!remaining.length) {
+    await childrenGone(owner.processes);
+    return { status: 'stopped', stopped, remaining: [] };
+  }
+  if (
+    !(await confirm({
+      phase: 'force',
+      codexHome: home,
+      targetGeneration,
+      processes: remaining,
+      consequences: `${process.platform === 'win32' ? 'No graceful shutdown mechanism is qualified for this external Windows stop command.' : 'Graceful shutdown timed out.'} Force termination may lose running work; credentials and guard ownership remain unchanged.`,
+    }))
+  )
+    return {
+      status: 'remaining',
+      stopped,
+      remaining: remaining.map((p) => p.pid),
+    };
+  for (const approved of remaining) {
+    const current = await revalidate();
+    if (!current.some((p) => p.pid === approved.pid)) continue;
+    const identity = await processIdentity(approved.pid);
+    if (!identity) continue;
+    if (
+      identity.creation !== approved.creation ||
+      identity.environment !== approved.environment
+    )
+      throw new Error('PID_REUSED');
+    if (process.platform === 'win32') {
+      const script = await readFile(
+        new URL('./windows-process-stop.ps1', import.meta.url),
+        'utf8',
+      );
+      try {
+        const { stdout } = await promisify(execFile)(
+          join(
+            process.env.SystemRoot ?? 'C:\\Windows',
+            'System32',
+            'WindowsPowerShell',
+            'v1.0',
+            'powershell.exe',
+          ),
+          [
+            '-NoLogo',
+            '-NoProfile',
+            '-NonInteractive',
+            '-EncodedCommand',
+            Buffer.from(script, 'utf16le').toString('base64'),
+          ],
+          {
+            env: {
+              ...process.env,
+              TANDEM_PROCESS_READER: fileURLToPath(
+                new URL('./windows-process-reader.ps1', import.meta.url),
+              ),
+              TANDEM_STOP_REQUEST: JSON.stringify({
+                pid: approved.pid,
+                creation: approved.creation,
+                home,
+                homeIdentity: owner.homeIdentity,
+                executable: approved.executable,
+                nonce: owner.nonce,
+              }),
+            },
+            windowsHide: true,
+            timeout: 15000,
+            maxBuffer: 4096,
+          },
+        );
+        if (JSON.parse(stdout).ok !== true) throw new Error('STOP_FAILED');
+      } catch (error) {
+        let code = 'STOP_FAILED';
+        try {
+          const result = JSON.parse(
+            (error as { stdout?: string }).stdout ?? '',
+          );
+          if (typeof result.code === 'string' && /^[A-Z_]+$/.test(result.code))
+            code = result.code;
+        } catch {
+          /* The native transport does not expose raw errors or output. */
+        }
+        throw new Error(code, { cause: error });
+      }
+    } else {
+      try {
+        process.kill(approved.pid, 'SIGKILL');
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ESRCH')
+          throw new Error('STOP_FAILED', { cause: error });
+      }
+    }
+  }
+  const forceDeadline = Date.now() + 3000;
+  do {
+    remaining = await survivors(remaining);
+    if (!remaining.length || Date.now() >= forceDeadline) break;
+    await delay(50);
+  } while (remaining.length);
+  if (!remaining.length) await childrenGone(owner.processes);
+  return {
+    status: remaining.length ? 'remaining' : 'stopped',
+    stopped: processes
+      .filter((p) => !remaining.some((row) => row.pid === p.pid))
+      .map((p) => p.pid),
+    remaining: remaining.map((p) => p.pid),
+  };
 }
 /** Acquire local installation, physical Codex home and mutable binding protection. Refuses scoped conflicts, unmarked existing analytics and foreign ownership; verifies prior scopes before stale recovery, transfers proved-dead binding mutations through their owned mutex, and rolls back only this attempt's locks. */
 export async function acquireGuard(options: GuardOptions): Promise<GuardLease> {

@@ -1,16 +1,20 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 import {
   acquireGuard,
   processesForScope,
   type GuardOptions,
+  stopScopedProcesses,
 } from './scope-guard.js';
-/** Inspect local process conflicts or hold a diagnostic credential guard until Enter, EOF or interruption. An explicit home overrides CODEX_HOME, then the native user's .codex default. Never activates credentials, launches Codex or stops processes. */
+/** Inspect local conflicts, offer separately confirmed scoped stops with sanitized executable paths and blocking reasons, or hold a diagnostic credential guard. An explicit home overrides CODEX_HOME and the native user's default. Stop cancellation returns 130; surviving or unknown processes block safety. Never changes credentials or launches Codex. */
 export async function guardCommand(
   command: 'guard' | 'processes',
   args: string[],
 ): Promise<number> {
   const json = args.includes('--json');
+  const stop = command === 'processes' && args[0] === 'stop';
+  if (stop) args = args.slice(1);
   let lease: Awaited<ReturnType<typeof acquireGuard>> | undefined;
   try {
     const values = new Map<string, string>();
@@ -52,6 +56,37 @@ export async function guardCommand(
     };
     if (command === 'processes') {
       if (args.includes('--hold')) throw new Error('INVALID_ARGUMENTS');
+      if (stop) {
+        const input = createInterface({ input: process.stdin });
+        const answers = input[Symbol.asyncIterator]();
+        try {
+          const result = await stopScopedProcesses(options, async (prompt) => {
+            process.stderr.write(
+              `Local scope: ${prompt.codexHome}\nGeneration: ${prompt.targetGeneration}\n${prompt.processes.map((p) => `PID ${p.pid}; creation ${p.creation}; ${p.role}; managed; executable ${JSON.stringify((p.executable ?? 'unknown').replace(/[\p{Cc}\p{Cf}]/gu, '?').slice(0, 4096))}; reason: live managed process retains this credential scope and blocks switching`).join('\n')}\n${prompt.consequences}\nType ${prompt.phase === 'graceful' ? 'stop' : 'force'} to approve this ${prompt.phase} action; anything else cancels: `,
+            );
+            const answer = await answers.next();
+            return (
+              !answer.done &&
+              answer.value === (prompt.phase === 'graceful' ? 'stop' : 'force')
+            );
+          });
+          process.stdout.write(
+            JSON.stringify({
+              schemaVersion: 1,
+              ok: result.status === 'stopped',
+              ...result,
+            }) + '\n',
+          );
+          return result.status === 'cancelled'
+            ? 130
+            : result.status === 'stopped'
+              ? 0
+              : 2;
+        } finally {
+          input.close();
+          process.stdin.pause();
+        }
+      }
       const processes = await processesForScope(options);
       const safe = processes.every((p) => p.ownership === 'unrelated');
       process.stdout.write(

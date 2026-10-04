@@ -14,7 +14,7 @@ await withTempPackage(
     for (const file of packed.files)
       assert.match(
         file.path,
-        /^(dist\/.*\.js|dist\/windows-process-reader\.ps1|package\.json|README\.md)$/,
+        /^(dist\/.*\.js|dist\/windows-process-(reader|stop)\.ps1|package\.json|README\.md)$/,
       );
     const manifest = JSON.parse(readFileSync('package.json', 'utf8'));
     assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0);
@@ -27,6 +27,7 @@ await withTempPackage(
         'test/profiles.test.mjs',
         'test/profile-login.test.mjs',
         'test/scope-guard.test.mjs',
+        'test/scoped-stop.test.mjs',
         'test/activation.test.mjs',
       ],
       {
