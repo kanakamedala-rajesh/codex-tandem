@@ -207,6 +207,23 @@ export async function previewLogin(
     backupRequired: policy.mode !== 'file',
   };
 }
+/** Require effective file-backed policy for activation and check the selected workspace against local restrictions. Does not override configuration or initiate login; unproven policy throws. */
+export async function verifyActivationPolicy(
+  options: StagedLoginOptions,
+  account: string,
+): Promise<void> {
+  const policy = await inspect(options.command, options.codexHome, options.cwd);
+  if (policy.mode !== 'file') throw new Error('FILE_STORAGE_REQUIRED');
+  if (
+    policy.forcedWorkspace !== null &&
+    !(
+      Array.isArray(policy.forcedWorkspace)
+        ? policy.forcedWorkspace
+        : [policy.forcedWorkspace]
+    ).includes(account)
+  )
+    throw new Error('WORKSPACE_POLICY_MISMATCH');
+}
 /**
  * Run explicitly requested Codex login in a restricted staging home and return
  * bounded private auth bytes after success. Tandem does not replace live credentials

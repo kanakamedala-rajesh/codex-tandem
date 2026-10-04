@@ -6,6 +6,7 @@ import {
   rename,
   rm,
   realpath,
+  link,
 } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -19,6 +20,113 @@ const windowsPowerShell = join(
   'v1.0',
   'powershell.exe',
 );
+const replaceScript = `
+$ErrorActionPreference = 'Stop'
+$assembly = [AppDomain]::CurrentDomain.DefineDynamicAssembly((New-Object Reflection.AssemblyName('TandemReplace')), [Reflection.Emit.AssemblyBuilderAccess]::Run)
+$module = $assembly.DefineDynamicModule('Native')
+$type = $module.DefineType('Replace', [Reflection.TypeAttributes]::Public)
+$method = $type.DefinePInvokeMethod('MoveFileExW', 'kernel32.dll', ([Reflection.MethodAttributes]::Public -bor [Reflection.MethodAttributes]::Static -bor [Reflection.MethodAttributes]::PinvokeImpl), [Reflection.CallingConventions]::Standard, [bool], [Type[]]@([string],[string],[uint32]), [Runtime.InteropServices.CallingConvention]::Winapi, [Runtime.InteropServices.CharSet]::Unicode)
+$method.SetImplementationFlags([Reflection.MethodImplAttributes]::PreserveSig)
+$native = $type.CreateType()
+if (!$native::MoveFileExW($env:TANDEM_REPLACE_SOURCE,$env:TANDEM_REPLACE_DESTINATION,[uint32]$env:TANDEM_REPLACE_FLAGS)) { exit 2 }
+`;
+/** One actual private-file operation and its before/after boundary. Observers may throw to simulate a crash; they receive no file contents. */
+export type PrivateWriteBoundary =
+  `${'open' | 'restrict' | 'write' | 'flush' | 'close' | 'replace' | 'verify' | 'publication-flush'}:${'before' | 'after'}`;
+/** Publish flushed private bytes with target-filesystem replacement and durability barriers. POSIX flushes the parent directory; Windows requests native write-through replacement. Exclusive records cannot replace an existing destination. Failures before publication preserve the destination bytes; failures after publication may leave the new bytes installed. No automatic rollback is provided. A failing observer leaves the same recoverable filesystem state as failure at that boundary. */
+export async function writePrivateDurable(
+  path: string,
+  bytes: string | Buffer,
+  options: {
+    exclusive?: boolean;
+    boundary?: (event: PrivateWriteBoundary) => void | Promise<void>;
+  } = {},
+): Promise<void> {
+  const boundary = async (event: PrivateWriteBoundary) => {
+    await options.boundary?.(event);
+  };
+  await verifyPrivate(dirname(path));
+  try {
+    await verifyPrivate(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  const pending = join(dirname(path), '.pending-' + randomUUID());
+  await boundary('open:before');
+  const handle = await open(pending, 'wx', 0o600);
+  let closed = false;
+  try {
+    await boundary('open:after');
+    await boundary('restrict:before');
+    await restrict([pending]);
+    await boundary('restrict:after');
+    await boundary('write:before');
+    await handle.writeFile(bytes);
+    await boundary('write:after');
+    await boundary('flush:before');
+    await handle.sync();
+    await boundary('flush:after');
+    await boundary('close:before');
+    await handle.close();
+    closed = true;
+    await boundary('close:after');
+    await boundary('replace:before');
+    if (options.exclusive && process.platform !== 'win32') {
+      await link(pending, path);
+      await rm(pending);
+    } else if (process.platform === 'win32') {
+      try {
+        await execute(
+          windowsPowerShell,
+          [
+            '-NoLogo',
+            '-NoProfile',
+            '-NonInteractive',
+            '-EncodedCommand',
+            Buffer.from(replaceScript, 'utf16le').toString('base64'),
+          ],
+          {
+            env: {
+              ...process.env,
+              TANDEM_REPLACE_SOURCE: pending,
+              TANDEM_REPLACE_DESTINATION: path,
+              TANDEM_REPLACE_FLAGS: options.exclusive ? '8' : '9',
+            },
+            windowsHide: true,
+            timeout: 10000,
+            maxBuffer: 1024,
+          },
+        );
+      } catch {
+        throw new Error('PRIVATE_REPLACE_FAILED');
+      }
+    } else await rename(pending, path);
+    await boundary('replace:after');
+    await boundary('verify:before');
+    await verifyPrivate(path);
+    await boundary('verify:after');
+    await boundary('publication-flush:before');
+    if (process.platform !== 'win32') {
+      const directory = await open(dirname(path), 'r');
+      try {
+        await directory.sync();
+      } finally {
+        await directory.close();
+      }
+    } else {
+      const destination = await open(path, 'r+');
+      try {
+        await destination.sync();
+      } finally {
+        await destination.close();
+      }
+    }
+    await boundary('publication-flush:after');
+  } finally {
+    if (!closed) await handle.close();
+    await rm(pending, { force: true });
+  }
+}
 const aclScript = `
 $ErrorActionPreference = 'Stop'
 foreach ($p in (ConvertFrom-Json $env:TANDEM_PRIVATE_PATHS)) {

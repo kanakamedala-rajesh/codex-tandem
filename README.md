@@ -5,8 +5,9 @@ It is being built against the [approved requirements](docs/README.md) in
 [kanakamedala-rajesh/codex-tandem](https://github.com/kanakamedala-rajesh/codex-tandem).
 
 The current package provides host capability checks, read-only target discovery,
-a synthetic G0 selector/child wrapper, and bounded metadata capture groundwork.
-Production credential activation returns `G1_ACTIVATION_UNAVAILABLE`. These
+a synthetic G0 selector/child wrapper, private profiles, guarded local credential
+activation/recovery and bounded metadata capture groundwork. The production
+`run`/resume flow is still unavailable. These
 features do not establish full tracking, complete G0 acceptance or release support.
 
 ## Build and install
@@ -162,6 +163,35 @@ unknown policy contracts remain unsupported; `POLICY_UNVERIFIABLE` distinguishes
 incomplete policy from `FILE_STORAGE_PROHIBITED`. Copying user configuration does
 not prove complete cloud-policy preservation. Real login and full platform/target
 qualification remain separate acceptance evidence.
+
+## Local credential activation
+
+```sh
+codex-tandem activate --identity PROFILE_ID --codex-home /existing/private/home --codex-executable /existing/codex --json
+codex-tandem activate recover --identity PROFILE_ID --codex-home /existing/private/home --codex-executable /existing/codex --json
+codex-tandem activate sync --identity PROFILE_ID --codex-home /existing/private/home --codex-executable /existing/codex --json
+```
+
+These operations use an existing Codex executable and effective file-backed policy;
+they start no interactive Codex launch. A Node-hosted entrypoint can use
+`--codex-script /existing/codex.js` with its Node `--codex-executable`.
+`--state-home` selects the private native installation and `--project` supplies
+the policy inspection directory (default cwd). Native scoped processes or uncertain
+ownership block switching and sync; the commands never stop processes.
+
+Activation saves the current home credentials to their recorded binding before
+replacing `auth.json` with the selected saved credentials. The chosen identity
+remains active. `sync` preserves refreshes from plain Codex after it exits, without
+claiming attribution for that external launch. `recover` reconciles an interrupted
+transaction using the current validated target file; it never restores a staging
+snapshot. Explicit recovery can adopt an existing unmarked target only when it
+matches the requested binding. Missing, invalid or contradictory alternatives
+remain recovery errors and preserve saved versions for diagnosis.
+
+Exit 0 reports `activated`, `recovered` or `synced`; failure exits 2 with a redacted
+code and recovery status. These outcomes describe credentials, not a successful
+Codex launch. Full managed launching, stopping, Docker activation and release
+qualification remain separate work.
 
 ## Local scope guards
 

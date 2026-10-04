@@ -202,4 +202,78 @@ fresh native absence, nonce and physical directory checks under an owned recover
 mutex, bounded to two nested recovery locks. Partial, legacy empty, inaccessible,
 foreign-environment or reused-PID records remain blocking. Mutex recovery restores
 concurrency only; it does not repair an interrupted credential transaction or restore
-older token bytes. Every release checks the exact owned nonce and directory.
+older token bytes. A guard can transfer a proved-dead mutation on its canonical
+binding through this same lease boundary, releasing its own recovery mutex first
+and retrying binding acquisition once. Live or ambiguous mutation owners still
+block; guard-record prior-scope and survivor checks remain unchanged. Every release
+checks the exact owned nonce and directory.
+
+## Local activation and launch preparation contract
+
+CT-11's `activateIdentity` holds the profile mutex, CT-10 installation/home/selected
+binding guard and any verified outgoing binding lease. It rechecks effective Codex
+file-storage/workspace policy before mutation. The existing shared home must be
+private; links, hardlinked credential files, foreign environments, active processes
+and uncertain ownership block the operation. The canonical native home filesystem
+identity plus operating environment defines this local target generation; it is
+not a Docker generation or a qualification claim.
+
+The private target `.tandem-activation` directory owns the phase journal, active
+binding reference and validated staging credential. Phases are begun,
+outgoing-saved, staged, replaced, active and complete. Outgoing bytes are validated
+against immutable binding hints and saved before selected credentials are staged
+on the target filesystem. Ownership and outgoing bytes are checked again at the
+replacement boundary. A detected external refresh interrupts replacement; its
+current target file remains recoverable. This does not make external programs
+participate in Tandem's cooperative locks or claim external-launch attribution.
+
+Replacement never deletes the only valid destination first. Private writes restrict
+temporary files before writing, flush bytes, publish, verify protection and apply a
+publication barrier. POSIX replacement uses rename (exclusive records use link)
+and parent-directory fsync. Windows uses compiler-free native MoveFileExW with
+write-through, with replacement disabled for exclusive records, then flushes the
+published file. Unsupported permissions, publication or flushes fail explicitly.
+Abrupt process termination exercises these barriers; hardware power loss and other
+filesystems are not thereby qualified.
+
+Restart reconciles an incomplete journal before another activation. Recovery prefers
+current validated target bytes matching the transaction's selected or verified
+outgoing binding, synchronizes that saved binding and records reconciliation.
+Completed transactions distinguish the intended selection from the resolved
+binding; reconciliation to outgoing credentials never claims the selected identity
+was installed. A stale
+transaction whose predecessor no longer matches the active reference is refused.
+Missing/corrupt target files, missing/retired bindings and contradictory identities
+remain explicit recovery errors with saved/staged alternatives retained. Recovery
+also blocks indistinguishable selected/outgoing binding IDs unless a committed
+active reference proves the selection; matching account hints alone cannot choose
+between distinct binding histories. Recovery
+does not install saved snapshots or staging bytes automatically. Explicit `activate
+recover` may adopt an unmarked existing target only when it matches the requested
+available binding. `activate sync` saves the recorded active binding's refreshes.
+
+The retained lease's `prepareLaunch(mode)` exclusively persists an immutable
+`prepared` record containing launch/profile/binding IDs, canonical home, local
+target generation, project, executable/entrypoint and tracked/untracked mode. A
+prepared record proves intended binding, never that a child started or succeeded.
+Tracked record failure throws before the caller releases a child. An explicit
+untracked choice writes the same intended binding to the private target journal;
+failure there also cancels. No credentials, local account/user hints or token-derived
+fingerprints enter these records. `registerProcess` consumes CT-10 native ownership
+proof, and surviving/ambiguous children block `syncAfterExit` and release. Exit sync
+requires this lease's active reference and matching target binding, preserves target
+bytes on failure and leaves the selected identity active. The installed-package
+verifier consumes this API with a harmless synthetic child; full production
+launch/resume and capture context are CT-13 responsibilities.
+
+`verify:activation-recovery -- --list` enumerates 137 maintained cases and their
+coverage mapping. Every role directly injects failures before/after write, flush
+and replacement, with abrupt termination after each durable journal/activation
+phase and immediately after target replacement before its phase record. Restricted
+staging and exclusive launch publication also exercise every open, restriction,
+close, verification and publication-barrier edge; the same helper's equivalent
+edges for other roles are identified as shared-primitive coverage, not separately
+executed cases. Ranges and fault kinds permit serialized resumption; only the full
+set establishes this scoped matrix. Synthetic Windows/Ubuntu subcases do not pass
+entire T08/T09/T19/T29/T37/T40 families, native Linux/legacy targets, Smart App
+Control, hardware-power-loss behavior or the outstanding Windows launch budget.

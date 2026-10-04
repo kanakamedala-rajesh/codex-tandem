@@ -1369,6 +1369,86 @@ test('profile credential mutations honor a held guard binding while unrelated wo
   }
 });
 
+test('a guard transfers only a proved-dead binding mutation without changing credentials', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'tandem-guard-'));
+  const options = {
+    stateHome: join(root, 'state'),
+    codexHome: join(root, 'home'),
+    bindingPath: join(root, 'binding.json'),
+    codexExecutable: await probeExecutable(root),
+  };
+  await mkdir(options.codexHome);
+  const bytes = Buffer.from('synthetic binding bytes');
+  await writeFile(options.bindingPath, bytes);
+  const { spawn } = await import('node:child_process');
+  const { once } = await import('node:events');
+  const { readFile } = await import('node:fs/promises');
+  const { processIdentity } = await import(
+    new URL('dist/processes.js', packageRoot)
+  );
+  const { writePrivate } = await import(
+    new URL('dist/private-files.js', packageRoot)
+  );
+  const file = options.bindingPath + '.tandem-binding.lock/owner.json';
+  const script = `import {acquireBindingLease} from ${JSON.stringify(new URL('dist/binding-lock.js', packageRoot).href)};import {processIdentity} from ${JSON.stringify(new URL('dist/processes.js', packageRoot).href)};await acquireBindingLease(${JSON.stringify(options.bindingPath)});process.on('message',()=>{});process.send(await processIdentity(process.pid));`;
+  const child = spawn(process.execPath, ['--input-type=module', '-e', script], {
+    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    windowsHide: true,
+  });
+  const exited = once(child, 'exit');
+  let owner, lease;
+  try {
+    [owner] = await Promise.race([
+      once(child, 'message'),
+      exited.then(() => {
+        throw new Error('mutation fixture failed');
+      }),
+    ]);
+    assert.deepEqual(await processIdentity(child.pid), owner);
+    const before = await readFile(file);
+    const original = JSON.parse(before);
+    await assert.rejects(acquireGuard(options), /BINDING_BUSY/);
+    assert.deepEqual(await readFile(file), before);
+    assert.deepEqual(await readFile(options.bindingPath), bytes);
+    await writePrivate(
+      file,
+      JSON.stringify({
+        ...original,
+        owner: { ...original.owner, creation: 'synthetic-obsolete-creation' },
+      }),
+    );
+    const reused = await readFile(file);
+    await assert.rejects(acquireGuard(options), /PID_REUSED/);
+    assert.deepEqual(await readFile(file), reused);
+    assert.deepEqual(await readFile(options.bindingPath), bytes);
+    await writePrivate(file, before);
+    assert.deepEqual(
+      await processIdentity(child.pid),
+      owner,
+      'Only the freshly verified mutation fixture may be terminated',
+    );
+    assert.equal(child.kill('SIGKILL'), true);
+    await exited;
+    assert.equal(await processIdentity(child.pid), null);
+    lease = await acquireGuard(options);
+    const transferred = JSON.parse(await readFile(file, 'utf8'));
+    assert.equal(transferred.kind, 'guard');
+    assert.notEqual(transferred.nonce, original.nonce);
+    assert.deepEqual(await readFile(options.bindingPath), bytes);
+    await lease.release();
+    lease = undefined;
+    await assert.rejects(readFile(file), { code: 'ENOENT' });
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) {
+      assert.deepEqual(await processIdentity(child.pid), owner);
+      child.kill('SIGKILL');
+      await exited;
+    }
+    await lease?.release();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('verified mutation mutexes recover only native dead owners and reject changed nonce, reused PID and legacy ambiguity', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tandem-guard-'));
   const binding = join(root, 'binding.json');

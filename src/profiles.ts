@@ -20,7 +20,8 @@ import {
   verifyPrivate,
   writePrivate,
 } from './private-files.js';
-type Profile = {
+/** A saved selectable profile; its binding reference is independent of its display label. */
+export type Profile = {
   id: string;
   label: string;
   description: string;
@@ -29,7 +30,8 @@ type Profile = {
   updatedAt: string;
   status: 'available' | 'deleted';
 };
-type Binding = {
+/** Local account/workspace and user consistency hints for one immutable binding. These do not establish remote identity. */
+export type Binding = {
   id: string;
   profileId: string;
   account: string;
@@ -37,7 +39,12 @@ type Binding = {
   retired: boolean;
   createdAt: string;
 };
-type Manifest = { schemaVersion: 1; profiles: Profile[]; bindings: Binding[] };
+/** Validated private profile history. Callers hold the profile mutex before credential mutations. */
+export type Manifest = {
+  schemaVersion: 1;
+  profiles: Profile[];
+  bindings: Binding[];
+};
 const text = (value: unknown, limit = 200): value is string =>
   typeof value === 'string' &&
   value.length > 0 &&
@@ -62,8 +69,13 @@ async function bounded(path: string, limit = 65536): Promise<Buffer> {
     await handle.close();
   }
 }
-function identity(bytes: Buffer): { account: string; subject: string } {
+/** Validate bounded opaque ChatGPT credentials and return local consistency hints. Unsupported or contradictory formats throw without exposing bytes. */
+export function credentialIdentity(bytes: Buffer): {
+  account: string;
+  subject: string;
+} {
   try {
+    if (bytes.length > 65536) throw new Error();
     const auth = JSON.parse(bytes.toString('utf8'));
     const tokens = auth.tokens;
     if (
@@ -202,7 +214,8 @@ function validate(manifest: Manifest) {
   )
     throw new Error('PROFILE_STATE_INVALID');
 }
-async function readManifest(root: string): Promise<Manifest> {
+/** Read validated owner-restricted profile history from an already claimed installation. Missing state yields an empty manifest; corrupt or unprotected state throws. */
+export async function readProfileManifest(root: string): Promise<Manifest> {
   const path = join(root, 'profiles.json');
   try {
     await verifyPrivate(path);
@@ -294,7 +307,7 @@ export async function profilesCommand(args: string[]): Promise<number> {
     };
     try {
       const path = join(root, 'profiles.json');
-      const manifest = await readManifest(root);
+      const manifest = await readProfileManifest(root);
       const profile = manifest.profiles.find(
         (p) => p.id === options.get('--identity'),
       );
@@ -325,7 +338,7 @@ export async function profilesCommand(args: string[]): Promise<number> {
         const bytes = options.get('--import')
           ? await bounded(resolve(options.get('--import')!))
           : await stagedCredential(await loginOptions());
-        const hints = identity(bytes);
+        const hints = credentialIdentity(bytes);
         const bindingId = `binding_${randomUUID()}`;
         selected = {
           id: `profile_${randomUUID()}`,
@@ -390,7 +403,7 @@ export async function profilesCommand(args: string[]): Promise<number> {
         const bytes = options.get('--import')
           ? await bounded(resolve(options.get('--import')!))
           : await stagedCredential(await loginOptions());
-        const hints = identity(bytes);
+        const hints = credentialIdentity(bytes);
         const previous = manifest.bindings.find(
           (b) => b.id === profile!.bindingId,
         )!;
@@ -506,7 +519,7 @@ async function manageProfiles(options: string[]): Promise<number> {
           resolve(stateIndex >= 0 ? options[stateIndex + 1] : defaultStateHome),
           'installation',
         );
-        const profiles = (await readManifest(root)).profiles.filter(
+        const profiles = (await readProfileManifest(root)).profiles.filter(
           (profile) => action === 'show' || profile.status === 'available',
         );
         if (profiles.length === 0) {

@@ -27,6 +27,7 @@ await withTempPackage(
         'test/profiles.test.mjs',
         'test/profile-login.test.mjs',
         'test/scope-guard.test.mjs',
+        'test/activation.test.mjs',
       ],
       {
         encoding: 'utf8',

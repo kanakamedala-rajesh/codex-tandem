@@ -1,4 +1,8 @@
-import { bindingScope, acquireRecoveryMutex } from './binding-lock.js';
+import {
+  bindingScope,
+  acquireRecoveryMutex,
+  acquireBindingLease,
+} from './binding-lock.js';
 import { claimPrivateState } from './private-state.js';
 import { realpath, stat, lstat, rm, rename, open } from 'node:fs/promises';
 import { join, resolve, isAbsolute } from 'node:path';
@@ -170,7 +174,12 @@ async function childrenGone(children: ManagedProcess[]) {
     }
   }
 }
-async function createLock(path: string, code: string, expected: OwnerRecord) {
+async function createLock(
+  path: string,
+  code: string,
+  expected: OwnerRecord,
+  allowMutationRecovery = true,
+) {
   try {
     await privateDirectory(path, { exclusive: true });
     return;
@@ -183,7 +192,20 @@ async function createLock(path: string, code: string, expected: OwnerRecord) {
   const recovery = await acquireRecoveryMutex(path);
   try {
     const raw = await metadata(join(path, 'owner.json'), 65536);
-    if (raw.kind === 'binding-mutation') throw new Error(code);
+    if (raw.kind === 'binding-mutation') {
+      if (
+        !allowMutationRecovery ||
+        code !== 'BINDING_BUSY' ||
+        path !== expected.binding + '.tandem-binding.lock'
+      )
+        throw new Error(code);
+      // Mutation recovery owns this same mutex; release ours before transferring through that boundary.
+      await recovery.release();
+      const mutation = await acquireBindingLease(expected.binding);
+      await mutation.release();
+      await createLock(path, code, expected, false);
+      return;
+    }
     const previous = await record(join(path, 'owner.json'));
     if (previous.owner.environment !== expected.owner.environment)
       throw new Error('LOCK_ENVIRONMENT_FOREIGN');
@@ -352,7 +374,7 @@ export async function processesForScope(options: {
   }
   return inspectProcesses({ ...options, codexHome: home }, managed);
 }
-/** Acquire local installation, physical Codex home and mutable binding protection. Refuses scoped conflicts, unmarked existing analytics and foreign ownership; verifies prior scopes before stale recovery and rolls back only this attempt's locks. */
+/** Acquire local installation, physical Codex home and mutable binding protection. Refuses scoped conflicts, unmarked existing analytics and foreign ownership; verifies prior scopes before stale recovery, transfers proved-dead binding mutations through their owned mutex, and rolls back only this attempt's locks. */
 export async function acquireGuard(options: GuardOptions): Promise<GuardLease> {
   const root = await claimPrivateState(
     resolve(options.stateHome),
