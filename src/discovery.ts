@@ -8,6 +8,7 @@ import {
   isAbsolute,
   join,
   relative,
+  posix,
   resolve,
   sep,
 } from 'node:path';
@@ -23,6 +24,8 @@ export type DiscoveryOptions = {
   dockerContext?: string;
   /** Full container ID expected by the caller; a replacement fails discovery. */
   expectedGeneration?: string;
+  /** Docker daemon identity expected by the operator; context aliases must resolve to this daemon. */
+  expectedDaemonId?: string;
   user?: string;
   projectRoot?: string;
   project?: string;
@@ -54,6 +57,8 @@ export type DiscoveryReport = {
   paths?: Paths;
   context?: string;
   generation?: string;
+  /** Stable daemon identity observed for this Docker discovery snapshot. */
+  daemonId?: string;
   credentialScope?: string;
 };
 const initial = (target: string): DiscoveryReport => ({
@@ -71,7 +76,9 @@ const boundedText = (value: unknown, limit: number): value is string =>
   value.length <= limit &&
   // eslint-disable-next-line no-control-regex -- Reject control characters in untrusted input.
   !/[\x00-\x1f\x7f]/.test(value);
-async function physical(path: string): Promise<string> {
+/** Resolve an absolute path through physical aliases, including an absent destination beneath its existing canonical ancestor. Does not create files; relative paths throw. */
+export async function canonicalPath(path: string): Promise<string> {
+  if (!isAbsolute(path)) throw new Error('PATH_ABSOLUTE_REQUIRED');
   try {
     return await realpath(path);
   } catch (error) {
@@ -81,7 +88,7 @@ async function physical(path: string): Promise<string> {
     )
       throw error;
     return join(
-      await physical(dirname(path)),
+      await canonicalPath(dirname(path)),
       path.slice(dirname(path).length + (dirname(path).endsWith(sep) ? 0 : 1)),
     );
   }
@@ -136,6 +143,9 @@ async function executable(requested?: string): Promise<string> {
  * Inspect host paths or an existing Docker container without launching Codex,
  * reading credentials or creating target files. Docker runs read-only shell and
  * Python probes and rejects remote endpoints or a changed container generation.
+ * An optional daemon pin is checked before entering a container; daemon and
+ * container identities are rechecked before paths and scope are published.
+ * These snapshots do not provide an atomic discovery-to-activation guarantee.
  * Returns failures as diagnostic codes; run can replace the Docker command reader.
  */
 export async function discoverTarget(
@@ -185,7 +195,7 @@ export async function discoverTarget(
         throw new Error('PROJECT_MOUNT_REQUIRES_REGISTERED_ROOT');
     }
     await access(project, constants.R_OK | constants.X_OK);
-    const codexHome = await physical(
+    const codexHome = await canonicalPath(
       resolve(
         options.codexHome ?? process.env.CODEX_HOME ?? join(home, '.codex'),
       ),
@@ -299,6 +309,9 @@ async function discoverDocker(
     );
     if (typeof daemon !== 'string' || !/^[a-zA-Z0-9:_-]{8,200}$/.test(daemon))
       throw new Error('DOCKER_DAEMON_ID_UNAVAILABLE');
+    if (options.expectedDaemonId && options.expectedDaemonId !== daemon)
+      throw new Error('DOCKER_DAEMON_CHANGED_REVALIDATE');
+    report.daemonId = daemon;
     const instance = JSON.parse(
       await run([
         ...args,
@@ -384,13 +397,30 @@ async function discoverDocker(
       !data.paths ||
       !['home', 'codexHome', 'projectRoot', 'project', 'executable'].every(
         (k) =>
-          boundedText(data.paths[k], 4096) && data.paths[k].startsWith('/'),
+          boundedText(data.paths[k], 4096) &&
+          data.paths[k].startsWith('/') &&
+          posix.normalize(data.paths[k]) === data.paths[k],
       ) ||
       typeof data.paths.codexHomeExists !== 'boolean' ||
       typeof data.permissions?.projectReadable !== 'boolean' ||
       typeof data.permissions?.codexHomeWritable !== 'boolean'
     )
       throw new Error('TARGET_PROJECTION_INVALID');
+    const containedProject = posix.relative(
+      data.paths.projectRoot,
+      data.paths.project,
+    );
+    if (
+      containedProject === '..' ||
+      containedProject.startsWith('../') ||
+      posix.isAbsolute(containedProject)
+    )
+      throw new Error('TARGET_PROJECTION_INVALID');
+    const afterDaemon = JSON.parse(
+      await run([...args, 'info', '--format', '{{json .ID}}']),
+    );
+    if (afterDaemon !== daemon)
+      throw new Error('DOCKER_DAEMON_CHANGED_DURING_DISCOVERY');
     const after = JSON.parse(
       await run([
         ...args,
@@ -454,6 +484,8 @@ async function discoverDocker(
         'CONTAINER_CHANGED_DURING_DISCOVERY',
         'REMOTE_DOCKER_UNSUPPORTED',
         'DOCKER_DAEMON_ID_UNAVAILABLE',
+        'DOCKER_DAEMON_CHANGED_REVALIDATE',
+        'DOCKER_DAEMON_CHANGED_DURING_DISCOVERY',
       ].includes(code)
         ? code
         : 'DOCKER_CONTEXT_OR_CONTAINER_INACCESSIBLE',
@@ -471,7 +503,7 @@ prefix = getattr(sys, 'base_prefix', sys.prefix).rstrip('/')
 version = '%d.%d' % sys.version_info[:2]
 stdlib = [prefix + '/lib/python' + version, prefix + '/lib64/python' + version]
 safe_paths = stdlib + [path + '/lib-dynload' for path in stdlib] + [prefix + '/lib/python%d%d.zip' % sys.version_info[:2]]
-sys.path[:] = [path for path in sys.path if path.startswith('/') and path in safe_paths]
+sys.path[:] = [path.rstrip('/') for path in sys.path if path.startswith('/') and path.rstrip('/') in safe_paths]
 import os, json, pwd, re
 try:
  root_arg, project_arg, codex_arg, exe_arg = sys.argv[1:]

@@ -15,7 +15,7 @@
   },
   "scripts": {
     "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\"",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && node scripts/copy-runtime-assets.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs",
     "check:repo": "node scripts/check-repo.mjs",
@@ -23,6 +23,7 @@
     "verify:package": "node scripts/verify-package.mjs",
     "verify:discovery": "node scripts/verify-discovery-package.mjs",
     "verify:capture": "node scripts/verify-capture-package.mjs",
+    "verify:activation-recovery": "node scripts/verify-activation-recovery.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",

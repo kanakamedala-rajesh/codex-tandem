@@ -12,11 +12,37 @@ const consumerEnv = {
 await withTempPackage(
   async ({ scratch, packed, packageRoot, installLog, sha256 }) => {
     for (const file of packed.files)
-      assert.match(file.path, /^(dist\/.*\.js|package\.json|README\.md)$/);
+      assert.match(
+        file.path,
+        /^(dist\/.*\.js|dist\/windows-process-(reader|stop)\.ps1|dist\/docker-runtime\.py|package\.json|README\.md)$/,
+      );
+    assert.equal(
+      readFileSync(join(packageRoot, 'dist', 'docker-runtime.py'), 'utf8'),
+      readFileSync('src/docker-runtime.py', 'utf8'),
+    );
     const manifest = JSON.parse(readFileSync('package.json', 'utf8'));
     assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0);
     for (const hook of ['preinstall', 'install', 'postinstall'])
       assert.equal(manifest.scripts[hook], undefined);
+    execFileSync(
+      process.execPath,
+      [
+        '--test',
+        'test/profiles.test.mjs',
+        'test/profile-login.test.mjs',
+        'test/scope-guard.test.mjs',
+        'test/scoped-stop.test.mjs',
+        'test/activation.test.mjs',
+        'test/local-launch.test.mjs',
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...consumerEnv, TANDEM_TEST_PACKAGE: packageRoot },
+        // Native Windows process and ACL probes need a bounded 30-minute suite budget.
+        timeout: process.platform === 'win32' ? 1800000 : 600000,
+        maxBuffer: 1048576,
+      },
+    );
     const entry = join(packageRoot, 'dist', 'cli.js');
     const direct = execFileSync(process.execPath, [entry, 'doctor', '--json'], {
       encoding: 'utf8',

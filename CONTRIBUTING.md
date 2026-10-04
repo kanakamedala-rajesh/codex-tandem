@@ -63,6 +63,14 @@ need formatting, syntax and link checks; runtime changes need behavioral checks.
 CI supplements platform evidence. Native Linux and actual-target requirements
 remain governed by the SRS.
 
+Activation or durable private-file changes also require
+`npm run verify:activation-recovery` on both platforms. This maintained synthetic
+failure/abrupt-termination matrix is separate from ordinary tests and package checks
+to avoid repeating costly native ownership reconstruction. `-- --list` reports exact
+cases and shared-primitive coverage; `--start=N --end=N` selects a serialized range
+and `--kind=failure|crash` selects fault type. Record every case/result when resuming;
+partial ranges alone do not complete activation qualification.
+
 The work distro `Ubuntu-24.04` and `ide` container are protected; execution or
 mutation requires new explicit user authorization. Keep Windows protection enabled.
 Actual Docker checks require an identified, approved disposable generation.
