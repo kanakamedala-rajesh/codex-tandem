@@ -440,7 +440,7 @@ test(
   { skip: process.platform === 'win32' },
   async () => {
     const f = await activationFixture();
-    let survivor;
+    let survivor, reaper, reaperExit;
     const { processIdentity } = await import(modulePath('processes.js'));
     try {
       const script = f.options.command.prefix[0];
@@ -459,10 +459,24 @@ test(
       server.disconnect();server.unref();
     }`,
       );
-      const result = await new Promise((resolve) => {
-        const child = execFile(
+      // Keep a test-owned subreaper alive until the orphan is stopped and reaped.
+      // Container PID 1 may not reap it; native identity must still prove absence.
+      const wrapper = `import ctypes, json, os, subprocess, sys
+if ctypes.CDLL(None, use_errno=True).prctl(36, 1, 0, 0, 0) != 0:
+    raise OSError(ctypes.get_errno(), 'subreaper setup failed')
+result = subprocess.run(sys.argv[1:], input='', capture_output=True, text=True, timeout=180)
+print(json.dumps({'code': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr}), flush=True)
+pid = sys.stdin.readline().strip()
+if pid:
+    os.waitpid(int(pid), 0)
+`;
+      reaper = spawn(
+        '/usr/bin/python3',
+        [
+          '-c',
+          wrapper,
           process.execPath,
-          [
+          ...[
             cli,
             'run',
             '--identity',
@@ -481,11 +495,50 @@ test(
             f.root,
             '--json',
           ],
-          { encoding: 'utf8', timeout: 180000 },
-          (error, stdout, stderr) =>
-            resolve({ code: error?.code ?? 0, stdout, stderr }),
+        ],
+        { stdio: ['pipe', 'pipe', 'pipe'] },
+      );
+      reaperExit = new Promise((resolve, reject) => {
+        reaper.once('error', reject);
+        reaper.once('exit', (code, signal) => resolve({ code, signal }));
+      });
+      // Observe failure immediately, while the stdout protocol reports foreground exit.
+      void reaperExit.catch(() => {});
+      const result = await new Promise((resolve, reject) => {
+        let stdout = '',
+          stderr = '';
+        const timer = setTimeout(
+          () => reject(new Error('synthetic launch timed out')),
+          180000,
         );
-        child.stdin.end();
+        reaper.stderr.on('data', (chunk) => {
+          stderr += chunk;
+        });
+        reaper.stdout.on('data', (chunk) => {
+          stdout += chunk;
+          if (stdout.includes('\n')) {
+            clearTimeout(timer);
+            try {
+              resolve(JSON.parse(stdout.slice(0, stdout.indexOf('\n'))));
+            } catch (error) {
+              reject(error);
+            }
+          }
+        });
+        reaperExit.then(
+          () => {
+            clearTimeout(timer);
+            reject(
+              new Error(
+                'synthetic reaper exited before foreground result: ' + stderr,
+              ),
+            );
+          },
+          (error) => {
+            clearTimeout(timer);
+            reject(error);
+          },
+        );
       });
       const pid = Number(result.stdout.trim());
       assert.ok(Number.isSafeInteger(pid) && pid > 1);
@@ -513,9 +566,14 @@ test(
           'cleanup only owns the unchanged synthetic server',
         );
         process.kill(survivor.pid, 'SIGTERM');
+        reaper.stdin.end(String(survivor.pid) + '\n');
+        assert.deepEqual(await reaperExit, { code: 0, signal: null });
         for (let i = 0; i < 100 && (await processIdentity(survivor.pid)); i++)
           await new Promise((resolve) => setTimeout(resolve, 20));
         assert.equal(await processIdentity(survivor.pid), null);
+      } else if (reaper) {
+        reaper.stdin.end();
+        await reaperExit;
       }
       await rm(f.root, { recursive: true, force: true });
     }
@@ -913,22 +971,44 @@ test('resume filesystem boundary errors are redacted for missing and inaccessibl
       redacted('RESUME_SOURCE_UNAVAILABLE'),
     );
     if (process.platform !== 'win32') {
+      const inaccessibleProject = join(project, 'inaccessible');
+      await mkdir(inaccessibleProject);
+      // These empty fixture ancestors contain no credentials. Permit a synthetic
+      // unprivileged child to reach the deliberately inaccessible boundary.
+      await chmod(root, 0o755);
+      await chmod(home, 0o755);
+      await chmod(project, 0o755);
+      const inaccessible = (path, code, sourceBoundary) => {
+        const result = spawnSync(
+          process.execPath,
+          [
+            '--input-type=module',
+            '-e',
+            `
+          import assert from 'node:assert/strict';
+          import {opendir,realpath} from 'node:fs/promises';
+          const {resolveLocalResume}=await import(${JSON.stringify(modulePath('resume.js'))});
+          const root=${JSON.stringify(root)};
+          const redacted=(${redacted.toString()});
+          if(process.getuid()===0){process.setgroups([]);process.setgid(65534);process.setuid(65534);}
+          await assert.rejects(${sourceBoundary ? 'opendir' : 'realpath'}(${JSON.stringify(path)}),{code:'EACCES'});
+          await assert.rejects(resolveLocalResume(${JSON.stringify(home)},${JSON.stringify(sourceBoundary ? project : path)},${JSON.stringify(id)}),redacted(${JSON.stringify(code)}));
+        `,
+          ],
+          { encoding: 'utf8', timeout: 5000 },
+        );
+        assert.equal(result.status, 0, result.stderr);
+      };
       await chmod(project, 0o000);
       try {
-        await assert.rejects(
-          resolveLocalResume(home, join(project, 'inaccessible'), id),
-          redacted('RESUME_PROJECT_UNAVAILABLE'),
-        );
+        inaccessible(inaccessibleProject, 'RESUME_PROJECT_UNAVAILABLE', false);
       } finally {
-        await chmod(project, 0o700);
+        await chmod(project, 0o755);
       }
       await mkdir(join(home, 'sessions'));
       await chmod(join(home, 'sessions'), 0o000);
       try {
-        await assert.rejects(
-          resolveLocalResume(home, project, id),
-          redacted('RESUME_SOURCE_UNAVAILABLE'),
-        );
+        inaccessible(join(home, 'sessions'), 'RESUME_SOURCE_UNAVAILABLE', true);
       } finally {
         await chmod(join(home, 'sessions'), 0o700);
       }
