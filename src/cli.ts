@@ -52,5 +52,8 @@ if (args[0] === 'doctor') {
   process.exitCode = await activationCommand(args.slice(1));
 } else {
   const { run } = await import('./run.js');
-  process.exitCode = await run(args[0] === 'run' ? args.slice(1) : args);
+  process.exitCode = await run(
+    args[0] === 'run' || args[0] === 'resume' ? args.slice(1) : args,
+    args[0] === 'resume' ? 'resume' : 'run',
+  );
 }

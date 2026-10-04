@@ -6,8 +6,7 @@ It is being built against the [approved requirements](docs/README.md) in
 
 The current package provides host capability checks, read-only target discovery,
 a synthetic G0 selector/child wrapper, private profiles, guarded local credential
-activation/recovery and bounded metadata capture groundwork. The production
-`run`/resume flow is still unavailable. These
+activation/recovery, managed local launch/resume and bounded metadata capture groundwork. These
 features do not establish full tracking, complete G0 acceptance or release support.
 
 ## Build and install
@@ -46,6 +45,75 @@ JSON stdout uses schema version 1:
 Diagnostics and Node warnings use stderr. Exit codes: 0 success, 1 capability
 failure, 2 invalid arguments. Underlying failure strings are redacted. SQLite and
 compression stay off the launch command's import path.
+
+## Local launch and resume
+
+```sh
+codex-tandem run --target local --identity PROFILE_ID --codex-executable /existing/codex -- CODEX_ARGUMENTS
+codex-tandem --target local --codex-executable /existing/codex
+codex-tandem resume SESSION_UUID --target local --identity PROFILE_ID --codex-executable /existing/codex -- PROMPT
+codex-tandem resume --last --target local --identity PROFILE_ID --codex-executable /existing/codex
+```
+
+An existing native Codex executable can be resolved from PATH. Node entrypoints
+use `--codex-executable /existing/node --codex-script /existing/codex.js`; Windows
+`.cmd`/`.bat` executable shims are refused. `--state-home`, `--codex-home` and
+`--project` choose the private installation, shared native home and project.
+The home must already exist with supported file-storage policy. Local target
+resolution is explicit with `--target local` outside an interactive terminal; the
+interactive default is local. Without stdin/stdout/stderr TTYs,
+or with Tandem `--json`, supply an explicit stable `--identity`; input is never
+requested implicitly. Interactive selection restores the terminal before spawn.
+
+Supported arguments after `--` reach the existing executable unchanged without a
+shell. Codex named `-p`/`--profile` is currently refused before activation with
+`PROFILE_POLICY_UNVERIFIABLE`: installed Codex 0.160.0 rejects named profiles for
+the app-server policy probe, and base configuration cannot prove the selected
+profile's effective policy. Named Codex configuration profiles are owner-deferred
+from G1;
+Tandem identity selection remains separate from Codex configuration profiles.
+Effective Codex `-C`/`--cd` directories are canonicalized
+before policy inspection and journaling; an explicit Tandem `--project` must match.
+Remote execution, a newly managed worktree, alternate local providers and ignored
+user configuration are refused with `CODEX_SCOPE_UNPROVEN` because this local
+adapter cannot prove their effective project or policy. Docker launching is separate.
+
+Resume accepts UUIDs from this home's native `sessions`/`archived_sessions` rollouts.
+It reads only the first `session_meta` line and checks its physical project path.
+`--last` before the passthrough boundary selects the newest matching metadata
+timestamp and passes that explicit UUID to Codex. Lookup is bounded to 10,000
+directory entries, three dated directory levels, 64 KiB per metadata line and
+16 MiB total reads; exceeding a limit fails explicitly. Links, incomplete or
+unknown metadata, conflicting copies, tied newest timestamps and unavailable
+project paths are refused. Session names and compressed sources are unsupported.
+Raw `resume UUID` or `exec resume UUID` is also scoped while its argv stays intact.
+Raw `--last` cannot prove the same upstream selection order and fails with
+`RESUME_SCOPE_UNPROVEN`; use Tandem `resume --last` instead.
+
+Before execution, guarded activation preserves outgoing refreshes, persists an
+immutable intended-launch record and freshly verifies ownership and invocation
+paths. This is a cooperative check, not an atomic OS check-and-spawn operation.
+Short-lived children need an observed exit and independent native idle proof when
+registration loses the race. Surviving or uncertain processes keep switching blocked;
+the launcher never implicitly stops them. After exit, only binding-matching refreshes
+are saved, and selected credentials remain usable by plain Codex. `--untracked`
+explicitly places the intended-launch record in the private target journal; it
+emits an `UNTRACKED_LAUNCH` diagnostic and never serves as an automatic fallback
+after a tracked write failure. These records
+do not establish full capture, attribution or successful child execution.
+
+Child streams and exit status propagate, including status zero when post-exit
+sync or release fails. Distinct redacted diagnostics report that failure on stderr;
+do not interpret a child status zero as proof of healthy tracking or released guards.
+Pre-execution validation/launch errors return 2; selector cancellation returns 130.
+POSIX forwards SIGINT/SIGTERM and maps signal exits to 130/143; other signals map
+to 1. Windows relies on the inherited console for Ctrl+C and does not turn a
+signal-forwarding request into an implicit forced stop. A failure without an
+observed child exit returns 2 and reports retained ownership for diagnosis.
+`--json` applies only to Tandem diagnostics (schema version 1, `ok:false`, `code`,
+`message`); Codex streams remain untouched. SQLite and compression are absent from
+the launch imports. Native Linux, actual-target capture, complete acceptance
+families and the outstanding Windows launch latency budget remain unqualified.
 
 ## Synthetic selector
 
@@ -190,7 +258,7 @@ remain recovery errors and preserve saved versions for diagnosis.
 
 Exit 0 reports `activated`, `recovered` or `synced`; failure exits 2 with a redacted
 code and recovery status. These outcomes describe credentials, not a successful
-Codex launch. Full managed launching, Docker activation and release
+Codex launch. Docker activation and release
 qualification remain separate work.
 
 ## Local scope guards

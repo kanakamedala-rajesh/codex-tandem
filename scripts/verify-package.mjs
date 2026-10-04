@@ -29,6 +29,7 @@ await withTempPackage(
         'test/scope-guard.test.mjs',
         'test/scoped-stop.test.mjs',
         'test/activation.test.mjs',
+        'test/local-launch.test.mjs',
       ],
       {
         encoding: 'utf8',

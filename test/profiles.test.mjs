@@ -45,7 +45,17 @@ const run = (args) =>
   );
 function ok(args) {
   const r = run(args);
-  assert.equal(r.status, 0, r.stderr);
+  assert.equal(
+    r.status,
+    0,
+    JSON.stringify({
+      status: r.status,
+      signal: r.signal,
+      errorCode: r.error?.code ?? null,
+    }) +
+      '\n' +
+      r.stderr,
+  );
   assert.doesNotMatch(r.stdout + r.stderr, /SYNTHETIC-SECRET/);
   return JSON.parse(r.stdout);
 }

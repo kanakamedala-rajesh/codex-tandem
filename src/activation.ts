@@ -30,6 +30,8 @@ export type ActivationOptions = {
   profileId: string;
   command: CodexCommand;
   projectPath: string;
+  /** Qualified Codex config/feature flags used to inspect the same effective policy as the intended child. Launch argument passthrough remains the caller's responsibility. */
+  policyArguments?: string[];
   operation?: 'activate' | 'recover' | 'sync';
   /** Observe actual credential/journal filesystem boundaries without receiving bytes. Throwing interrupts the operation for fault-injection verification. */
   boundary?: (
@@ -41,6 +43,8 @@ export type ActivationOptions = {
 export type ActivationLease = {
   /** Register this manager's freshly verified native child under the retained guard. Surviving or ambiguous registered processes block sync/release; never stops a process. */
   registerProcess: (pid: number) => Promise<void>;
+  /** Require unchanged live ownership, active binding and physical invocation paths pinned before policy inspection immediately before spawn. Throws on conflict; the caller must not execute a child after failure. This is a fresh check, not an atomic operating-system spawn guarantee. */
+  revalidateBeforeLaunch: () => Promise<void>;
   /** Persist immutable intended-launch metadata before the caller releases a child to execute. Tracked failure cancels by throwing; explicitly requested untracked mode uses the private target journal and never claims tracked success. No successful-child status is recorded here. */
   prepareLaunch: (
     mode: 'tracked' | 'untracked',
@@ -253,12 +257,25 @@ export async function activateIdentity(
       }),
     );
     if (prefix.length > 1) throw new Error('CODEX_ENTRYPOINT_INVALID');
+    const invocationPaths = await Promise.all(
+      [
+        options.codexHome,
+        options.projectPath,
+        options.command.executable,
+        ...(options.command.prefix ?? []),
+      ].map(async (path) => ({
+        path: resolve(path),
+        physical: await realpath(resolve(path)),
+        info: await stat(path, { bigint: true }),
+      })),
+    );
     await verifyActivationPolicy(
       {
         command: { executable, prefix },
         codexHome: home,
         stateHome: root,
         cwd: project,
+        policyArguments: options.policyArguments,
       },
       selected.account,
     );
@@ -471,7 +488,35 @@ export async function activateIdentity(
       throw new Error('TARGET_BINDING_MISMATCH');
     let released = false;
     let prepared = false;
+    const revalidateBeforeLaunch = async () => {
+      if (released) throw new Error('ACTIVATION_RELEASED');
+      if (!prepared) throw new Error('LAUNCH_PREPARATION_REQUIRED');
+      await guard!.revalidate();
+      for (const path of invocationPaths) {
+        const current = await stat(path.path, { bigint: true });
+        if (
+          (await realpath(path.path)) !== path.physical ||
+          current.dev !== path.info.dev ||
+          current.ino !== path.info.ino ||
+          (current.isFile() &&
+            (current.size !== path.info.size ||
+              current.mtimeNs !== path.info.mtimeNs))
+        )
+          throw new Error('LAUNCH_PATH_CHANGED');
+      }
+      const marker = activeRecord(await metadata(activePath), home, generation);
+      if (
+        !marker ||
+        marker.transactionId !== active!.transactionId ||
+        marker.bindingId !== selected.id ||
+        marker.profileId !== profile.id
+      )
+        throw new Error('ACTIVE_BINDING_CHANGED');
+      if (!matches(await privateBytes(target), selected))
+        throw new Error('TARGET_BINDING_MISMATCH');
+    };
     return {
+      revalidateBeforeLaunch,
       registerProcess: async (pid) => {
         if (released) throw new Error('ACTIVATION_RELEASED');
         if (!prepared) throw new Error('LAUNCH_PREPARATION_REQUIRED');

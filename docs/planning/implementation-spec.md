@@ -266,6 +266,33 @@ bytes on failure and leaves the selected identity active. The installed-package
 verifier consumes this API with a harmless synthetic child; full production
 launch/resume and capture context are CT-13 responsibilities.
 
+CT-13 connects local `run`/`resume` to this lease. `revalidateBeforeLaunch` checks
+native ownership, the active binding and unchanged physical home/project/executable
+and entrypoint paths pinned before policy inspection, after durable preparation and immediately before shell-free spawn. The run owner also pins and freshly rechecks the actual spawn cwd and every raw -C/--cd resolution from that cwd, so an alias retarget or cwd replacement cannot silently select another project.
+It does not establish an atomic OS check-and-spawn guarantee. A child that exits
+before native registration must have an observed exit and independently proved idle
+scope; failed registration alone never proves absence. Survivors retain protection.
+Inherited streams remain unchanged, POSIX signals are forwarded and Windows uses
+the inherited console without implicit forced stopping. Signal observers remain active through post-exit sync, release and failure cleanup, so another interrupt during cleanup does not discard the observed child status or bypass protected-state checks. The run owner removes its listeners after cleanup completes. Observed child exit codes
+survive post-exit sync/release errors, which remain explicit stderr health diagnostics.
+Untracked mode emits `UNTRACKED_LAUNCH` and records the intended binding privately.
+Config/feature overrides are forwarded unchanged to the read-only effective policy
+probe. Named Codex profiles fail before activation with
+`PROFILE_POLICY_UNVERIFIABLE`: actual Codex 0.160.0 excludes profiles from
+app-server, so its base policy cannot prove runtime named-profile policy. CLI-003
+named configuration-profile compatibility is owner-deferred from G1; saved Tandem identities remain supported. The refusal remains the safety boundary for these deferred inputs.
+
+Resume is a separate bounded native metadata read, invoked only when requested.
+It validates UUID-bearing `session_meta` first lines against the same canonical
+home/project; it neither imports history nor attributes it to the selected identity.
+Explicit UUID lookup filters filenames before reading metadata. Opt-in last lookup
+chooses a unique newest matching metadata timestamp. Reads are bounded to 10,000
+entries, three directory levels, 64 KiB per first line and 16 MiB total, with links,
+partial/unknown metadata and conflicts refused. Raw explicit Codex resume argv is
+validated unchanged, with command/UUID positions distinguished from literal resume prompt tokens. Missing/inaccessible home, project and metadata source boundaries report redacted RESUME_* codes without native paths or causes. Unproved raw last-session grammar requires the top-level
+Tandem resolver. The adapter's native upstream metadata/configuration support
+requires actual installed-version evidence; synthetic fixtures alone do not qualify it.
+
 `verify:activation-recovery -- --list` enumerates 137 maintained cases and their
 coverage mapping. Every role directly injects failures before/after write, flush
 and replacement, with abrupt termination after each durable journal/activation

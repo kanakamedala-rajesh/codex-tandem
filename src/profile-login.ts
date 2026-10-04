@@ -29,11 +29,12 @@ async function inspect(
   command: CodexCommand,
   home: string,
   cwd: string,
+  policyArguments: string[] = [],
 ): Promise<Policy> {
   return new Promise((resolve, reject) => {
     const child = spawn(
       command.executable,
-      [...(command.prefix ?? []), 'app-server'],
+      [...(command.prefix ?? []), 'app-server', ...policyArguments],
       {
         cwd,
         env: { ...process.env, CODEX_HOME: home },
@@ -207,12 +208,30 @@ export async function previewLogin(
     backupRequired: policy.mode !== 'file',
   };
 }
-/** Require effective file-backed policy for activation and check the selected workspace against local restrictions. Does not override configuration or initiate login; unproven policy throws. */
+/** Require effective file-backed policy for activation and check the selected workspace against local restrictions. Optional policyArguments are pairs of -c/--config/--enable/--disable and their unchanged values, applied only to this read-only probe. Does not change stored configuration or initiate login; malformed arguments and unproven policy throw. */
 export async function verifyActivationPolicy(
-  options: StagedLoginOptions,
+  options: StagedLoginOptions & {
+    /** Qualified config/feature flag-value pairs for this activation's policy probe. Prompts, subcommands and named profiles are not supported. */
+    policyArguments?: string[];
+  },
   account: string,
 ): Promise<void> {
-  const policy = await inspect(options.command, options.codexHome, options.cwd);
+  const argumentsForPolicy = options.policyArguments ?? [];
+  if (
+    argumentsForPolicy.length % 2 ||
+    argumentsForPolicy.some((value, index) =>
+      index % 2 === 0
+        ? !['-c', '--config', '--enable', '--disable'].includes(value)
+        : typeof value !== 'string',
+    )
+  )
+    throw new Error('POLICY_ARGUMENTS_INVALID');
+  const policy = await inspect(
+    options.command,
+    options.codexHome,
+    options.cwd,
+    options.policyArguments,
+  );
   if (policy.mode !== 'file') throw new Error('FILE_STORAGE_REQUIRED');
   if (
     policy.forcedWorkspace !== null &&
