@@ -1,3 +1,4 @@
+import { resolveStateHome } from './private-state.js';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -12,7 +13,7 @@ import {
   inspectDockerProcesses,
   stopDockerProcesses,
 } from './docker-processes.js';
-/** Inspect local or named Docker conflicts, offer separately confirmed scoped stops, or hold a local diagnostic guard. Docker resolves the configured project mapping and never takes over its remote guard. Stop cancellation returns 130; surviving or unknown processes block safety. Never changes credentials or launches Codex. */
+/** Inspect local or named Docker conflicts, offer separately confirmed scoped stops, or hold a local diagnostic guard. Docker resolves the configured project mapping and never takes over its remote guard. Root flags follow resolveStateHome before state access. Stop cancellation returns 130; surviving or unknown processes block safety. Never changes credentials or launches Codex. */
 export async function guardCommand(
   command: 'guard' | 'processes',
   args: string[],
@@ -27,6 +28,7 @@ export async function guardCommand(
       if (args[i] === '--json' || args[i] === '--hold') continue;
       if (
         ![
+          '--home',
           '--state-home',
           '--codex-home',
           '--binding',
@@ -44,14 +46,10 @@ export async function guardCommand(
         throw new Error('INVALID_ARGUMENTS');
       values.set(args[i], args[++i]);
     }
-    const stateHome =
-      values.get('--state-home') ??
-      join(
-        homedir(),
-        process.platform === 'win32'
-          ? '.codex-tandem-windows'
-          : '.codex-tandem',
-      );
+    const stateHome = await resolveStateHome({
+      home: values.get('--home'),
+      stateHome: values.get('--state-home'),
+    });
     if (values.has('--target') && values.get('--target') !== 'local') {
       if (
         command !== 'processes' ||
@@ -152,14 +150,7 @@ export async function guardCommand(
     )
       throw new Error('INVALID_ARGUMENTS');
     const options: GuardOptions = {
-      stateHome:
-        values.get('--state-home') ??
-        join(
-          homedir(),
-          process.platform === 'win32'
-            ? '.codex-tandem-windows'
-            : '.codex-tandem',
-        ),
+      stateHome,
       codexHome:
         values.get('--codex-home') ??
         process.env.CODEX_HOME ??

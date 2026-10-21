@@ -24,6 +24,7 @@
     "verify:discovery": "node scripts/verify-discovery-package.mjs",
     "verify:capture": "node scripts/verify-capture-package.mjs",
     "verify:activation-recovery": "node scripts/verify-activation-recovery.mjs",
+    "benchmark:launch": "node scripts/benchmark-launch.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",

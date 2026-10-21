@@ -29,6 +29,7 @@ await withTempPackage(
       [
         '--test',
         'test/profiles.test.mjs',
+        'test/private-state.test.mjs',
         'test/profile-login.test.mjs',
         'test/scope-guard.test.mjs',
         'test/scoped-stop.test.mjs',

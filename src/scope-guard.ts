@@ -1,4 +1,12 @@
 import {
+  openSync,
+  fstatSync,
+  readSync,
+  closeSync,
+  realpathSync,
+  statSync,
+} from 'node:fs';
+import {
   bindingScope,
   acquireRecoveryMutex,
   acquireBindingLease,
@@ -73,13 +81,18 @@ const validIdentity = (value: ProcessIdentity) =>
   identifier(value.creation) &&
   ['windows', 'wsl', 'linux'].includes(value.environment);
 async function metadata(path: string, limit: number) {
-  const handle = await open(path, 'r');
+  const handle =
+    process.platform === 'linux' ? openSync(path, 'r') : await open(path, 'r');
   try {
-    const info = await handle.stat();
+    const info =
+      typeof handle === 'number' ? fstatSync(handle) : await handle.stat();
     if (!info.isFile() || info.size > limit)
       throw new Error('LOCK_OWNER_INVALID');
     const bytes = Buffer.alloc(limit + 1);
-    const { bytesRead } = await handle.read(bytes, 0, bytes.length, 0);
+    const bytesRead =
+      typeof handle === 'number'
+        ? readSync(handle, bytes, 0, bytes.length, 0)
+        : (await handle.read(bytes, 0, bytes.length, 0)).bytesRead;
     if (bytesRead > limit) throw new Error('LOCK_OWNER_INVALID');
     try {
       const value = JSON.parse(bytes.subarray(0, bytesRead).toString('utf8'));
@@ -90,7 +103,8 @@ async function metadata(path: string, limit: number) {
       throw new Error('LOCK_OWNER_INVALID');
     }
   } finally {
-    await handle.close();
+    if (typeof handle === 'number') closeSync(handle);
+    else await handle.close();
   }
 }
 async function record(
@@ -157,8 +171,14 @@ async function sameOwner(
 }
 async function verifyInventory(inventory: OwnerRecord['inventory']) {
   if (inventory.codexExecutable === null) return;
-  const physical = await realpath(inventory.codexExecutable);
-  const identity = await stat(physical, { bigint: true });
+  const physical =
+    process.platform === 'linux'
+      ? realpathSync.native(inventory.codexExecutable)
+      : await realpath(inventory.codexExecutable);
+  const identity =
+    process.platform === 'linux'
+      ? statSync(physical, { bigint: true })
+      : await stat(physical, { bigint: true });
   if (
     physical !== inventory.codexExecutable ||
     !identity.isFile() ||
@@ -283,7 +303,12 @@ async function createLock(
     await recovery.release();
   }
 }
-async function analyticsOwner(path: string, environment: string) {
+/** Claim a private analytics destination for one operating environment without opening it.
+ * Existing unmarked databases, foreign claims and hardlinked destinations fail closed.
+ * `environment` comes from operatingEnvironment, never untrusted source metadata.
+ * Callers separately serialize writes and verify native filesystem/schema suitability.
+ */
+export async function analyticsOwner(path: string, environment: string) {
   const canonical = await canonicalPath(resolve(path));
   const destinationExists = async () => {
     if ((await canonicalPath(resolve(path))) !== canonical)
@@ -694,13 +719,20 @@ export async function acquireGuard(options: GuardOptions): Promise<GuardLease> {
     resolve(options.stateHome),
     'installation',
   );
-  const home = await realpath(resolve(options.codexHome));
-  const homeStat = await stat(home, { bigint: true });
+  const home =
+    process.platform === 'linux'
+      ? realpathSync.native(resolve(options.codexHome))
+      : await realpath(resolve(options.codexHome));
+  const homeStat =
+    process.platform === 'linux'
+      ? statSync(home, { bigint: true })
+      : await stat(home, { bigint: true });
   if (!homeStat.isDirectory()) throw new Error('HOME_INVALID');
   const { binding, lockPath: bindingLock } = await bindingScope(
     options.bindingPath,
   );
-  const info = await stat(binding);
+  const info =
+    process.platform === 'linux' ? statSync(binding) : await stat(binding);
   if (!info.isFile() || info.nlink !== 1)
     throw new Error('BINDING_ALIAS_UNSUPPORTED');
   const owner = await processIdentity(process.pid);
@@ -754,7 +786,10 @@ export async function acquireGuard(options: GuardOptions): Promise<GuardLease> {
       [bindingLock, 'BINDING_BUSY'],
     ]) {
       await createLock(path, code, expected);
-      const identity = await stat(path, { bigint: true });
+      const identity =
+        process.platform === 'linux'
+          ? statSync(path, { bigint: true })
+          : await stat(path, { bigint: true });
       acquired.push({ path, dev: identity.dev, ino: identity.ino });
     }
     await writePrivateBatch(
@@ -798,13 +833,23 @@ export async function acquireGuard(options: GuardOptions): Promise<GuardLease> {
       current.environment !== owner.environment
     )
       throw new Error('LOCK_OWNER_CHANGED');
-    const physical = await realpath(resolve(options.codexHome)),
-      now = await stat(physical, { bigint: true });
+    const physical =
+        process.platform === 'linux'
+          ? realpathSync.native(resolve(options.codexHome))
+          : await realpath(resolve(options.codexHome)),
+      now =
+        process.platform === 'linux'
+          ? statSync(physical, { bigint: true })
+          : await stat(physical, { bigint: true });
     if (
       physical !== home ||
       `${now.dev}:${now.ino}` !== expected.homeIdentity ||
-      (await realpath(resolve(options.bindingPath))) !== binding ||
-      (await realpath(resolve(options.stateHome))) !== root
+      (process.platform === 'linux'
+        ? realpathSync.native(resolve(options.bindingPath))
+        : await realpath(resolve(options.bindingPath))) !== binding ||
+      (process.platform === 'linux'
+        ? realpathSync.native(resolve(options.stateHome))
+        : await realpath(resolve(options.stateHome))) !== root
     )
       throw new Error('SCOPE_PATH_CHANGED');
     await verifyPrivate(acquired.map(({ path }) => join(path, 'owner.json')));

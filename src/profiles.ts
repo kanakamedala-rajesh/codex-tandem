@@ -1,13 +1,13 @@
+import { openSync, fstatSync, readSync, closeSync } from 'node:fs';
 import {
   acquireBindingLease,
   acquireProfileMutex,
   type BindingLease,
 } from './binding-lock.js';
-import { claimPrivateState } from './private-state.js';
+import { claimPrivateState, resolveStateHome } from './private-state.js';
 import { open, rm, lstat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { join, resolve } from 'node:path';
-import { homedir } from 'node:os';
 import {
   stagedCredential,
   previewLogin,
@@ -52,21 +52,26 @@ const text = (value: unknown, limit = 200): value is string =>
   !/[\p{Cc}\p{Cf}]/u.test(value);
 const id = (value: unknown): value is string =>
   typeof value === 'string' && /^(profile|binding)_[a-f0-9-]{36}$/.test(value);
-const defaultStateHome = join(
-  homedir(),
-  process.platform === 'win32' ? '.codex-tandem-windows' : '.codex-tandem',
-);
 async function bounded(path: string, limit = 65536): Promise<Buffer> {
   if (!(await lstat(path)).isFile()) throw new Error('INPUT_INVALID');
-  const handle = await open(path, 'r');
+  const handle =
+    process.platform === 'linux' ? openSync(path, 'r') : await open(path, 'r');
   try {
-    if ((await handle.stat()).size > limit) throw new Error('INPUT_INVALID');
+    if (
+      (typeof handle === 'number' ? fstatSync(handle) : await handle.stat())
+        .size > limit
+    )
+      throw new Error('INPUT_INVALID');
     const buffer = Buffer.alloc(limit + 1);
-    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+    const bytesRead =
+      typeof handle === 'number'
+        ? readSync(handle, buffer, 0, buffer.length, 0)
+        : (await handle.read(buffer, 0, buffer.length, 0)).bytesRead;
     if (bytesRead > limit) throw new Error('INPUT_INVALID');
     return buffer.subarray(0, bytesRead);
   } finally {
-    await handle.close();
+    if (typeof handle === 'number') closeSync(handle);
+    else await handle.close();
   }
 }
 /** Validate bounded opaque ChatGPT credentials and return local consistency hints. Unsupported or contradictory formats throw without exposing bytes. */
@@ -229,7 +234,7 @@ export async function readProfileManifest(root: string): Promise<Manifest> {
     return { schemaVersion: 1, profiles: [], bindings: [] };
   }
 }
-/** Manage stable local profiles. Commands return non-secret profile/binding references; imported credentials stay private. Mutations use a verified profile mutex, then canonical binding leases for credential changes; ambiguous ownership blocks cleanup and recovery. */
+/** Manage stable local profiles. Commands return non-secret profile/binding references; imported credentials stay private. Root flags follow resolveStateHome before state access. Mutations use a verified profile mutex, then canonical binding leases for credential changes; ambiguous ownership blocks cleanup and recovery. */
 export async function profilesCommand(args: string[]): Promise<number> {
   const json = args.includes('--json');
   try {
@@ -240,6 +245,7 @@ export async function profilesCommand(args: string[]): Promise<number> {
       if (args[i] === '--json') continue;
       if (
         ![
+          '--home',
           '--state-home',
           '--identity',
           '--label',
@@ -265,7 +271,10 @@ export async function profilesCommand(args: string[]): Promise<number> {
     )
       throw new Error('INVALID_ARGUMENTS');
     const root = await claimPrivateState(
-      resolve(options.get('--state-home') ?? defaultStateHome),
+      await resolveStateHome({
+        home: options.get('--home'),
+        stateHome: options.get('--state-home'),
+      }),
       'installation',
     );
     const credentials = await privateDirectory(join(root, 'credentials'));
@@ -514,9 +523,13 @@ async function manageProfiles(options: string[]): Promise<number> {
       const args = [action, ...options];
       if (['show', 'rename', 'login', 'remove'].includes(action)) {
         if ((await profilesCommand(['list', ...options])) !== 0) continue;
+        const homeIndex = options.indexOf('--home');
         const stateIndex = options.indexOf('--state-home');
         const root = await claimPrivateState(
-          resolve(stateIndex >= 0 ? options[stateIndex + 1] : defaultStateHome),
+          await resolveStateHome({
+            home: homeIndex >= 0 ? options[homeIndex + 1] : undefined,
+            stateHome: stateIndex >= 0 ? options[stateIndex + 1] : undefined,
+          }),
           'installation',
         );
         const profiles = (await readProfileManifest(root)).profiles.filter(

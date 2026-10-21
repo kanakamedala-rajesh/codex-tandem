@@ -1,10 +1,9 @@
 import { open, lstat, realpath, stat, readFile } from 'node:fs/promises';
 import { join, relative, isAbsolute, posix, resolve, sep } from 'node:path';
-import { claimPrivateState } from './private-state.js';
+import { claimPrivateState, resolveStateHome } from './private-state.js';
 import { acquireProfileMutex } from './binding-lock.js';
 import { verifyPrivate, writePrivateDurable } from './private-files.js';
 import { discoverTarget } from './discovery.js';
-import { homedir } from 'node:os';
 
 /** A named existing Docker execution configuration independent of saved identities. Pins the daemon/container and explicitly mapped physical project roots; contains no credentials. */
 export type DockerTarget = {
@@ -223,7 +222,7 @@ export async function mappedDockerProject(
   return matches[0];
 }
 
-/** Register, inspect, explicitly replace or remove named Docker configurations. Registration revalidates daemon/container and physical target paths; no credentials or helpers are transferred. Replacement/removal require --confirm-id matching the target name. Errors contain only safe codes. */
+/** Register, inspect, explicitly replace or remove named Docker configurations. Root flags follow resolveStateHome before state access. Registration revalidates daemon/container and physical target paths; no credentials or helpers are transferred. Replacement/removal require --confirm-id matching the target name. Errors contain only safe codes. */
 export async function dockerTargetsCommand(args: string[]): Promise<number> {
   const json = args.includes('--json');
   try {
@@ -232,23 +231,23 @@ export async function dockerTargetsCommand(args: string[]): Promise<number> {
     for (let i = 1; i < args.length; i++) {
       if (args[i] === '--json') continue;
       if (
-        !['--state-home', '--config', '--id', '--confirm-id'].includes(
-          args[i],
-        ) ||
+        ![
+          '--home',
+          '--state-home',
+          '--config',
+          '--id',
+          '--confirm-id',
+        ].includes(args[i]) ||
         !args[i + 1] ||
         values.has(args[i])
       )
         throw new Error('INVALID_ARGUMENTS');
       values.set(args[i], args[++i]);
     }
-    const state =
-      values.get('--state-home') ??
-      join(
-        homedir(),
-        process.platform === 'win32'
-          ? '.codex-tandem-windows'
-          : '.codex-tandem',
-      );
+    const state = await resolveStateHome({
+      home: values.get('--home'),
+      stateHome: values.get('--state-home'),
+    });
     if (!['add', 'edit', 'list', 'show', 'check', 'remove'].includes(operation))
       throw new Error('INVALID_ARGUMENTS');
     let target: DockerTarget | undefined;

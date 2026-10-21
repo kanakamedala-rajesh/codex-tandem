@@ -1,3 +1,4 @@
+import { openSync, fstatSync, readSync, closeSync } from 'node:fs';
 import { open, lstat, stat, rm, rename } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -48,13 +49,18 @@ export type BindingLease = {
 async function readOwner(path: string): Promise<MutationOwner> {
   const file = join(path, 'owner.json');
   await verifyPrivate([path, file]);
-  const handle = await open(file, 'r');
+  const handle =
+    process.platform === 'linux' ? openSync(file, 'r') : await open(file, 'r');
   try {
-    const info = await handle.stat();
+    const info =
+      typeof handle === 'number' ? fstatSync(handle) : await handle.stat();
     if (!info.isFile() || info.nlink !== 1 || info.size > 8192)
       throw new Error('LOCK_OWNER_INVALID');
     const bytes = Buffer.alloc(8193),
-      { bytesRead } = await handle.read(bytes, 0, bytes.length, 0);
+      bytesRead =
+        typeof handle === 'number'
+          ? readSync(handle, bytes, 0, bytes.length, 0)
+          : (await handle.read(bytes, 0, bytes.length, 0)).bytesRead;
     if (bytesRead > 8192) throw new Error('LOCK_OWNER_INVALID');
     let value;
     try {
@@ -106,7 +112,8 @@ async function readOwner(path: string): Promise<MutationOwner> {
       throw new Error('LOCK_OWNER_INVALID');
     return value;
   } finally {
-    await handle.close();
+    if (typeof handle === 'number') closeSync(handle);
+    else await handle.close();
   }
 }
 async function sameOwner(path: string, expected: MutationOwner) {

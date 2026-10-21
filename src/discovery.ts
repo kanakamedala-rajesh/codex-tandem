@@ -1,5 +1,5 @@
 import { access, readFile, realpath, stat } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { constants, realpathSync } from 'node:fs';
 import { homedir, userInfo } from 'node:os';
 import {
   delimiter,
@@ -76,11 +76,13 @@ const boundedText = (value: unknown, limit: number): value is string =>
   value.length <= limit &&
   // eslint-disable-next-line no-control-regex -- Reject control characters in untrusted input.
   !/[\x00-\x1f\x7f]/.test(value);
-/** Resolve an absolute path through physical aliases, including an absent destination beneath its existing canonical ancestor. Does not create files; relative paths throw. */
+/** Resolve an absolute path through physical aliases, including an absent destination beneath its existing canonical ancestor. Linux performs a fresh native lookup without caching. Does not create files; relative paths throw. */
 export async function canonicalPath(path: string): Promise<string> {
   if (!isAbsolute(path)) throw new Error('PATH_ABSOLUTE_REQUIRED');
   try {
-    return await realpath(path);
+    return process.platform === 'linux'
+      ? realpathSync.native(path)
+      : await realpath(path);
   } catch (error) {
     if (
       (error as NodeJS.ErrnoException).code !== 'ENOENT' ||

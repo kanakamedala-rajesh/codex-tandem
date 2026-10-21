@@ -39,7 +39,7 @@ class ProfileManagementTerminal(unittest.TestCase):
         self.original_mode = termios.tcgetattr(self.slave)
         self.pending = b''
         self.transcript = b''
-        self.process = subprocess.Popen([self.node, str(self.cli), 'profiles', 'manage', '--state-home', str(self.state)], stdin=self.slave, stdout=self.slave, stderr=self.slave)
+        self.process = subprocess.Popen([self.node, str(self.cli), 'profiles', 'manage', '--home', str(self.state)], stdin=self.slave, stdout=self.slave, stderr=self.slave)
         self.until(b'Action: ')
 
     def tearDown(self):

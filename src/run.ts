@@ -2,12 +2,11 @@ import { readSync, openSync, fstatSync, closeSync } from 'node:fs';
 import { selectProfile } from './selector.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { realpath, stat } from 'node:fs/promises';
 import { activateIdentity, type ActivationLease } from './activation.js';
 import { discoverTarget } from './discovery.js';
-import { claimPrivateState } from './private-state.js';
+import { claimPrivateState, resolveStateHome } from './private-state.js';
 import { readProfileManifest } from './profiles.js';
 
 function invocationOptions(args: string[], operation: 'run' | 'resume') {
@@ -260,7 +259,7 @@ async function runFixture(args: string[]): Promise<number> {
   });
 }
 
-/** Launch existing local Codex with a guarded saved identity, or resume a project-scoped UUID when operation is `resume`. Options precede `--`; trailing child arguments and streams remain unchanged, including resume prompt tokens. Physical spawn cwd and raw directory inputs are checked again immediately before spawn; this is not an atomic OS guarantee. Signal observers remain installed through post-exit synchronization and failure cleanup, then are removed. Observed child exit status survives post-exit health errors, reported on stderr; pre-execution failures return 2 and selection cancellation returns 130. Named Codex profiles are refused until their effective policy can be proved. Fixture mode retains the harmless G0 adapter. */
+/** Launch existing local Codex with a guarded saved identity, or resume a project-scoped UUID when operation is `resume`. Root flags follow resolveStateHome before state access. Options precede `--`; trailing child arguments and streams remain unchanged, including resume prompt tokens. Physical spawn cwd and raw directory inputs are checked again immediately before spawn; this is not an atomic OS guarantee. Signal observers remain installed through post-exit synchronization and failure cleanup, then are removed. Observed child exit status survives post-exit health errors, reported on stderr; pre-execution failures return 2 and selection cancellation returns 130. Named Codex profiles are refused until their effective policy can be proved. Fixture mode retains the harmless G0 adapter. */
 export async function run(
   args: string[],
   operation: 'run' | 'resume' = 'run',
@@ -321,6 +320,7 @@ export async function run(
         ![
           '--identity',
           '--target',
+          '--home',
           '--state-home',
           '--codex-home',
           '--codex-executable',
@@ -348,14 +348,10 @@ export async function run(
     const rawResume = invocation.resume;
     if (operation === 'resume' && (rawResume || invocation.last))
       throw new Error('RESUME_SCOPE_UNPROVEN');
-    const stateHome =
-      values.get('--state-home') ??
-      join(
-        homedir(),
-        process.platform === 'win32'
-          ? '.codex-tandem-windows'
-          : '.codex-tandem',
-      );
+    const stateHome = await resolveStateHome({
+      home: values.get('--home'),
+      stateHome: values.get('--state-home'),
+    });
     let profileId = values.get('--identity');
     if (!profileId) {
       const root = await claimPrivateState(resolve(stateHome), 'installation');
@@ -516,6 +512,13 @@ export async function run(
       try {
         await lease.registerProcess(child.pid);
       } catch (registrationError) {
+        // Fresh Linux procfs reads can observe a terminated child before Node
+        // delivers close. Two check turns allow an intervening poll/close phase;
+        // only observed status plus fresh validation permits the fallback.
+        if (process.platform === 'linux' && childStatus === undefined)
+          await new Promise<void>((resolve) =>
+            setImmediate(() => setImmediate(resolve)),
+          );
         if (childStatus === undefined) throw registrationError;
         await lease.revalidateBeforeLaunch();
       }

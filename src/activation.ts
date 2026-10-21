@@ -1,7 +1,16 @@
+import {
+  openSync,
+  fstatSync,
+  readSync,
+  closeSync,
+  lstatSync,
+  realpathSync,
+  statSync,
+} from 'node:fs';
 import { open, lstat, realpath, stat, rm } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { join, resolve } from 'node:path';
-import { claimPrivateState } from './private-state.js';
+import { claimPrivateState, resolveStateHome } from './private-state.js';
 import {
   acquireProfileMutex,
   acquireBindingLease,
@@ -54,14 +63,18 @@ export type ActivationLease = {
   /** Revalidate process ownership and release this operation's leases. Active or ambiguous processes keep protection held. */
   release: () => Promise<void>;
 };
-async function privateBytes(path: string): Promise<Buffer> {
+/** Read bounded owner-only saved credential bytes through verified native file identity. Linux uses fresh bounded descriptor reads; no contents are cached. Links, hardlinks, changed files and inaccessible permissions throw without exposing contents. */
+export async function readPrivateCredential(path: string): Promise<Buffer> {
   await verifyPrivate(path);
-  const info = await lstat(path);
+  const info =
+    process.platform === 'linux' ? lstatSync(path) : await lstat(path);
   if (!info.isFile() || info.nlink !== 1 || info.size > 65536)
     throw new Error('CREDENTIAL_INVALID');
-  const handle = await open(path, 'r');
+  const handle =
+    process.platform === 'linux' ? openSync(path, 'r') : await open(path, 'r');
   try {
-    const opened = await handle.stat();
+    const opened =
+      typeof handle === 'number' ? fstatSync(handle) : await handle.stat();
     if (
       opened.dev !== info.dev ||
       opened.ino !== info.ino ||
@@ -69,16 +82,16 @@ async function privateBytes(path: string): Promise<Buffer> {
     )
       throw new Error('CREDENTIAL_CHANGED');
     const bytes = Buffer.alloc(65537),
-      { bytesRead } = await handle.read(bytes, 0, bytes.length, 0);
+      bytesRead =
+        typeof handle === 'number'
+          ? readSync(handle, bytes, 0, bytes.length, 0)
+          : (await handle.read(bytes, 0, bytes.length, 0)).bytesRead;
     if (bytesRead > 65536) throw new Error('CREDENTIAL_INVALID');
     return bytes.subarray(0, bytesRead);
   } finally {
-    await handle.close();
+    if (typeof handle === 'number') closeSync(handle);
+    else await handle.close();
   }
-}
-/** Read bounded owner-only saved credential bytes through verified native file identity. Links, hardlinks, changed files and inaccessible permissions throw without exposing contents. */
-export async function readPrivateCredential(path: string): Promise<Buffer> {
-  return privateBytes(path);
 }
 function matches(bytes: Buffer, binding: Binding): boolean {
   const actual = credentialIdentity(bytes);
@@ -220,13 +233,13 @@ export function validateActivationState(
 }
 async function optionalBytes(path: string) {
   try {
-    return await privateBytes(path);
+    return await readPrivateCredential(path);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     return undefined;
   }
 }
-/** Activate, recover or sync a saved local identity under native ownership and effective policy checks. Saves verified outgoing refreshes before target-filesystem replacement. An interrupted operation may have installed new credentials; recovery retains current matching bytes and never automatically restores staging snapshots. */
+/** Activate, recover or sync a saved local identity under native ownership and effective policy checks. Saves verified outgoing refreshes before target-filesystem replacement. Linux may reuse a coherent committed activation for the exact already-active profile/binding, retaining fresh policy/ownership checks and launch journaling. An interrupted operation may have installed new credentials; recovery retains current matching bytes and never automatically restores staging snapshots. */
 export async function activateIdentity(
   options: ActivationOptions,
 ): Promise<ActivationLease> {
@@ -259,18 +272,43 @@ export async function activateIdentity(
       bindingPath: credentialPath(selected.id),
       codexExecutable: options.command.executable,
     });
-    const home = await realpath(options.codexHome);
+    const home =
+      process.platform === 'linux'
+        ? realpathSync.native(options.codexHome)
+        : await realpath(options.codexHome);
     await verifyPrivate(home);
-    const homeInfo = await stat(home, { bigint: true });
+    const homeInfo =
+      process.platform === 'linux'
+        ? statSync(home, { bigint: true })
+        : await stat(home, { bigint: true });
     const generation = `${await operatingEnvironment()}:${homeInfo.dev}:${homeInfo.ino}`;
-    const project = await realpath(resolve(options.projectPath));
-    if (!(await stat(project)).isDirectory())
+    const project =
+      process.platform === 'linux'
+        ? realpathSync.native(resolve(options.projectPath))
+        : await realpath(resolve(options.projectPath));
+    if (
+      !(
+        process.platform === 'linux' ? statSync(project) : await stat(project)
+      ).isDirectory()
+    )
       throw new Error('PROJECT_INVALID');
-    const executable = await realpath(resolve(options.command.executable));
+    const executable =
+      process.platform === 'linux'
+        ? realpathSync.native(resolve(options.command.executable))
+        : await realpath(resolve(options.command.executable));
     const prefix = await Promise.all(
       (options.command.prefix ?? []).map(async (p) => {
-        const physical = await realpath(resolve(p));
-        if (!(await stat(physical)).isFile())
+        const physical =
+          process.platform === 'linux'
+            ? realpathSync.native(resolve(p))
+            : await realpath(resolve(p));
+        if (
+          !(
+            process.platform === 'linux'
+              ? statSync(physical)
+              : await stat(physical)
+          ).isFile()
+        )
           throw new Error('CODEX_ENTRYPOINT_INVALID');
         return physical;
       }),
@@ -284,8 +322,14 @@ export async function activateIdentity(
         ...(options.command.prefix ?? []),
       ].map(async (path) => ({
         path: resolve(path),
-        physical: await realpath(resolve(path)),
-        info: await stat(path, { bigint: true }),
+        physical:
+          process.platform === 'linux'
+            ? realpathSync.native(resolve(path))
+            : await realpath(resolve(path)),
+        info:
+          process.platform === 'linux'
+            ? statSync(path, { bigint: true })
+            : await stat(path, { bigint: true }),
       })),
     );
     await verifyActivationPolicy(
@@ -359,7 +403,7 @@ export async function activateIdentity(
       if (!matches(bytes, binding)) throw new Error('TARGET_BINDING_MISMATCH');
       await protect(binding);
       await guard!.revalidate();
-      if (!(await privateBytes(target)).equals(bytes))
+      if (!(await readPrivateCredential(target)).equals(bytes))
         throw new Error('EXTERNAL_CREDENTIAL_CHANGE');
       await write(record, credentialPath(binding.id), bytes);
     };
@@ -453,8 +497,18 @@ export async function activateIdentity(
         'outgoing',
       );
     } else if (active) throw new Error('RECOVERABLE_CREDENTIAL_ALTERNATIVES');
-    if ((options.operation ?? 'activate') === 'activate') {
-      const bytes = await privateBytes(credentialPath(selected.id));
+    const reuseCommitted =
+      process.platform === 'linux' &&
+      active?.profileId === profile.id &&
+      active.bindingId === selected.id &&
+      transaction?.phase === 'complete' &&
+      transaction.id === active.transactionId &&
+      transaction.selected.profileId === profile.id &&
+      transaction.selected.bindingId === selected.id &&
+      transaction.resolved?.profileId === profile.id &&
+      transaction.resolved.bindingId === selected.id;
+    if ((options.operation ?? 'activate') === 'activate' && !reuseCommitted) {
+      const bytes = await readPrivateCredential(credentialPath(selected.id));
       if (!matches(bytes, selected)) throw new Error('SAVED_BINDING_MISMATCH');
       transaction = {
         schemaVersion: 1,
@@ -482,14 +536,14 @@ export async function activateIdentity(
       await phase('begun');
       await phase('outgoing-saved');
       await write('stage', stage, bytes);
-      if (!matches(await privateBytes(stage), selected))
+      if (!matches(await readPrivateCredential(stage), selected))
         throw new Error('STAGED_BINDING_MISMATCH');
       await phase('staged');
       await guard.revalidate();
       const latest = await optionalBytes(target);
       if (outgoing ? !latest?.equals(outgoing) : latest !== undefined)
         throw new Error('EXTERNAL_CREDENTIAL_CHANGE');
-      await write('target', target, await privateBytes(stage));
+      await write('target', target, await readPrivateCredential(stage));
       await phase('replaced');
       active = {
         schemaVersion: 1,
@@ -512,9 +566,14 @@ export async function activateIdentity(
       if (!prepared) throw new Error('LAUNCH_PREPARATION_REQUIRED');
       await guard!.revalidate();
       for (const path of invocationPaths) {
-        const current = await stat(path.path, { bigint: true });
+        const current =
+          process.platform === 'linux'
+            ? statSync(path.path, { bigint: true })
+            : await stat(path.path, { bigint: true });
         if (
-          (await realpath(path.path)) !== path.physical ||
+          (process.platform === 'linux'
+            ? realpathSync.native(path.path)
+            : await realpath(path.path)) !== path.physical ||
           current.dev !== path.info.dev ||
           current.ino !== path.info.ino ||
           (current.isFile() &&
@@ -531,7 +590,7 @@ export async function activateIdentity(
         marker.profileId !== profile.id
       )
         throw new Error('ACTIVE_BINDING_CHANGED');
-      if (!matches(await privateBytes(target), selected))
+      if (!matches(await readPrivateCredential(target), selected))
         throw new Error('TARGET_BINDING_MISMATCH');
     };
     return {
@@ -546,7 +605,7 @@ export async function activateIdentity(
         if (!['tracked', 'untracked'].includes(mode))
           throw new Error('TRACKING_MODE_INVALID');
         await guard!.revalidate();
-        const current = await privateBytes(target);
+        const current = await readPrivateCredential(target);
         const marker = activeRecord(
           await metadata(activePath),
           home,
@@ -602,7 +661,11 @@ export async function activateIdentity(
           marker.bindingId !== selected.id
         )
           throw new Error('ACTIVE_BINDING_CHANGED');
-        await save(selected, await privateBytes(target), 'exit-refresh');
+        await save(
+          selected,
+          await readPrivateCredential(target),
+          'exit-refresh',
+        );
       },
       release: async () => {
         if (released) throw new Error('ACTIVATION_RELEASED');
@@ -626,7 +689,7 @@ export async function activateIdentity(
   }
 }
 
-/** Activate a saved local profile, explicitly reconcile interrupted state, or sync the active binding. Requires an existing executable and stable profile ID; never starts or stops Codex. Outputs references and redacted recovery errors only. */
+/** Activate a saved local profile, explicitly reconcile interrupted state, or sync the active binding. Root flags follow resolveStateHome before state access. Requires an existing executable and stable profile ID; never starts or stops Codex. Outputs references and redacted recovery errors only. */
 export async function activationCommand(args: string[]): Promise<number> {
   const json = args.includes('--json');
   let lease: ActivationLease | undefined;
@@ -640,6 +703,7 @@ export async function activationCommand(args: string[]): Promise<number> {
       if (args[i] === '--json') continue;
       if (
         ![
+          '--home',
           '--state-home',
           '--codex-home',
           '--identity',
@@ -656,14 +720,10 @@ export async function activationCommand(args: string[]): Promise<number> {
     if (!values.has('--identity') || !values.has('--codex-executable'))
       throw new Error('ACTIVATION_OPTIONS_REQUIRED');
     lease = await activateIdentity({
-      stateHome:
-        values.get('--state-home') ??
-        join(
-          homedir(),
-          process.platform === 'win32'
-            ? '.codex-tandem-windows'
-            : '.codex-tandem',
-        ),
+      stateHome: await resolveStateHome({
+        home: values.get('--home'),
+        stateHome: values.get('--state-home'),
+      }),
       codexHome:
         values.get('--codex-home') ??
         process.env.CODEX_HOME ??

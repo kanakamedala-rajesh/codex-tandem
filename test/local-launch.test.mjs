@@ -131,7 +131,17 @@ test('local launch preserves arguments and streams, journals before execution an
       process.exitCode=7;
     }`,
     );
-    const args = ['--config', 'model="a b"', '"quotes"', 'こんにちは', ';&$x'];
+    const args = [
+      '--config',
+      'model="a b"',
+      '"quotes"',
+      'こんにちは',
+      ';&$x',
+      '--home',
+      'child-home',
+      '--state-home',
+      'child-alias',
+    ];
     const result = await new Promise((resolve) => {
       const child = execFile(
         process.execPath,
@@ -146,7 +156,7 @@ test('local launch preserves arguments and streams, journals before execution an
           'local',
           '--identity',
           f.profiles[1].id,
-          '--state-home',
+          '--home',
           f.state,
           '--codex-home',
           f.home,
@@ -202,6 +212,82 @@ test('local launch preserves arguments and streams, journals before execution an
     await rm(f.root, { recursive: true, force: true });
   }
 });
+
+test(
+  'Linux preserves observed fast-child exit status when native registration precedes close notification',
+  { skip: process.platform !== 'linux', timeout: 15000 },
+  async () => {
+    const f = await activationFixture();
+    try {
+      const control = join(f.root, 'native-terminal-control'),
+        loader = fileURLToPath(
+          new URL('./fixtures/registration-close-control.mjs', import.meta.url),
+        ),
+        script = f.options.command.prefix[0];
+      const benchmark = await readFile(
+        new URL('./fixtures/benchmark-launch.mjs', import.meta.url),
+        'utf8',
+      );
+      await writeFile(
+        script,
+        benchmark +
+          "\nif(!process.argv.includes('app-server'))process.exitCode=Number(process.env.TANDEM_TEST_EXIT);\n",
+      );
+      for (const status of [0, 7]) {
+        const result = await new Promise((resolve) => {
+          const child = execFile(
+            process.execPath,
+            [
+              '--import=' + loader,
+              cli,
+              'run',
+              '--target',
+              'local',
+              '--identity',
+              f.profiles[0].id,
+              '--state-home',
+              f.state,
+              '--codex-home',
+              f.home,
+              '--codex-executable',
+              f.options.command.executable,
+              '--codex-script',
+              script,
+              '--project',
+              f.root,
+              '--json',
+            ],
+            {
+              env: {
+                ...process.env,
+                TANDEM_BENCHMARK_STATE: f.state,
+                TANDEM_TEST_EXIT: String(status),
+                TANDEM_TEST_NATIVE_TERMINAL: control,
+              },
+              timeout: 5000,
+              encoding: 'utf8',
+            },
+            (error, stdout, stderr) =>
+              resolve({ code: error?.code ?? 0, stdout, stderr }),
+          );
+          child.stdin.end();
+        });
+        assert.equal(result.code, status, result.stderr);
+        assert.equal(result.stdout, 'TANDEM_BENCHMARK_READY\n');
+        assert.equal(result.stderr, '');
+        assert.equal(
+          (await readFile(control, 'utf8')).trim().split('\n').length,
+          status === 0 ? 1 : 2,
+        );
+        const entries = await readdir(f.state);
+        assert(!entries.includes('manager.lock'));
+        assert(!(await readdir(f.home)).includes('.tandem-home.lock'));
+      }
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
 
 test('a prepared launch refuses a changed entrypoint before child execution', async () => {
   const f = await activationFixture();

@@ -1,7 +1,8 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath, stat } from 'node:fs/promises';
+import { readFileSync, realpathSync, readdirSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { join } from 'node:path';
+import { join, resolve, isAbsolute } from 'node:path';
 const execute = promisify(execFile);
 /** Native process creation evidence. The environment separates Windows, WSL and native Linux PID namespaces. */
 export type ProcessIdentity = {
@@ -14,11 +15,11 @@ export async function operatingEnvironment(): Promise<string> {
   if (process.platform === 'win32') return 'windows';
   if (process.platform !== 'linux')
     throw new Error('PROCESS_PLATFORM_UNSUPPORTED');
-  return /microsoft/i.test(await readFile('/proc/sys/kernel/osrelease', 'utf8'))
+  return /microsoft/i.test(readFileSync('/proc/sys/kernel/osrelease', 'utf8'))
     ? 'wsl'
     : 'linux';
 }
-/** Read native creation evidence for a PID. Returns null only when the native reader proves absence; inaccessible evidence throws. */
+/** Read native creation evidence for a PID. Returns null only when a fresh native lookup proves absence after missing or malformed exit evidence; inaccessible or still-present malformed evidence throws. */
 export async function processIdentity(
   pid: number,
 ): Promise<ProcessIdentity | null> {
@@ -70,11 +71,9 @@ if ($o.ReturnValue -ne 0 -or !$p.CreationDate -or !$o.Sid) { exit 2 }
     }
   }
   try {
-    const [raw, status, boot] = await Promise.all([
-      readFile(`/proc/${pid}/stat`, 'utf8'),
-      readFile(`/proc/${pid}/status`, 'utf8'),
-      readFile('/proc/sys/kernel/random/boot_id', 'utf8'),
-    ]);
+    const raw = readFileSync(`/proc/${pid}/stat`, 'utf8'),
+      status = readFileSync(`/proc/${pid}/status`, 'utf8'),
+      boot = readFileSync('/proc/sys/kernel/random/boot_id', 'utf8');
     const fields = raw
       .slice(raw.lastIndexOf(')') + 2)
       .trim()
@@ -89,11 +88,15 @@ if ($o.ReturnValue -ne 0 -or !$p.CreationDate -or !$o.Sid) { exit 2 }
     };
   } catch (error) {
     if (
-      ['ENOENT', 'ESRCH'].includes((error as NodeJS.ErrnoException).code ?? '')
+      ['ENOENT', 'ESRCH'].includes(
+        (error as NodeJS.ErrnoException).code ?? '',
+      ) ||
+      (error as Error).message === 'PROCESS_IDENTITY_UNAVAILABLE'
     ) {
-      // A vanished proc entry is absence only after a second native lookup.
+      // An open proc file may return incomplete bytes during exit. Neither
+      // malformed bytes nor a failed read proves absence without another lookup.
       try {
-        await readFile(`/proc/${pid}/stat`);
+        readFileSync(`/proc/${pid}/stat`);
       } catch (again) {
         if (
           ['ENOENT', 'ESRCH'].includes(
@@ -249,22 +252,18 @@ async function nativeProcess(pid: number): Promise<NativeProcess | null> {
   const identity = await processIdentity(pid);
   if (!identity) return null;
   try {
-    const { realpath } = await import('node:fs/promises');
-    const { resolve, isAbsolute } = await import('node:path');
-    const raw = await readFile(`/proc/${pid}/stat`, 'utf8');
+    const raw = readFileSync(`/proc/${pid}/stat`, 'utf8');
     const fields = raw.slice(raw.lastIndexOf(')') + 2).split(/\s+/);
     let executable: string | undefined,
       home: string | undefined,
       nonce: string | undefined;
     try {
-      executable = await realpath(`/proc/${pid}/exe`);
+      executable = realpathSync.native(`/proc/${pid}/exe`);
     } catch {
       /* An inaccessible candidate stays unknown. */
     }
     try {
-      const env = (await readFile(`/proc/${pid}/environ`))
-        .toString()
-        .split('\0');
+      const env = readFileSync(`/proc/${pid}/environ`).toString().split('\0');
       const selected =
         env.find((x) => x.startsWith('CODEX_HOME='))?.slice(11) ??
         (env.find((x) => x.startsWith('HOME='))?.slice(5)
@@ -274,7 +273,7 @@ async function nativeProcess(pid: number): Promise<NativeProcess | null> {
         const { canonicalPath } = await import('./discovery.js');
         const base = isAbsolute(selected)
           ? undefined
-          : await realpath('/proc/' + pid + '/cwd');
+          : realpathSync.native('/proc/' + pid + '/cwd');
         home = await canonicalPath(
           base ? resolve(base, selected) : resolve(selected),
         );
@@ -286,7 +285,7 @@ async function nativeProcess(pid: number): Promise<NativeProcess | null> {
     let role: ScopedProcess['role'] = 'foreground';
     try {
       if (
-        (await readFile(`/proc/${pid}/cmdline`))
+        readFileSync(`/proc/${pid}/cmdline`)
           .toString()
           .split('\0')
           .some((x) => ['app-server', 'mcp-server', 'serve'].includes(x))
@@ -296,7 +295,8 @@ async function nativeProcess(pid: number): Promise<NativeProcess | null> {
       /* Ownership still requires native creation and scope. */
     }
     const after = await processIdentity(pid);
-    if (!after || after.creation !== identity.creation)
+    if (!after) return null;
+    if (after.creation !== identity.creation)
       throw new Error('PROCESS_IDENTITY_CHANGED');
     return {
       ...identity,
@@ -306,7 +306,17 @@ async function nativeProcess(pid: number): Promise<NativeProcess | null> {
       nonce,
       role,
     };
-  } catch {
+  } catch (error) {
+    if (
+      ['ENOENT', 'ESRCH'].includes((error as NodeJS.ErrnoException).code ?? '')
+    ) {
+      try {
+        if ((await processIdentity(pid)) === null) return null;
+      } catch {
+        // Unavailable identity still blocks inventory; never infer disappearance.
+      }
+    }
+    // eslint-disable-next-line preserve-caught-error -- Native causes can contain private filesystem paths.
     throw new Error('PROCESS_INVENTORY_UNAVAILABLE');
   }
 }
@@ -326,7 +336,6 @@ export async function proveManagedProcess(
   codexHome: string,
   executable?: string,
 ): Promise<ManagedProcess> {
-  const { realpath, stat } = await import('node:fs/promises');
   const manager = await processIdentity(process.pid);
   const child = await nativeProcess(pid);
   if (!manager || !child || !child.executable || child.pid === manager.pid)
@@ -382,13 +391,11 @@ export async function proveManagedProcess(
   }
   throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
 }
-/** Inspect local Codex candidates against a canonical home and native managed records. Vanished Linux scan entries are omitted only after native absence proof. Unreadable or ambiguous scope blocks switching; no process is stopped. */
+/** Inspect local Codex candidates against a canonical home and native managed records. Each call reads fresh Linux procfs metadata synchronously, yielding between bounded candidate groups so signals can be observed. Vanished entries are omitted only after native absence proof. Unreadable or ambiguous scope blocks switching; no process is stopped. */
 export async function inspectProcesses(
   options: { codexHome: string; codexExecutable?: string },
   managed: ManagedProcess[] = [],
 ): Promise<ScopedProcess[]> {
-  const { realpath, readdir, stat } = await import('node:fs/promises');
-  const { resolve } = await import('node:path');
   const home = await realpath(resolve(options.codexHome));
   const executable = options.codexExecutable
     ? await realpath(resolve(options.codexExecutable))
@@ -427,12 +434,12 @@ $r=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -match '^codex(?:\\.
       throw new Error('PROCESS_INVENTORY_UNAVAILABLE');
     }
   } else {
-    for (const entry of await readdir('/proc')) {
-      if (!/^\d+$/.test(entry)) continue;
+    const entries = readdirSync('/proc').filter((entry) => /^\d+$/.test(entry));
+    const candidate = async (entry: string): Promise<number | undefined> => {
       const pid = Number(entry);
       let comm: string;
       try {
-        comm = (await readFile(`/proc/${pid}/comm`, 'utf8')).trim();
+        comm = readFileSync(`/proc/${pid}/comm`, 'utf8').trim();
       } catch (error) {
         if (
           ['ENOENT', 'ESRCH'].includes(
@@ -441,7 +448,7 @@ $r=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -match '^codex(?:\\.
         ) {
           // A failed name read cannot prove that the enumerated process is gone.
           try {
-            if ((await processIdentity(pid)) === null) continue;
+            if ((await processIdentity(pid)) === null) return undefined;
           } catch (identityError) {
             throw new Error('PROCESS_INVENTORY_UNAVAILABLE', {
               cause: identityError,
@@ -452,12 +459,25 @@ $r=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -match '^codex(?:\\.
       }
       let exe;
       try {
-        exe = await realpath(`/proc/${pid}/exe`);
+        exe = realpathSync.native(`/proc/${pid}/exe`);
       } catch {
         /* Candidate matching a Codex name still requires inspection. */
       }
       if (/^codex(?:\.exe)?$/i.test(comm) || (executable && exe === executable))
-        candidates.push(pid);
+        return pid;
+      return undefined;
+    };
+    for (let start = 0; start < entries.length; start += 16) {
+      if (start) await new Promise<void>((resolve) => setImmediate(resolve));
+      // Procfs reads are fresh but need no thread-pool round trips. Absence
+      // checks can still await another lookup, so drain the group on failure.
+      const results = await Promise.allSettled(
+        entries.slice(start, start + 16).map(candidate),
+      );
+      for (const result of results) {
+        if (result.status === 'rejected') throw result.reason;
+        if (result.value !== undefined) candidates.push(result.value);
+      }
     }
   }
   if (!Array.isArray(candidates) || candidates.length > 4096)
@@ -473,7 +493,9 @@ $r=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -match '^codex(?:\\.
           ).map((row) => [row.pid, row]),
         )
       : undefined;
-  for (const pid of candidates) {
+  for (const [index, pid] of candidates.entries()) {
+    if (process.platform === 'linux' && index && index % 16 === 0)
+      await new Promise<void>((resolve) => setImmediate(resolve));
     if (excluded.has(pid)) continue;
     const row = batch
       ? await fromWindows(batch.get(pid)!)

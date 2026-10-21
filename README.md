@@ -6,7 +6,8 @@ It is being built against the [approved requirements](docs/README.md) in
 
 The current package provides host capability checks, read-only target discovery,
 a synthetic G0 selector/child wrapper, private profiles, guarded local credential
-activation/recovery, managed local and named Docker launch/resume and bounded metadata capture groundwork. These
+activation/recovery, managed local and named Docker launch/resume, bounded metadata
+capture groundwork. These
 features do not establish full tracking, complete G0 acceptance or release support.
 
 ## Build and install
@@ -202,6 +203,62 @@ terminal behavior, existing Codex/toolchain execution and native Linux qualifica
 require separate platform evidence; registration and `codex --version` do not qualify
 those acceptance families. Full capture and launch latency remain separate gates.
 
+## Launch benchmark
+
+Build first, then run the maintained local synthetic benchmark:
+
+```sh
+npm run build
+npm run benchmark:launch
+# Measure actual A-to-B credential switches as a separate condition:
+npm run benchmark:launch -- --identity-mode=alternating
+# Short diagnostic only; never qualifies the latency budget:
+npm run benchmark:launch -- --diagnostic --warmups=2 --samples=10
+```
+
+The default runs 50 warmup pairs and 1,000 measured pairs, alternating
+direct/wrapped order. Each direct launch runs the same harmless Node fixture in
+the same project and synthetic Codex home. Wrapped launches execute the complete
+CLI with explicit saved identity, native process ownership checks, effective-policy
+RPCs, private activation durability and a tracked launch journal. The copied fixture
+uses the existing activation tests' synthetic policy/credential contract; it makes
+no Codex or provider requests. No existing credentials, targets or configuration
+are selected. All measured work remains enabled.
+
+The default same-identity mode measures the healthy already-selected identity,
+including verified committed-activation reuse on Linux. Alternating mode switches
+between two saved synthetic identities on every wrapped launch. The harness verifies
+their intended-launch counts after measurement; both conditions need separate
+results, and neither alone qualifies all G1 launch behavior.
+
+The command emits one JSON object with raw millisecond distributions and nearest-rank
+p50/p95/p99 values for direct latency, wrapped latency and each paired difference.
+Readiness runs from process spawn to the fixture's fixed ready marker; completion
+also includes child registration, exit credential sync and guard release. Output
+includes alternating order, sample configuration, platform/CPU/Node details, source
+commit/dirty state and SHA-256 hashes of built assets, harness, fixture and Node.
+Temporary synthetic state is removed afterward. Redirect the JSON to an ignored
+`.scratch/` file or CI artifact when retaining evidence.
+`npm run --silent benchmark:launch` suppresses npm's own preamble for direct JSON
+redirection.
+
+The paired readiness overhead fails with exit 1 when p95 exceeds 100 ms or
+p99 exceeds 250 ms; completion overhead is reported separately. Diagnostic mode reports `DIAGNOSTIC_ONLY` regardless of its
+observations. Invalid arguments, missing readiness, nonzero child exit, unexpected
+output/diagnostics and timeouts abort with a sanitized error and exit 2; failed
+samples are never discarded. Supported bounds are `--warmups=0..10000`,
+`--samples=1..10000` and `--timeout-ms=1..180000` per launch; fewer than 50 warmups
+or 1,000 samples require `--diagnostic`. Deadlines terminate only the harness's
+own synthetic child, without stopping existing Codex processes.
+
+This command always reports `fixtureOnly:true` and `releaseQualified:false`.
+It measures warm local launches with no collector, rollouts or analytics; launch
+journals accumulate naturally. Real Codex UI readiness, equivalent actual Docker
+transport, cold OS caches, collector running/importing, history-size comparisons,
+capture hooks, selector responsiveness, Smart App Control and the full
+Windows/Ubuntu/native Linux/legacy-target and Node matrix require separate evidence.
+A successful fixture budget result does not complete CT-15 or release acceptance.
+
 ## Synthetic selector
 
 ```sh
@@ -289,9 +346,17 @@ not qualify its use on any target. Target policy must be checked before login or
 activation. JSON results contain profile labels and stable binding references,
 never credential values or provider account identifiers.
 
-Stores default to `~/.codex-tandem-windows` on Windows and `~/.codex-tandem` on
-POSIX, with `--state-home PATH` for an explicit private directory. Windows and WSL
-keep separate state. Credential files use effective current-user Windows ACL
+On POSIX, stores default to `$XDG_STATE_HOME/codex-tandem` when that variable is
+absolute, otherwise `~/.local/state/codex-tandem`. Use `--home PATH` to select a
+private installation; `--state-home PATH` remains a compatible alias. Supplying
+both flags is invalid. If the former `~/.codex-tandem` default exists, select it
+explicitly with `--home` until an explicit migration is performed. Default
+selection leaves that store unchanged and reports
+`LEGACY_STATE_REQUIRES_EXPLICIT_HOME`.
+
+Windows retains its existing `~/.codex-tandem-windows` default while Windows
+implementation and qualification are paused. Windows and WSL keep separate state.
+Credential files use effective current-user Windows ACL
 verification (SYSTEM and Administrators also allowed) or owner-only POSIX access.
 An insecure store, symlink, corrupt metadata or unresolved mutation lock blocks the
 operation. New profile mutexes and binding leases carry nonce and native creation

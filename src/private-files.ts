@@ -1,3 +1,4 @@
+import { lstatSync } from 'node:fs';
 import {
   lstat,
   mkdir,
@@ -179,7 +180,7 @@ async function windowsAcl(paths: string[], set: boolean) {
     throw new Error('PRIVATE_ACL_REQUIRED');
   }
 }
-/** Verify owner-only POSIX access or a Windows DACL limited to the current user, SYSTEM and Administrators. A bounded path batch shares one native ACL probe; links and inaccessible protection throw. */
+/** Verify owner-only POSIX access or a Windows DACL limited to the current user, SYSTEM and Administrators. Linux performs fresh native metadata checks; a Windows path batch shares one ACL probe. Links and inaccessible protection throw. */
 export async function verifyPrivate(
   path: string | readonly string[],
 ): Promise<void> {
@@ -187,7 +188,8 @@ export async function verifyPrivate(
   if (paths.length > 256 || JSON.stringify(paths).length > 16384)
     throw new Error('PRIVATE_PATHS_INVALID');
   for (const item of paths) {
-    const info = await lstat(item);
+    const info =
+      process.platform === 'linux' ? lstatSync(item) : await lstat(item);
     if (info.isSymbolicLink() || (!info.isDirectory() && !info.isFile()))
       throw new Error('PRIVATE_PATH_INVALID');
     if (

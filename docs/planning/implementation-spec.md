@@ -103,6 +103,27 @@ acceptance families. Release preparation does not authorize publication.
 Baseline exclusions remain SRS §1.2. No Go runtime wrapper, manual attribution
 editor, automatic background pricing or mandatory dashboard redesign is added.
 
+## Installation root contract
+
+Every profile, activation, guard/process, Docker-configuration and launch command
+resolves the same Tandem root. On POSIX this follows SRS §10.2: absolute
+`$XDG_STATE_HOME/codex-tandem`, otherwise `~/.local/state/codex-tandem`.
+Relative `XDG_STATE_HOME` is ignored. `--home` selects an explicit root; the
+pre-release `--state-home` alias remains supported, but supplying both is invalid.
+Launch options after `--` remain Codex arguments.
+
+Root selection does not migrate state or relax canonical ownership/private-file
+checks. If the old POSIX default `~/.codex-tandem` exists, default selection fails
+with `LEGACY_STATE_REQUIRES_EXPLICIT_HOME`. Select the old root explicitly to retain
+it, or explicitly select the new root after resolving migration; no second
+controller is silently initialized and the old store is left unchanged.
+
+Windows implementation and qualification are deferred while Linux work completes.
+Windows retains the pre-release `~/.codex-tandem-windows` default; the SRS-required
+`%LOCALAPPDATA%/CodexTandem` default remains an open requirement, not a waiver.
+Windows and WSL retain independent live stores. Database filesystem qualification
+and previewed migration remain the storage/lifecycle tickets' obligations.
+
 ## Profile storage and isolated login contract
 
 CT-09 owns the version-1 private profile manifest and per-binding credential files.
@@ -217,6 +238,21 @@ private; links, hardlinked credential files, foreign environments, active proces
 and uncertain ownership block the operation. The canonical native home filesystem
 identity plus operating environment defines this local target generation; it is
 not a Docker generation or a qualification claim.
+
+On Linux, selecting the exact already-active profile and binding may reuse its
+committed activation when the complete transaction, resolved binding, active
+reference and native home generation agree. Effective policy and process ownership
+are proved afresh, outgoing refreshes are saved, and every launch gets a new durable
+launch record and final pre-spawn validation. Reuse does not replace unchanged target
+credentials or rewrite the completed activation journal. Other selections and
+incomplete, absent or contradictory transaction state retain the existing full
+activation/recovery path. This optimization does not qualify switching latency.
+
+Linux reads fresh procfs identities and bounded private credential/owner metadata
+through native synchronous descriptors, retaining the same permission, file-identity
+and size checks. Reads are not cached; candidate enumeration and detailed process
+inspection yield between groups of at most 16 so timers and signals remain observable.
+Credential publication, journal phases and durability barriers remain unchanged.
 
 The private target `.tandem-activation` directory owns the phase journal, active
 binding reference and validated staging credential. Phases are begun,

@@ -1599,15 +1599,15 @@ test(
   'Linux comm scan requires native absence before omitting vanished entries',
   { skip: process.platform !== 'linux' },
   async () => {
-    const fs = (await import('node:fs/promises')).default;
+    const fs = (await import('node:fs')).default;
     const { syncBuiltinESMExports } = await import('node:module');
     const { spawn } = await import('node:child_process');
     const { once } = await import('node:events');
     const { inspectProcesses, processIdentity } = await import(
       new URL('dist/processes.js', packageRoot)
     );
-    const nativeReadFile = fs.readFile;
-    const nativeReaddir = fs.readdir;
+    const nativeReadFile = fs.readFileSync;
+    const nativeReaddir = fs.readdirSync;
     const root = await mkdtemp(join(tmpdir(), 'tandem-proc-race-'));
     const home = join(root, 'home');
     await mkdir(home);
@@ -1633,14 +1633,14 @@ test(
         liveStatReads = 0;
       const nativeError = (code) =>
         Object.assign(new Error('synthetic proc read'), { code });
-      fs.readdir = async (path, ...args) => {
+      fs.readdirSync = (path, ...args) => {
         if (path === '/proc')
           return mode === 'absent'
             ? [String(absentPid), String(child.pid)]
             : [String(child.pid)];
         return nativeReaddir(path, ...args);
       };
-      fs.readFile = async (path, ...args) => {
+      fs.readFileSync = (path, ...args) => {
         if (path === '/proc/' + absentPid + '/comm')
           throw nativeError(commCode);
         if (path === '/proc/' + absentPid + '/stat') absentStatReads++;
@@ -1685,8 +1685,8 @@ test(
         if (outcome === 'comm-denied') assert.equal(liveStatReads, 0);
       }
     } finally {
-      fs.readFile = nativeReadFile;
-      fs.readdir = nativeReaddir;
+      fs.readFileSync = nativeReadFile;
+      fs.readdirSync = nativeReaddir;
       syncBuiltinESMExports();
       if (child.exitCode === null && child.signalCode === null) {
         const exited = once(child, 'exit');
@@ -1694,6 +1694,290 @@ test(
         await exited;
       }
       await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'Linux candidate scans yield between bounded groups and finish failed reads before returning',
+  { skip: process.platform !== 'linux', timeout: 10000 },
+  async () => {
+    const fs = (await import('node:fs')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { inspectProcesses } = await import(
+      new URL('dist/processes.js', packageRoot)
+    );
+    const original = {
+      readdir: fs.readdirSync,
+      read: fs.readFileSync,
+      realpath: fs.realpathSync.native,
+    };
+    const root = await mkdtemp(join(tmpdir(), 'tandem-proc-batch-'));
+    const entries = Array.from({ length: 64 }, (_, i) => String(900000 + i));
+    let reads = 0,
+      readsAtYield,
+      denied = false,
+      detailed = false,
+      detailedReads = 0,
+      detailedAtYield;
+    const priorStat = original.read(`/proc/${process.pid}/stat`, 'utf8'),
+      priorStatus = original.read(`/proc/${process.pid}/status`, 'utf8');
+    try {
+      fs.readdirSync = (path, ...args) =>
+        path === '/proc' ? entries : original.readdir(path, ...args);
+      fs.readFileSync = (path, ...args) => {
+        if (/^\/proc\/9000\d\d\/comm$/.test(path)) {
+          reads++;
+          if (denied)
+            throw Object.assign(new Error('synthetic denied comm'), {
+              code: 'EACCES',
+            });
+          if (reads === 1)
+            setImmediate(() => {
+              readsAtYield = reads;
+            });
+          return detailed ? 'codex\n' : 'unrelated\n';
+        }
+        const selected =
+          /^\/proc\/(9000\d\d)\/(stat|status|environ|cmdline)$/.exec(path);
+        if (detailed && selected) {
+          if (selected[2] === 'stat')
+            return priorStat.replace(/^\d+/, selected[1]);
+          if (selected[2] === 'status') return priorStatus;
+          if (selected[2] === 'environ') {
+            detailedReads++;
+            if (detailedReads === 1)
+              setImmediate(() => {
+                detailedAtYield = detailedReads;
+              });
+          }
+          return Buffer.alloc(0);
+        }
+        return original.read(path, ...args);
+      };
+      fs.realpathSync.native = (path, ...args) =>
+        /^\/proc\/9000\d\d\/exe$/.test(path)
+          ? detailed
+            ? process.execPath
+            : '/synthetic-unrelated-executable'
+          : original.realpath(path, ...args);
+      syncBuiltinESMExports();
+      const options = { codexHome: root, codexExecutable: process.execPath };
+      assert.deepEqual(await inspectProcesses(options), []);
+      assert.equal(reads, entries.length);
+      assert(
+        readsAtYield > 0 && readsAtYield < entries.length,
+        'a large inventory must yield before consuming every candidate',
+      );
+      denied = true;
+      reads = 0;
+      await assert.rejects(
+        inspectProcesses(options),
+        /PROCESS_INVENTORY_UNAVAILABLE/,
+      );
+      const finished = reads;
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(
+        reads,
+        finished,
+        'no candidate reads may outlive a failed scan',
+      );
+      assert(
+        reads > 0 && reads < entries.length,
+        'failure stops before another group',
+      );
+      denied = false;
+      detailed = true;
+      reads = 0;
+      const rows = await inspectProcesses(options);
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(rows.length, entries.length);
+      assert(rows.every((row) => row.ownership === 'unknown'));
+      assert(
+        detailedAtYield > 0 && detailedAtYield < entries.length,
+        'detailed inspection must also yield when scope metadata is unavailable',
+      );
+    } finally {
+      fs.readdirSync = original.readdir;
+      fs.readFileSync = original.read;
+      fs.realpathSync.native = original.realpath;
+      syncBuiltinESMExports();
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'Linux identity requires a fresh native absence check after malformed exit evidence',
+  { skip: process.platform !== 'linux' },
+  async () => {
+    const fs = (await import('node:fs')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { spawn } = await import('node:child_process');
+    const { once } = await import('node:events');
+    const { processIdentity } = await import(
+      new URL('dist/processes.js', packageRoot)
+    );
+    const originalRead = fs.readFileSync;
+    for (const outcome of ['gone', 'live', 'denied']) {
+      const child = spawn(
+        process.execPath,
+        ['-e', "process.stdout.write('ready');setInterval(()=>{},1000)"],
+        { stdio: ['ignore', 'pipe', 'ignore'] },
+      );
+      try {
+        await once(child.stdout, 'data');
+        const status = originalRead(`/proc/${child.pid}/status`, 'utf8');
+        if (outcome === 'gone') {
+          const exited = once(child, 'exit');
+          child.kill();
+          await exited;
+        }
+        let lookups = 0;
+        fs.readFileSync = (path, ...args) => {
+          if (path === `/proc/${child.pid}/status`) return status;
+          if (path === `/proc/${child.pid}/stat` && ++lookups === 1) {
+            if (outcome === 'denied')
+              throw Object.assign(new Error('synthetic denied identity'), {
+                code: 'EACCES',
+              });
+            return '';
+          }
+          return originalRead(path, ...args);
+        };
+        syncBuiltinESMExports();
+        if (outcome === 'gone') {
+          assert.equal(await processIdentity(child.pid), null);
+          assert(lookups >= 2, 'malformed bytes alone never prove absence');
+        } else {
+          await assert.rejects(
+            processIdentity(child.pid),
+            /PROCESS_IDENTITY_UNAVAILABLE/,
+          );
+          if (outcome === 'live') assert(lookups >= 2);
+        }
+      } finally {
+        fs.readFileSync = originalRead;
+        syncBuiltinESMExports();
+        if (child.exitCode === null && child.signalCode === null) {
+          const exited = once(child, 'exit');
+          child.kill();
+          await exited;
+        }
+      }
+    }
+  },
+);
+
+test(
+  'Linux inventory omits natively vanished candidates during inspection while live ambiguity and reused creation block',
+  { skip: process.platform !== 'linux' },
+  async () => {
+    const fs = (await import('node:fs')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { spawn } = await import('node:child_process');
+    const { once } = await import('node:events');
+    const { inspectProcesses } = await import(
+      new URL('dist/processes.js', packageRoot)
+    );
+    const original = {
+      read: fs.readFileSync,
+      readdir: fs.readdirSync,
+      realpath: fs.realpathSync.native,
+    };
+    const home = await mkdtemp(join(tmpdir(), 'tandem-proc-disappearance-'));
+    try {
+      for (const outcome of [
+        'middle-gone',
+        'final-gone',
+        'middle-denied',
+        'final-reused',
+        'middle-live',
+      ]) {
+        const child = spawn(
+          process.execPath,
+          ['-e', "process.stdout.write('ready');setInterval(()=>{},1000)"],
+          {
+            env: { ...process.env, CODEX_HOME: home },
+            stdio: ['ignore', 'pipe', 'ignore'],
+          },
+        );
+        try {
+          await once(child.stdout, 'data');
+          // Keep native before-exit evidence while subsequent lookups use the
+          // real procfs absence. No event-loop blocking inside a filesystem hook.
+          const priorStat = original.read(`/proc/${child.pid}/stat`, 'utf8'),
+            priorStatus = original.read(`/proc/${child.pid}/status`, 'utf8'),
+            priorComm = original.read(`/proc/${child.pid}/comm`, 'utf8'),
+            priorExe = original.realpath(`/proc/${child.pid}/exe`);
+          if (outcome.endsWith('-gone')) {
+            const exited = once(child, 'exit');
+            child.kill();
+            await exited;
+          }
+          let lookups = 0,
+            exeLookups = 0;
+          fs.readdirSync = (path, ...args) =>
+            path === '/proc'
+              ? [String(child.pid)]
+              : original.readdir(path, ...args);
+          fs.realpathSync.native = (path, ...args) =>
+            path === `/proc/${child.pid}/exe` && ++exeLookups === 1
+              ? priorExe
+              : original.realpath(path, ...args);
+          fs.readFileSync = (path, ...args) => {
+            if (path === `/proc/${child.pid}/comm`) return priorComm;
+            if (path === `/proc/${child.pid}/status` && lookups === 1)
+              return priorStatus;
+            if (path === `/proc/${child.pid}/stat`) {
+              lookups++;
+              if (lookups === 1 || (outcome === 'final-gone' && lookups === 2))
+                return priorStat;
+              if (
+                lookups === 2 &&
+                (outcome === 'middle-denied' || outcome === 'middle-live')
+              )
+                throw Object.assign(
+                  new Error('synthetic native read failure'),
+                  { code: outcome === 'middle-denied' ? 'EACCES' : 'ENOENT' },
+                );
+              if (outcome === 'final-reused' && lookups === 3) {
+                const end = priorStat.lastIndexOf(')') + 2,
+                  fields = priorStat.slice(end).trim().split(/\s+/);
+                fields[19] = String(BigInt(fields[19]) + 1n);
+                return priorStat.slice(0, end) + fields.join(' ') + '\n';
+              }
+            }
+            return original.read(path, ...args);
+          };
+          syncBuiltinESMExports();
+          const inspect = () =>
+            inspectProcesses({
+              codexHome: home,
+              codexExecutable: process.execPath,
+            });
+          if (outcome.endsWith('-gone')) {
+            assert.deepEqual(await inspect(), []);
+            assert(
+              lookups >= 3,
+              'omission requires another native lookup after the initial identity',
+            );
+          } else
+            await assert.rejects(inspect(), /PROCESS_INVENTORY_UNAVAILABLE/);
+        } finally {
+          fs.readFileSync = original.read;
+          fs.readdirSync = original.readdir;
+          fs.realpathSync.native = original.realpath;
+          syncBuiltinESMExports();
+          if (child.exitCode === null && child.signalCode === null) {
+            const exited = once(child, 'exit');
+            child.kill();
+            await exited;
+          }
+        }
+      }
+    } finally {
+      await rm(home, { recursive: true, force: true });
     }
   },
 );
