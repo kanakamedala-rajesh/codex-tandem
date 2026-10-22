@@ -9,6 +9,8 @@ import pathlib
 import posixpath
 import tempfile
 import subprocess
+import sqlite3
+from unittest import mock
 import sys
 import threading
 import time
@@ -85,6 +87,86 @@ class InventoryTests(unittest.TestCase):
             self.inventory()
         self.records['process-' + LAUNCH + '.json']['state'] = 'exited'
         self.assertEqual(self.inventory(), [])
+
+
+    def test_exe_disappearance_retains_same_identity_managed_zombie_until_reaped(self):
+        for role in ['child', 'supervisor']:
+            for initial_state in ['S', 'Z']:
+                with self.subTest(role=role, initial_state=initial_state):
+                    self.process_record()
+                    pid = 42 if role == 'child' else 41
+                    initial = dict(native(pid, 'codex'), state=initial_state)
+                    fresh = dict(initial, state='Z')
+                    self.rows = {pid: initial}
+                    observed = [initial, fresh]
+                    self.code.identity = lambda requested: observed.pop(0) if observed else fresh
+                    def disappeared(path):raise OSError(self.code.errno.ENOENT, 'synthetic zombie exe')
+                    self.code.os.readlink = disappeared
+                    def inaccessible_environment(requested):raise AssertionError('proved managed zombie environment was read')
+                    self.code.environment = inaccessible_environment
+                    values = self.inventory()
+                    self.assertEqual([(p['pid'], p['creation'], p['state'], p['role']) for p in values], [(pid, initial['creation'], 'Z', role)])
+                    self.assertTrue(values[0]['managed'])
+                    # A zombie root is retained, and disappearing roots alone never
+                    # establish descendant absence without the durable exited record.
+                    self.rows.clear()
+                    self.code.identity = lambda requested: None
+                    with self.assertRaisesRegex(self.code.Refused, 'REMOTE_DESCENDANTS_UNPROVEN'):self.inventory()
+                    self.records['process-' + LAUNCH + '.json']['state'] = 'exited'
+                    self.assertEqual(self.inventory(), [])
+
+    def test_exe_failure_refuses_live_changed_identity_or_uid_and_unknown_ownership(self):
+        original_environment = self.code.environment
+        for change, expected in [('live', 'REMOTE_PROCESS_INACCESSIBLE'), ('creation', 'REMOTE_PID_REUSED'), ('uid', 'REMOTE_PID_REUSED'), ('external-zombie', 'REMOTE_PROCESS_INACCESSIBLE')]:
+            with self.subTest(change=change):
+                self.process_record()
+                if change == 'external-zombie':self.records.clear()
+                initial = native(42, 'codex')
+                fresh = dict(initial, state='Z' if change != 'live' else 'S')
+                if change == 'creation':fresh['creation'] += '1'
+                if change == 'uid':fresh['uid'] = 10001
+                observed = [initial, fresh]
+                self.code.identity = lambda requested: observed.pop(0) if observed else fresh
+                def denied(path):raise OSError(self.code.errno.EACCES, 'synthetic exe denial')
+                self.code.os.readlink = denied
+                self.code.environment = original_environment
+                def denied_environment(*args):raise OSError(self.code.errno.EACCES, 'synthetic environment denial')
+                self.code.open = denied_environment
+                with self.assertRaisesRegex(self.code.Refused, expected):self.inventory()
+
+    def test_environment_esrch_is_disappearance_only_with_fresh_absence(self):
+        for number, absent in [(self.code.errno.ESRCH, True), (self.code.errno.ENOENT, True), (self.code.errno.ESRCH, False), (self.code.errno.EACCES, True)]:
+            with self.subTest(number=number, absent=absent):
+                def disappeared(*args):raise OSError(number, 'synthetic proc disappearance')
+                self.code.open = disappeared
+                self.code.identity = lambda requested: None if absent else native(requested)
+                if absent and number in [self.code.errno.ENOENT, self.code.errno.ESRCH]:
+                    self.assertIsNone(self.code.environment(42))
+                else:
+                    with self.assertRaisesRegex(self.code.Refused, 'REMOTE_PROCESS_INACCESSIBLE'):self.code.environment(42)
+
+    def test_environment_malformed_and_oversized_values_still_refuse(self):
+        self.code.open = lambda *args: io.BytesIO(b'HOME=\xff')
+        with self.assertRaises(UnicodeDecodeError):self.code.environment(42)
+        self.code.open = lambda *args: io.BytesIO(b'x' * 1048577)
+        with self.assertRaisesRegex(self.code.Refused, 'REMOTE_PROCESS_INACCESSIBLE'):self.code.environment(42)
+
+    def test_stop_rechecks_every_approved_identity_before_first_signal(self):
+        approved = [dict(native(pid), managed=True, role='supervisor' if pid == 41 else 'child') for pid in [41, 42, 43]]
+        self.code.process_snapshot = lambda *args: {'owner': None, 'processes': approved}
+        self.code.sys = types.SimpleNamespace(stdin=io.StringIO(json.dumps({'owner': None, 'processes': approved, 'force': True})))
+        checked, signals = [], []
+        def changed(pid):
+            checked.append(pid)
+            value = native(pid)
+            if pid == 43:value['creation'] += '1'
+            return value
+        self.code.identity = changed
+        self.code.os.kill = lambda *args: signals.append(args)
+        with self.assertRaisesRegex(self.code.Refused, 'REMOTE_PID_REUSED'):
+            self.code.inspect_or_stop('stop', '/private/user/.codex', '/work', '/bin/codex')
+        self.assertEqual(checked, [41, 42, 43])
+        self.assertEqual(signals, [])
 
 
 @unittest.skipUnless(os.name == 'posix', 'Remote kernel file-lock semantics require POSIX')
@@ -236,8 +318,6 @@ class PreparedResumeTests(unittest.TestCase):
         self.source.parent.mkdir(mode=0o700)
         self.source.write_text(json.dumps({'type': 'session_meta', 'payload': {'id': LAUNCH, 'cwd': str(self.project), 'timestamp': '2026-01-01T00:00:00.123456789Z'}}) + '\n' + 'SYNTHETIC-CONVERSATION-MUST-NOT-ESCAPE\n')
         self.database = self.home / 'state_5.sqlite'
-        # The normal path must not inspect SQLite at all, including these bytes.
-        self.database.write_bytes(b'SYNTHETIC-NOT-A-SQLITE-DATABASE')
         self.executable = pathlib.Path(self.root.name) / 'codex'
         self.write_rpc()
         self.code.folder(str(self.home / '.tandem-activation'))
@@ -256,8 +336,19 @@ class PreparedResumeTests(unittest.TestCase):
         for name in ['auth.json', '.tandem-docker.lock', '.tandem-docker-owner.lock']:
             self.assertFalse((self.home / name).exists())
 
-    def write_rpc(self, version='0.163.0', mutate=False, row_cwd=None, rows=None, mutate_cache=False, shutdown_output=False, retained=False, shutdown_delay=0):
+    def write_index(self, rows):
+        if self.database.exists():self.database.unlink()
+        with contextlib.closing(sqlite3.connect(str(self.database))) as database, database:
+            database.executescript("CREATE TABLE threads(id TEXT PRIMARY KEY,rollout_path TEXT NOT NULL,cwd TEXT NOT NULL,created_at_ms INTEGER NOT NULL,preview TEXT NOT NULL DEFAULT '',name TEXT); CREATE TABLE backfill_state(id INTEGER PRIMARY KEY,status TEXT NOT NULL); INSERT INTO backfill_state VALUES(1,'complete');")
+            for row in rows:
+                stamp = json.loads(pathlib.Path(row['path']).read_text().split('\n', 1)[0])['payload']['timestamp']
+                created = row.get('created_at_ms', self.code.calendar.timegm(self.code.datetime.datetime.strptime(stamp[:19], '%Y-%m-%dT%H:%M:%S').timetuple()) * 1000)
+                database.execute('INSERT INTO threads VALUES(?,?,?,?,?,?)', (row['id'], row['path'], row['cwd'], created, row.get('preview', ''), 'synthetic name'))
+        self.database.chmod(0o600)
+
+    def write_rpc(self, version='0.163.0', mutate=False, row_cwd=None, rows=None, mutate_cache=False, shutdown_output=False, retained=False, shutdown_delay=0, index_rows=None):
         row = {'id': LAUNCH, 'cwd': row_cwd or str(self.project), 'path': str(self.source), 'preview': 'SYNTHETIC-PREVIEW-MUST-NOT-ESCAPE', 'turns': ['SYNTHETIC-CONTENT']}
+        self.write_index(index_rows if index_rows is not None else rows if rows is not None else [row])
         program = '''import json,signal,sys,os,time
 HOME=%r
 ROWS=%r
@@ -398,6 +489,194 @@ if %r:time.sleep(30)
             with self.assertRaisesRegex(self.code.Refused, 'REMOTE_POLICY_PROCESS_CHANGED'):
                 self.code.policy(str(self.project), str(self.executable), [], None, include_resume=True, home=str(self.home))
             self.assertIsNone(children[0].poll())
+
+    def test_named_empty_indexed_uuid_is_preparable_when_native_list_omits_it(self):
+        row = {'id': LAUNCH, 'cwd': str(self.project), 'path': str(self.source)}
+        self.write_rpc(rows=[], index_rows=[row])
+        original = self.database.read_bytes()
+        prepared = self.prepare()
+        self.assertEqual(prepared['id'], LAUNCH)
+        self.assertEqual(self.database.read_bytes(), original)
+        self.assertNotIn('synthetic name', json.dumps(prepared))
+
+    def test_project_last_includes_empty_newest_using_index_milliseconds(self):
+        newer = '00000000-0000-0000-0000-000000000003'
+        source = self.source.with_name('rollout-2025-01-01T00-00-00-' + newer + '.jsonl')
+        source.write_text(json.dumps({'type': 'session_meta', 'payload': {'id': newer, 'cwd': str(self.project), 'timestamp': '2025-01-01T00:00:00Z'}}) + '\n')
+        old = {'id': LAUNCH, 'cwd': str(self.project), 'path': str(self.source), 'created_at_ms': 1000}
+        empty = {'id': newer, 'cwd': str(self.project), 'path': str(source), 'created_at_ms': 2000}
+        self.write_rpc(rows=[old], index_rows=[old, empty])
+        self.assertEqual(self.prepare('last')['id'], newer)
+
+    def index_rows(self, selection=LAUNCH, budget=None, deadline=None):
+        return self.code.resume_index_rows(self.code.resume_database(str(self.home)), str(self.home), selection, deadline if deadline is not None else time.monotonic() + 10, budget if budget is not None else [0])
+
+    def test_snapshot_reads_only_private_copies_and_always_removes_them(self):
+        original = sqlite3.connect
+        copies = []
+        def connect(filename, **kwargs):
+            from urllib.parse import unquote
+            self.assertTrue(filename.startswith('file:') and filename.endswith('?mode=ro'))
+            copy = pathlib.Path(unquote(filename[5:-8]))
+            self.assertNotEqual(copy, self.database)
+            self.assertEqual(copy.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(copy.parent.stat().st_mode & 0o777, 0o700)
+            copies.append(copy.parent)
+            return original(filename, **kwargs)
+        for broken in [False, True]:
+            with self.subTest(broken=broken):
+                if broken:
+                    with contextlib.closing(original(str(self.database))) as database, database:
+                        database.execute('DROP TABLE threads')
+                with mock.patch('sqlite3.connect', side_effect=connect):
+                    if broken:
+                        with self.assertRaisesRegex(self.code.Refused, 'RESUME_INDEX_UNSUPPORTED'):
+                            self.index_rows()
+                    else:
+                        self.assertEqual(self.index_rows()[0]['id'], LAUNCH)
+                self.assertTrue(copies)
+                self.assertTrue(all(not path.exists() for path in copies))
+
+    def test_missing_uuid_never_walks_or_reads_rollouts(self):
+        original = self.code.os
+        class NoHistory:
+            def __getattr__(proxy, name):return getattr(original, name)
+            def open(proxy, path, *args):
+                if str(path).startswith(str(self.source.parent)):
+                    raise AssertionError('missing UUID read history')
+                return original.open(path, *args)
+            def listdir(proxy, *args):raise AssertionError('missing UUID enumerated history')
+            scandir = listdir
+        self.code.os = NoHistory()
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_UNAVAILABLE'):
+            self.prepare('00000000-0000-0000-0000-000000000099')
+
+    def test_dirty_wal_snapshot_includes_committed_empty_newest_without_checkpoint(self):
+        newer = '00000000-0000-0000-0000-000000000003'
+        source = self.source.with_name('rollout-2026-01-02T00-00-00-' + newer + '.jsonl')
+        source.write_text(json.dumps({'type': 'session_meta', 'payload': {'id': newer, 'cwd': str(self.project), 'timestamp': '2026-01-02T00:00:00Z'}}) + '\n')
+        database = sqlite3.connect(str(self.database))
+        self.addCleanup(database.close)
+        database.execute('PRAGMA journal_mode=WAL')
+        database.execute('PRAGMA wal_autocheckpoint=0')
+        database.execute('INSERT INTO threads VALUES(?,?,?,?,?,?)', (newer, str(source), str(self.project), 9999999999999, '', 'synthetic empty'))
+        database.commit()
+        wal = self.home / 'state_5.sqlite-wal'
+        self.assertGreater(wal.stat().st_size, 0)
+        before = [path.read_bytes() for path in [self.database, wal]]
+        self.assertEqual(self.prepare('last')['id'], newer)
+        self.assertEqual([path.read_bytes() for path in [self.database, wal]], before)
+
+    def test_snapshot_rejects_copy_races_and_path_substitution(self):
+        original = self.code.os
+        changed = [False]
+        class RacingRead:
+            def __getattr__(proxy, name):return getattr(original, name)
+            def read(proxy, descriptor, size):
+                chunk = original.read(descriptor, size)
+                if not changed[0]:
+                    changed[0] = True
+                    with open(str(self.database), 'ab') as output:output.write(b'changed')
+                return chunk
+        self.code.os = RacingRead()
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_PREPARATION_STALE'):
+            self.index_rows()
+        self.code.os = original
+        self.write_rpc()
+        moved = self.database.with_suffix('.retired')
+        self.database.rename(moved)
+        self.database.symlink_to(moved)
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_SOURCE_UNSAFE'):
+            self.index_rows()
+
+    def test_snapshot_rejects_unqualified_schema_backfill_and_unavailable_sqlite(self):
+        for change, error in [('DROP TABLE backfill_state', 'RESUME_INDEX_UNSUPPORTED'), ("UPDATE backfill_state SET status='running'", 'RESUME_INDEX_INCOMPLETE'), ('DROP TABLE threads; CREATE TABLE threads(id TEXT,rollout_path TEXT,cwd TEXT,created_at_ms INTEGER)', 'RESUME_INDEX_UNSUPPORTED')]:
+            with self.subTest(change=change):
+                self.write_rpc()
+                with contextlib.closing(sqlite3.connect(str(self.database))) as database, database:database.executescript(change)
+                with self.assertRaisesRegex(self.code.Refused, error):self.index_rows()
+        self.write_rpc()
+        import builtins
+        original = builtins.__import__
+        def unavailable(name, *args, **kwargs):
+            if name == 'sqlite3':raise ImportError('synthetic unavailable SQLite')
+            return original(name, *args, **kwargs)
+        with mock.patch('builtins.__import__', side_effect=unavailable):
+            with self.assertRaisesRegex(self.code.Refused, 'RESUME_INDEX_UNSUPPORTED'):self.index_rows()
+            # Ordinary policy and normal prepared lookup do not load SQLite.
+            self.assertEqual(self.code.policy(str(self.project), str(self.executable), [], None)['config']['cli_auth_credentials_store'], 'file')
+
+    def test_snapshot_enforces_copy_row_projection_and_deadline_limits(self):
+        with open(str(self.database), 'r+b') as database:database.truncate(268435457)
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_INDEX_UNAVAILABLE'):self.index_rows()
+        self.write_rpc()
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_METADATA_LIMIT'):self.index_rows(budget=[16777216])
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_METADATA_LIMIT'):self.index_rows(deadline=time.monotonic() - 1)
+        with contextlib.closing(sqlite3.connect(str(self.database))) as database, database:
+            database.executemany('INSERT INTO threads VALUES(?,?,?,?,?,?)', [('00000000-0000-0000-0000-%012d' % index, str(self.source), str(self.project), index, '', None) for index in range(10, 10011)])
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_METADATA_LIMIT'):self.index_rows('last')
+
+    def test_snapshot_refuses_native_changes_during_query_and_expired_query_budget(self):
+        original = sqlite3.connect
+        def raced(filename, **kwargs):
+            connection = original(filename, **kwargs)
+            with open(str(self.database), 'ab') as source:source.write(b'changed-after-copy')
+            return connection
+        with mock.patch('sqlite3.connect', side_effect=raced):
+            with self.assertRaisesRegex(self.code.Refused, 'RESUME_PREPARATION_STALE'):self.index_rows()
+        self.write_rpc()
+        deadline = time.monotonic() + 10
+        def expired(filename, **kwargs):
+            connection = original(filename, **kwargs)
+            self.code.time = types.SimpleNamespace(monotonic=lambda: deadline + 1)
+            return connection
+        with mock.patch('sqlite3.connect', side_effect=expired):
+            with self.assertRaisesRegex(self.code.Refused, 'RESUME_METADATA_LIMIT'):self.index_rows(deadline=deadline)
+
+    def test_snapshot_projection_bounds_values_before_python_row_validation(self):
+        original = sqlite3.connect
+        materialized = []
+        class ObservedConnection(sqlite3.Connection):
+            def execute(connection, statement, parameters=()):
+                cursor = super().execute(statement, parameters)
+                def observed(cursor, row):
+                    for value in row:
+                        if isinstance(value, (str, bytes)):
+                            size = len(value.encode('utf8')) if isinstance(value, str) else len(value)
+                            if size > (65536 if statement.startswith('PRAGMA') else 4096):
+                                materialized.append((statement.split()[0], size))
+                    return row
+                cursor.row_factory = observed
+                return cursor
+        cases = [(field, prefix + '\0' + 'x' * 8192, 'RESUME_INDEX_UNSUPPORTED') for field, prefix in [('id', LAUNCH), ('rollout_path', str(self.source)), ('cwd', str(self.project))]]
+        cases += [('cwd', '/' + '\u00e9' * 3000, 'RESUME_INDEX_UNSUPPORTED')]
+        cases += [('created_at_ms', value, 'RESUME_INDEX_UNSUPPORTED') for value in ['invalid' * 2000, sqlite3.Binary(b'x' * 8192)]]
+        cases += [('status', value, 'RESUME_INDEX_INCOMPLETE') for value in ['complete' + '\0' + 'x' * 8192, sqlite3.Binary(b'x' * 8192)]]
+        for field, value, error in cases:
+            with self.subTest(field=field, storage=type(value).__name__):
+                self.write_rpc()
+                materialized.clear()
+                with contextlib.closing(original(str(self.database))) as database, database:
+                    database.execute('UPDATE ' + ('backfill_state' if field == 'status' else 'threads') + ' SET ' + field + '=?', (value,))
+                with mock.patch('sqlite3.connect', side_effect=lambda *args, **kwargs: original(*args, factory=ObservedConnection, **kwargs)):
+                    with self.assertRaisesRegex(self.code.Refused, error):self.index_rows('last')
+                self.assertEqual(materialized, [], 'oversized source values reached Python cursor rows')
+        self.write_rpc()
+        materialized.clear()
+        with contextlib.closing(original(str(self.database))) as database, database:
+            database.execute('ALTER TABLE threads ADD COLUMN oversized TEXT DEFAULT \'%s\'' % ('x' * 70000))
+        with mock.patch('sqlite3.connect', side_effect=lambda *args, **kwargs: original(*args, factory=ObservedConnection, **kwargs)):
+            with self.assertRaisesRegex(self.code.Refused, 'RESUME_INDEX_UNSUPPORTED'):self.index_rows()
+        self.assertEqual(materialized, [], 'oversized schema values reached Python PRAGMA rows')
+
+    def test_snapshot_refuses_oversized_metadata_and_millisecond_last_ties(self):
+        with contextlib.closing(sqlite3.connect(str(self.database))) as database, database:database.execute('UPDATE threads SET cwd=?', ('/' + 'x' * 4096,))
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_INDEX_UNSUPPORTED'):self.index_rows()
+        newer = '00000000-0000-0000-0000-000000000003'
+        source = self.source.with_name('rollout-2026-01-02T00-00-00-' + newer + '.jsonl')
+        source.write_text(json.dumps({'type': 'session_meta', 'payload': {'id': newer, 'cwd': str(self.project), 'timestamp': '2026-01-02T00:00:00Z'}}) + '\n')
+        self.write_rpc(index_rows=[{'id': identifier, 'path': str(path), 'cwd': str(self.project), 'created_at_ms': 1000} for identifier, path in [(LAUNCH, self.source), (newer, source)]])
+        with self.assertRaisesRegex(self.code.Refused, 'RESUME_LAST_AMBIGUOUS'):self.prepare('last')
 
     def test_empty_wal_and_safe_shm_disposal_survive_preparation_and_ordinary_policy(self):
         self.write_rpc(mutate_cache=True)
@@ -547,6 +826,7 @@ if %r:time.sleep(30)
                 self.code.control(str(self.home), str(self.project), str(self.executable), 'a' * 64)
                 self.assertTrue(all(json.loads(line)['ok'] for line in output.getvalue().splitlines()))
                 changed.parent.mkdir(parents=True, exist_ok=True)
+                previous_contents = changed.read_bytes() if changed.exists() else None
                 changed.write_text('' if changed.name.endswith('-journal') else 'synthetic configuration generation ' + str(index) + '\n')
                 self.code.ctypes = types.SimpleNamespace(CDLL=lambda *args, **kwargs: types.SimpleNamespace(prctl=lambda *args: 0))
                 self.code.signal = types.SimpleNamespace(SIGINT=2, SIGTERM=15, SIGHUP=1, SIG_IGN=1, signal=lambda *args: None)
@@ -561,6 +841,10 @@ if %r:time.sleep(30)
                     self.assertEqual((status['state'], status['exitCode']), ('exited', 2))
                 finally:
                     self.code.subprocess = previous_subprocess
+                    if previous_contents is None:
+                        changed.unlink()
+                    else:
+                        changed.write_bytes(previous_contents)
                     (self.home / '.tandem-docker.lock' / 'owner.json').unlink()
                     (self.home / '.tandem-docker.lock').rmdir()
                     for path in [self.home / '.tandem-activation' / ('launch-' + LAUNCH + '.json'), self.home / '.tandem-activation' / ('process-' + LAUNCH + '.json')]:

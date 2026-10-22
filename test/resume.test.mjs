@@ -15,8 +15,9 @@ import {
   utimes,
   copyFile,
   truncate,
+  realpath,
 } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname, basename, toNamespacedPath } from 'node:path';
 import fsPromises from 'node:fs/promises';
 import { syncBuiltinESMExports } from 'node:module';
 import { execFile } from 'node:child_process';
@@ -59,6 +60,120 @@ const launchArgs = (f) => [
   f.root,
   '--json',
 ];
+
+test(
+  'Windows extended drive index paths keep physical containment and strict alias revalidation',
+  { skip: process.platform !== 'win32' },
+  async () => {
+    const f = await activationFixture();
+    try {
+      const indexed = toNamespacedPath(sourcePath(f));
+      const prepare = await resumeIndexFixture(f, [
+        { id, path: indexed, cwd: toNamespacedPath(f.root) },
+      ]);
+      assert.notEqual(indexed, await realpath(indexed));
+      await prepare(id);
+      await prepare('last');
+      const scope = (await readdir(join(f.state, 'resume')))[0];
+      const record = JSON.parse(
+        await readFile(join(f.state, 'resume', scope, id + '.json'), 'utf8'),
+      );
+      assert.equal(record.source.path, indexed);
+      assert.equal(record.source.physical, await realpath(indexed));
+      assert(record.ancestors.length > 0);
+      assert(
+        record.ancestors.every((entry) => !entry.path.startsWith('\\\\?\\')),
+      );
+      const proof = await lookup(f);
+      assert.equal((await lookup(f, 'last')).id, id);
+      await proof.revalidate();
+      const sessions = dirname(sourcePath(f));
+      const replacement = join(f.home, 'replacement-sessions');
+      await mkdir(replacement);
+      await copyFile(sourcePath(f), join(replacement, basename(sourcePath(f))));
+      await rename(sessions, join(f.home, 'original-sessions'));
+      await symlink(replacement, sessions, 'junction');
+      await assert.rejects(proof.revalidate(), /RESUME_PREPARATION_STALE/);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'Windows extended index paths refuse aliases, escapes, hardlinks and special namespace semantics',
+  { skip: process.platform !== 'win32' },
+  async () => {
+    const f = await activationFixture();
+    const originalLstat = fsPromises.lstat;
+    const originalStat = fsPromises.stat;
+    try {
+      const prepare = await resumeIndexFixture(f, [{ id }]);
+      const { DatabaseSync } = await import('node:sqlite');
+      const select = (path) => {
+        const database = new DatabaseSync(join(f.home, 'state_5.sqlite'));
+        try {
+          database
+            .prepare('UPDATE threads SET rollout_path=? WHERE id=?')
+            .run(path, id);
+        } finally {
+          database.close();
+        }
+      };
+      const alias = join(f.home, 'sessions-alias');
+      await symlink(dirname(sourcePath(f)), alias, 'junction');
+      select(toNamespacedPath(join(alias, basename(sourcePath(f)))));
+      await assert.rejects(prepare(id), /RESUME_SOURCE_UNSAFE/);
+      const outside = join(f.root, 'outside.jsonl');
+      await copyFile(sourcePath(f), outside);
+      select(toNamespacedPath(outside));
+      await assert.rejects(prepare(id), /RESUME_SOURCE_UNSAFE/);
+      const hardlink = join(f.root, 'source-hardlink.jsonl');
+      await link(sourcePath(f), hardlink);
+      select(toNamespacedPath(sourcePath(f)));
+      await assert.rejects(prepare(id), /RESUME_SOURCE_UNSAFE/);
+      await rm(hardlink);
+      const indexed = toNamespacedPath(sourcePath(f));
+      select(indexed);
+      fsPromises.stat = async (path, ...args) => {
+        const info = await originalStat(path, ...args);
+        return path === sourcePath(f)
+          ? Object.assign(Object.create(info), { ino: info.ino + 1n })
+          : info;
+      };
+      syncBuiltinESMExports();
+      await assert.rejects(prepare(id), /RESUME_PREPARATION_STALE/);
+      fsPromises.stat = originalStat;
+      syncBuiltinESMExports();
+      const special = [
+        indexed + '.',
+        indexed + ' ',
+        indexed + ':stream',
+        indexed.replace('\\sessions\\', '\\sessions\\.\\'),
+        indexed.replace('\\sessions\\', '\\sessions/'),
+        toNamespacedPath(join(dirname(sourcePath(f)), 'NUL.jsonl')),
+        '\\\\?\\UNC\\localhost\\share\\source.jsonl',
+        '\\\\.\\C:\\source.jsonl',
+      ];
+      const forbidden = new Set(special);
+      fsPromises.lstat = (path, ...args) => {
+        if (forbidden.has(String(path)))
+          throw new Error('SYNTHETIC_SPECIAL_PATH_ACCESS');
+        return originalLstat(path, ...args);
+      };
+      syncBuiltinESMExports();
+      for (const path of special) {
+        select(path);
+        await assert.rejects(prepare(id), /RESUME_SOURCE_UNSAFE/);
+      }
+    } finally {
+      fsPromises.lstat = originalLstat;
+      fsPromises.stat = originalStat;
+      syncBuiltinESMExports();
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
 
 test('explicit CLI preparation never activates credentials and stores only bounded metadata', async () => {
   const f = await activationFixture();

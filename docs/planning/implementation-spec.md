@@ -369,6 +369,14 @@ projects, malformed headers and changed files refuse. Config/project ancestry is
 bounded to 64 levels. Raw config, override values, conversation content and
 credentials are excluded from persistent records and diagnostics.
 
+Windows preparation accepts an extended drive-prefixed indexed source only when
+its components have ordinary Win32 meaning, its unprefixed spelling is the exact
+resolved path, and fresh full witnesses prove both spellings identify the same
+file generation. The source retains the indexed spelling; containment and ancestor
+checks use that proved physical path. Namespace devices, special literal names,
+source aliases, links and escapes remain refused. Ordinary resume retains fresh
+stat-only checks of the original source spelling and physical identity.
+
 Windows preparation supports a freshly copied executable whose first native
 execution changes only ctime. Before and after the existing version/policy probes,
 it streams at most 512 MiB per command file into transient SHA-256 digests. Bytes
@@ -398,9 +406,9 @@ These checks do not provide an atomic filesystem-to-spawn guarantee.
 Raw explicit Codex resume argv remains unchanged, with command/UUID positions
 distinguished from literal prompt tokens. Missing/inaccessible home, project and
 source boundaries report redacted RESUME_* codes without native paths or causes.
-Unproved raw last-session grammar requires the top-level Tandem resolver. Native
-Windows qualification remains paused; synthetic fixtures alone do not qualify the
-installed native capability or a complete SRS acceptance family.
+Unproved raw last-session grammar requires the top-level Tandem resolver. Synthetic
+fixtures alone do not qualify the installed native capability or a complete SRS
+acceptance family.
 
 `verify:activation-recovery -- --list` enumerates 137 maintained cases and their
 coverage mapping. Every role directly injects failures before/after write, flush
@@ -512,11 +520,31 @@ directory resolution, and rechecks physical identities before policy and executi
 The target supervisor verifies committed activation and invocation paths, then starts
 the existing Codex with unchanged argv and the configured environment wrapper.
 Target resume uses explicit standalone `resume prepare UUID|--last`; preparation
-does not select credentials or start a session. The existing native Codex performs
-metadata-only RPC outside the launch path, with completed native-index backfill
-and bounded indexed-source headers. No raw database or conversation crosses the
-bridge. The supported native-index capability initially requires Codex 0.163.0;
-legacy 0.159 and unknown capabilities fail explicitly without upgrading the target.
+does not select credentials or start a session. Existing native Codex policy
+initialization completes backfill before metadata preparation. The existing target
+Python lazily loads its standard-library SQLite only during standalone preparation,
+opening generation-fenced private copies of the native database and WAL, never the
+originals. Copies stay on the target in a new owner-only temporary directory, are
+bounded to 256 MiB per file and removed after success or refusal. Missing SQLite,
+schema/backfill support, coherent WAL access or safe source generations refuse
+preparation without installing a dependency or falling back to history traversal.
+
+The snapshot must expose the qualified primary-key thread index and completed
+backfill. Schema definitions are byte-bounded before column metadata is read.
+Only UUID, selected rollout path, cwd and integer `created_at_ms` are projected;
+SQL bounds text by bytes and checks storage types before Python materializes
+values. Backfill status projects only a completion boolean. Explicit UUID uses
+primary-key lookup; project-last checks at most
+10,000 indexed rows in native millisecond order, preserves physical-project
+filtering and refuses tied newest candidates. Empty previews and missing user turns
+do not exclude a valid indexed session. Native UI `thread/list` filters are not the
+index contract, and `thread/read` filesystem fallback is not used. Metadata bytes,
+query work/deadline and selected first-line headers remain bounded, with fresh
+DB/WAL/path/owner checks around copying, querying and native shutdown. No raw
+database, preview or conversation crosses the bridge. Normal prepared resume never
+loads SQLite, copies source bytes or enumerates history. The supported native-index
+capability initially requires Codex 0.163.0; legacy 0.159 and unknown capabilities
+fail explicitly without upgrading the target.
 
 Owner-only per-UUID records retain immutable project path/device/inode bindings.
 Each canonical-project last pointer contains a complete bounded selection proof,

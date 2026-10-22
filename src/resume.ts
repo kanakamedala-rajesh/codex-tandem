@@ -114,12 +114,42 @@ async function witness(path: string, identityOnly = false): Promise<Witness> {
     throw error;
   }
 }
+function ordinarySourcePath(path: string): string {
+  if (process.platform !== 'win32') return path;
+  if (path.startsWith('\\\\.\\')) throw new Error('RESUME_SOURCE_UNSAFE');
+  if (!path.startsWith('\\\\?\\')) return path;
+  const ordinary = path.slice(4);
+  // Extended paths bypass Win32 normalization. Admit only drive-qualified names
+  // whose components retain the same literal meaning in the ordinary namespace.
+  if (
+    !/^[a-z]:\\/i.test(ordinary) ||
+    ordinary
+      .slice(3)
+      .split('\\')
+      .some(
+        (part) =>
+          !part ||
+          /^[ ]|[ .]$|[<>:"/|?*]/u.test(part) ||
+          /^(?:con|prn|aux|nul|clock\$|conin\$|conout\$|com[1-9¹²³]|lpt[1-9¹²³])(?:[ .]|$)/i.test(
+            part,
+          ),
+      )
+  )
+    throw new Error('RESUME_SOURCE_UNSAFE');
+  return ordinary;
+}
 async function sourceWitness(path: string): Promise<Witness> {
+  const ordinary = ordinarySourcePath(path);
   const info = await lstat(path);
   if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1)
     throw new Error('RESUME_SOURCE_UNSAFE');
   const result = await witness(path);
-  if (result.physical !== path) throw new Error('RESUME_SOURCE_UNSAFE');
+  if (result.physical !== ordinary) throw new Error('RESUME_SOURCE_UNSAFE');
+  if (
+    ordinary !== path &&
+    !same({ ...result, path: ordinary }, await witness(ordinary))
+  )
+    throw new Error('RESUME_PREPARATION_STALE');
   return result;
 }
 async function directory(path: string, code: string): Promise<string> {
@@ -680,7 +710,7 @@ export async function prepareLocalResume(
           continue;
         }
         const source = await sourceWitness(row.rollout_path);
-        const ancestors = await sourceAncestors(home, row.rollout_path);
+        const ancestors = await sourceAncestors(home, source.physical!);
         const meta = await sessionMetadata(row.rollout_path);
         if (
           meta.id !== row.id ||

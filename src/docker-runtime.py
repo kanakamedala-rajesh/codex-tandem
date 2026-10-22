@@ -137,7 +137,7 @@ def environment(pid):
                 result[name.decode('ascii')] = value.decode('utf8')
         return result
     except (IOError, OSError) as error:
-        if error.errno == errno.ENOENT and identity(pid) is None:
+        if error.errno in [errno.ENOENT, errno.ESRCH] and identity(pid) is None:
             return None
         fail('REMOTE_PROCESS_INACCESSIBLE')
 
@@ -189,8 +189,12 @@ def inventory(home, executable, journal, ignore=None):
         try:
             path = os.readlink('/proc/%d/exe' % pid)
         except OSError as error:
-            if identity(pid) is None:
+            fresh = identity(pid)
+            if fresh is None:
                 continue
+            if fresh['creation'] != info['creation'] or fresh['uid'] != info['uid']:
+                fail('REMOTE_PID_REUSED')
+            info = fresh
             if info['uid'] == os.geteuid() and info['state'] != 'Z':
                 fail('REMOTE_PROCESS_INACCESSIBLE')
             path = ''
@@ -201,7 +205,10 @@ def inventory(home, executable, journal, ignore=None):
             if candidate:
                 fail('REMOTE_PROCESS_OWNER_UNPROVEN')
             continue
-        env = environment(pid)
+        # A proved managed zombie has no readable executable/environment. Keep
+        # its identity until the supervisor reaps it; this never proves idle.
+        zombie = owner is not None and info['state'] == 'Z'
+        env = {} if zombie else environment(pid)
         if env is None:
             continue
         scope_path = env.get('CODEX_HOME') or (os.path.join(env['HOME'], '.codex') if env.get('HOME') else None)
@@ -211,7 +218,7 @@ def inventory(home, executable, journal, ignore=None):
                 fail('REMOTE_PROCESS_OWNER_UNPROVEN')
             if scope != home:
                 continue
-        if owner is not None and (env.get('TANDEM_MANAGER_NONCE') != owner.get('nonce') or scope != home):
+        if owner is not None and not zombie and (env.get('TANDEM_MANAGER_NONCE') != owner.get('nonce') or scope != home):
             # An adopted child may deliberately clear its environment; ancestry
             # still proves the owned supervisor relation while it remains alive.
             if pid == owner['supervisor']['pid']:
@@ -562,6 +569,122 @@ def resume_indexed_metadata(home, project, row, budget):
         fail('RESUME_SOURCE_CHANGED')
     return {'id': row['id'], 'timestamp': stamp, 'source': before, 'cwd': resume_witness(meta['cwd']), 'nativeCwd': resume_witness(row['cwd'])}
 
+
+def resume_index_rows(database, sqlite_home, selection, deadline, budget):
+    # Preparation only: never open native originals with SQLite, or transport a
+    # database across the bridge. UI thread/list intentionally hides empty rows.
+    try:
+        import sqlite3
+        import tempfile
+        import shutil
+        from urllib.parse import quote
+    except ImportError:
+        fail('RESUME_INDEX_UNSUPPORTED')
+    if database[0]['kind'] != 'file' or database[3]['kind'] != 'missing':
+        fail('RESUME_INDEX_UNAVAILABLE')
+    temporary = tempfile.mkdtemp(prefix='codex-tandem-resume-')
+    connection = None
+    limited = [False]
+    try:
+        os.chmod(temporary, 0o700)
+        private(temporary, True)
+        for entry in database[:2]:
+            if entry['kind'] == 'missing':
+                continue
+            if int(entry['size']) > 268435456:
+                fail('RESUME_INDEX_UNAVAILABLE')
+            source = os.open(entry['path'], os.O_RDONLY | os.O_NOFOLLOW)
+            try:
+                info = os.fstat(source)
+                def matches(info):
+                    return stat.S_ISREG(info.st_mode) and info.st_uid == os.geteuid() and info.st_nlink == 1 and all(str(getattr(info, field)) == entry[key] for field, key in [('st_dev', 'device'), ('st_ino', 'inode'), ('st_size', 'size'), ('st_mode', 'mode'), ('st_mtime_ns', 'modified'), ('st_ctime_ns', 'changed')])
+                if not matches(info):
+                    fail('RESUME_PREPARATION_STALE')
+                destination = os.path.join(temporary, 'state_5.sqlite' + ('-wal' if entry['path'].endswith('-wal') else ''))
+                target = os.open(destination, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+                try:
+                    os.fchmod(target, 0o600)
+                    remaining = info.st_size
+                    while remaining:
+                        if time.monotonic() >= deadline:
+                            fail('RESUME_METADATA_LIMIT')
+                        chunk = os.read(source, min(65536, remaining))
+                        if not chunk:
+                            fail('RESUME_PREPARATION_STALE')
+                        offset = 0
+                        while offset < len(chunk):
+                            written = os.write(target, chunk[offset:])
+                            if written < 1:
+                                fail('RESUME_INDEX_UNAVAILABLE')
+                            offset += written
+                        remaining -= len(chunk)
+                    if os.read(source, 1) or not matches(os.fstat(source)):
+                        fail('RESUME_PREPARATION_STALE')
+                finally:
+                    os.close(target)
+            finally:
+                os.close(source)
+        if not resume_database_unchanged(database, sqlite_home):
+            fail('RESUME_PREPARATION_STALE')
+        try:
+            if time.monotonic() >= deadline:
+                fail('RESUME_METADATA_LIMIT')
+            connection = sqlite3.connect('file:' + quote(os.path.join(temporary, 'state_5.sqlite'), safe='/') + '?mode=ro', uri=True, timeout=0)
+            steps = [0]
+            def progress():
+                steps[0] += 1000
+                limited[0] = steps[0] > 2000000 or time.monotonic() >= deadline
+                return int(limited[0])
+            connection.set_progress_handler(progress, 1000)
+            # Bound schema text before PRAGMA materializes column names, declared
+            # types or defaults. Legacy SQLite has no table-valued PRAGMA query.
+            schema = connection.execute("SELECT CASE WHEN typeof(sql)='text' AND length(CAST(sql AS BLOB))<=65536 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name IN ('threads','backfill_state') LIMIT 3").fetchmany(3)
+            if schema != [(1,), (1,)]:
+                fail('RESUME_INDEX_UNSUPPORTED')
+            columns = connection.execute('PRAGMA table_info(threads)').fetchmany(257)
+            required = {'id': 'TEXT', 'rollout_path': 'TEXT', 'cwd': 'TEXT', 'created_at_ms': 'INTEGER'}
+            by_name = {row[1]: row for row in columns}
+            if len(columns) > 256 or any(name not in by_name or by_name[name][2].upper() != kind for name, kind in required.items()) or by_name['id'][5] != 1 or sum(bool(row[5]) for row in columns) != 1:
+                fail('RESUME_INDEX_UNSUPPORTED')
+            backfill = connection.execute('PRAGMA table_info(backfill_state)').fetchmany(257)
+            fields = {row[1]: row for row in backfill}
+            if len(backfill) > 256 or 'id' not in fields or fields['id'][2].upper() != 'INTEGER' or fields['id'][5] != 1 or 'status' not in fields or fields['status'][2].upper() != 'TEXT':
+                fail('RESUME_INDEX_UNSUPPORTED')
+            status = connection.execute("SELECT CASE WHEN typeof(status)='text' AND CAST(status AS BLOB)=CAST('complete' AS BLOB) THEN 1 ELSE 0 END FROM backfill_state WHERE id=1").fetchmany(2)
+            if status != [(1,)]:
+                fail('RESUME_INDEX_INCOMPLETE')
+            # Bound text before Python materializes values. Never select previews,
+            # titles, conversations or thread history, even for empty sessions.
+            projection = ','.join("CASE WHEN typeof(%s)='text' AND length(CAST(%s AS BLOB))<=4096 THEN %s END" % (name, name, name) for name in ['id', 'rollout_path', 'cwd']) + ",CASE WHEN typeof(created_at_ms)='integer' THEN created_at_ms END"
+            query = 'SELECT ' + projection + ' FROM threads '
+            cursor = connection.execute(query + ('ORDER BY created_at_ms DESC,id DESC LIMIT 10001' if selection == 'last' else 'WHERE id=?'), () if selection == 'last' else (selection,))
+            result = []
+            for row in cursor:
+                if time.monotonic() >= deadline:
+                    fail('RESUME_METADATA_LIMIT')
+                if len(result) >= 10000:
+                    fail('RESUME_METADATA_LIMIT')
+                identifier, source, cwd, created = row
+                if not isinstance(identifier, str) or not uuid_pattern.match(identifier) or not resume_path(source) or not resume_path(cwd) or type(created) is not int or abs(created) > 9007199254740991:
+                    fail('RESUME_INDEX_UNSUPPORTED')
+                budget[0] += len(json.dumps(row).encode('utf8'))
+                if budget[0] > 16777216:
+                    fail('RESUME_METADATA_LIMIT')
+                result.append({'id': identifier, 'path': source, 'cwd': cwd, 'createdAtMs': created})
+        except Refused:
+            raise
+        except Exception:
+            fail('RESUME_METADATA_LIMIT' if limited[0] else 'RESUME_INDEX_UNSUPPORTED')
+        if not resume_database_unchanged(database, sqlite_home):
+            fail('RESUME_PREPARATION_STALE')
+        return result
+    finally:
+        try:
+            if connection is not None:
+                connection.close()
+        finally:
+            shutil.rmtree(temporary)
+
 def policy(project, executable, arguments, wrapper, resume_selection=None, include_resume=False, home=None):
     if not isinstance(arguments, list) or len(arguments) % 2 or any(arguments[i] not in ['-c', '--config', '--enable', '--disable'] for i in range(0, len(arguments), 2)):
         fail('REMOTE_POLICY_ARGUMENTS_INVALID')
@@ -577,9 +700,7 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
         fail('RESUME_ID_INVALID')
     config, layers, requirements = None, None, None
     result, buffer, size = None, b'', 0
-    prepared, selected, budget, seen, archived, cursor, request_id, rows_seen = None, {}, [0], set(), False, None, 3, 0
-    def list_page():
-        send({'id': request_id, 'method': 'thread/list', 'params': {'limit': 8, 'cursor': cursor, 'sortKey': 'created_at', 'sortDirection': 'desc', 'modelProviders': [], 'sourceKinds': ['cli', 'vscode', 'exec', 'appServer', 'subAgent', 'subAgentReview', 'subAgentCompact', 'subAgentThreadSpawn', 'subAgentOther', 'unknown'], 'archived': archived, 'useStateDbOnly': True}})
+    budget = [0]
     limit = 16777216 if preparing else 1048576
     def wait_for_exit(seconds):
         nonlocal size
@@ -627,7 +748,7 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
                         if preparing:
                             agent = message.get('result', {}).get('userAgent')
                             # The pinned 0.163 implementation awaits complete backfill
-                            # before serving and defines the no-fallback DB-only flag.
+                            # before serving. SQLite capability is checked only on private copies.
                             if not isinstance(agent, str) or len(agent) > 4096 or not re.search(r'(?:^|[ /])0\.163\.0(?:[ (]|$)', agent):
                                 fail('RESUME_INDEX_UNSUPPORTED')
                         send({'method': 'initialized'})
@@ -653,48 +774,26 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
                         if preparing:
                             context = result['resume']
                             prepared = {'schemaVersion': 1, 'nativeVersion': '0.163.0', 'id': None, 'preparedAt': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'home': resume_witness(home), 'project': resume_witness(project), 'command': [resume_witness(path) for path in [executable] + ([wrapper] if wrapper else [])], 'policy': context, 'configuration': [resume_witness(path) for path in resume_configuration_paths(context, project)], 'database': resume_database(context['sqliteHome'])}
-                            result = None
-                            list_page()
-                    elif preparing and message.get('id') == request_id:
-                        payload = message.get('result')
-                        if not isinstance(payload, dict) or not isinstance(payload.get('data'), list) or len(payload['data']) > 8 or 'nextCursor' not in payload:
-                            fail('RESUME_METADATA_INVALID')
-                        for row in payload['data']:
-                            rows_seen += 1
-                            if rows_seen > 10000:
-                                fail('RESUME_METADATA_LIMIT')
-                            if resume_selection != 'last' and isinstance(row, dict) and row.get('id') != resume_selection:
-                                continue
-                            if resume_selection != 'last' and isinstance(row, dict) and resume_path(row.get('cwd')) and os.path.realpath(row['cwd']) != project:
-                                fail('RESUME_PROJECT_MISMATCH')
-                            entry = resume_indexed_metadata(home, project, row, budget)
-                            if entry is not None:
-                                previous = selected.get(entry['id'])
-                                if previous is not None and previous != entry:
-                                    fail('RESUME_METADATA_CONFLICT')
-                                selected[entry['id']] = entry
-                        next_cursor = payload['nextCursor']
-                        if next_cursor is not None:
-                            if not isinstance(next_cursor, str) or len(next_cursor) > 4096 or (archived, next_cursor) in seen:
-                                fail('RESUME_METADATA_INVALID')
-                            seen.add((archived, next_cursor))
-                            cursor = next_cursor
-                        elif not archived:
-                            archived, cursor = True, None
-                        else:
-                            choices = sorted(selected.values(), key=lambda entry: entry['timestamp'], reverse=True)
+                            rows = resume_index_rows(prepared['database'], context['sqliteHome'], resume_selection, deadline, budget)
+                            choices = []
+                            for row in rows:
+                                if resume_selection != 'last' and os.path.realpath(row['cwd']) != project:
+                                    fail('RESUME_PROJECT_MISMATCH')
+                                entry = resume_indexed_metadata(home, project, row, budget)
+                                if entry is not None:
+                                    entry['createdAtMs'] = row['createdAtMs']
+                                    choices.append(entry)
+                                    if resume_selection != 'last' or len(choices) == 2:
+                                        break
                             if not choices:
                                 fail('RESUME_UNAVAILABLE')
-                            if resume_selection == 'last' and len(choices) > 1 and choices[0]['timestamp'] == choices[1]['timestamp']:
+                            if resume_selection == 'last' and len(choices) > 1 and choices[0]['createdAtMs'] == choices[1]['createdAtMs']:
                                 fail('RESUME_LAST_AMBIGUOUS')
                             chosen = choices[0]
                             prepared.update({key: chosen[key] for key in ['id', 'source', 'cwd', 'nativeCwd']})
                             entries = [prepared[k] for k in ['home', 'project', 'cwd', 'nativeCwd', 'source']] + prepared['command'] + prepared['configuration'] + prepared['database']
                             prepared['ancestors'] = resume_ancestors([entry['path'] for entry in entries])
                             result = prepared
-                            continue
-                        request_id += 1
-                        list_page()
     finally:
         # Prepare fences include helper shutdown. EOF can trigger a checkpoint,
         # so use the same owned SIGTERM lifecycle as a bounded policy helper.
