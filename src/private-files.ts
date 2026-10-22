@@ -1,4 +1,4 @@
-import { lstatSync } from 'node:fs';
+import { lstatSync, chmodSync, realpathSync } from 'node:fs';
 import {
   lstat,
   mkdir,
@@ -34,7 +34,7 @@ if (!$native::MoveFileExW($env:TANDEM_REPLACE_SOURCE,$env:TANDEM_REPLACE_DESTINA
 /** One actual private-file operation and its before/after boundary. Observers may throw to simulate a crash; they receive no file contents. */
 export type PrivateWriteBoundary =
   `${'open' | 'restrict' | 'write' | 'flush' | 'close' | 'replace' | 'verify' | 'publication-flush'}:${'before' | 'after'}`;
-/** Publish flushed private bytes with target-filesystem replacement and durability barriers. POSIX flushes the parent directory; Windows requests native write-through replacement. Exclusive records cannot replace an existing destination. Failures before publication preserve the destination bytes; failures after publication may leave the new bytes installed. No automatic rollback is provided. A failing observer leaves the same recoverable filesystem state as failure at that boundary. */
+/** Publish flushed private bytes with target-filesystem replacement and durability barriers. POSIX flushes the parent directory; Windows requests native write-through replacement. Linux verifies freshly observed exact private modes and corrects restrictive umask before publication. Exclusive records cannot replace an existing destination. Failures before publication preserve the destination bytes; failures after publication may leave the new bytes installed. No automatic rollback is provided. A failing observer leaves the same recoverable filesystem state as failure at that boundary. */
 export async function writePrivateDurable(
   path: string,
   bytes: string | Buffer,
@@ -205,7 +205,8 @@ export async function verifyPrivate(
 }
 async function restrict(paths: string[]) {
   for (const path of paths) {
-    const info = await lstat(path);
+    const info =
+      process.platform === 'linux' ? lstatSync(path) : await lstat(path);
     if (info.isSymbolicLink() || (!info.isDirectory() && !info.isFile()))
       throw new Error('PRIVATE_PATH_INVALID');
   }
@@ -213,11 +214,18 @@ async function restrict(paths: string[]) {
     await windowsAcl(paths, true);
     return;
   }
-  for (const path of paths)
-    await chmod(path, (await lstat(path)).isDirectory() ? 0o700 : 0o600);
+  for (const path of paths) {
+    if (process.platform === 'linux') {
+      const current = lstatSync(path);
+      const mode = current.isDirectory() ? 0o700 : 0o600;
+      // Newly created private files/directories already have this mode unless
+      // umask removed owner access. Verify protection again after any correction.
+      if ((current.mode & 0o7777) !== mode) chmodSync(path, mode);
+    } else await chmod(path, (await lstat(path)).isDirectory() ? 0o700 : 0o600);
+  }
   await verifyPrivate(paths);
 }
-/** Create a restricted directory or verify an existing one without changing its permissions. Returns its physical path. Exclusive creation throws EEXIST for an existing path. */
+/** Create a restricted directory or verify an existing one without changing its permissions. Returns its physical path. Exclusive creation throws EEXIST for an existing path. Linux corrects a newly created directory only when its fresh mode differs from 0700, then verifies protection. */
 export async function privateDirectory(
   path: string,
   options: { exclusive?: boolean } = {},
@@ -230,7 +238,9 @@ export async function privateDirectory(
       throw error;
     await verifyPrivate(path);
   }
-  return realpath(path);
+  return process.platform === 'linux'
+    ? realpathSync.native(path)
+    : realpath(path);
 }
 /** Flush private bytes and atomically replace one file. Errors before replacement preserve it; verification or cleanup errors after replacement may leave the new bytes installed. No rollback is provided. */
 export async function writePrivate(
@@ -239,7 +249,7 @@ export async function writePrivate(
 ): Promise<void> {
   await writePrivateBatch([{ path, bytes }]);
 }
-/** Replace private metadata files with batched native protection checks. Each replacement is atomic, but the batch is not a transaction: later failures may leave earlier files replaced. Throws on any protection, write, replacement or cleanup failure. */
+/** Replace private metadata files with batched native protection checks. Linux checks fresh modes and corrects restrictive umask before publication. Each replacement is atomic, but the batch is not a transaction: later failures may leave earlier files replaced. Throws on any protection, write, replacement or cleanup failure. */
 export async function writePrivateBatch(
   records: readonly { path: string; bytes: string | Buffer }[],
 ): Promise<void> {
@@ -253,7 +263,8 @@ export async function writePrivateBatch(
   const existing: string[] = [];
   for (const { path } of records) {
     try {
-      await lstat(path);
+      if (process.platform === 'linux') lstatSync(path);
+      else await lstat(path);
       existing.push(path);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;

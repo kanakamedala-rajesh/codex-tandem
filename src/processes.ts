@@ -1,5 +1,5 @@
 import { readFile, realpath, stat } from 'node:fs/promises';
-import { readFileSync, realpathSync, readdirSync } from 'node:fs';
+import { readFileSync, realpathSync, readdirSync, statSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join, resolve, isAbsolute } from 'node:path';
@@ -385,7 +385,7 @@ function creationTime(identity: ProcessIdentity): bigint {
     throw new Error('PROCESS_IDENTITY_UNAVAILABLE');
   return BigInt(value);
 }
-/** Prove a candidate is still a descendant of this manager using native creation chronology; returns private ownership metadata. */
+/** Prove a candidate is still a descendant of this manager using native creation chronology; returns private ownership metadata. Linux physical-home comparisons read fresh native metadata without caching. */
 export async function proveManagedProcess(
   pid: number,
   nonce: string,
@@ -396,7 +396,11 @@ export async function proveManagedProcess(
   const child = await nativeProcess(pid);
   if (!manager || !child || !child.executable || child.pid === manager.pid)
     throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
-  const wanted = executable ? await realpath(executable) : undefined;
+  const wanted = executable
+    ? process.platform === 'linux'
+      ? realpathSync.native(executable)
+      : await realpath(executable)
+    : undefined;
   if (
     wanted
       ? child.executable !== wanted
@@ -404,10 +408,16 @@ export async function proveManagedProcess(
   )
     throw new Error('PROCESS_EXECUTABLE_MISMATCH');
   if (!child.home) throw new Error('PROCESS_SCOPE_UNPROVEN');
-  const [selected, actualHome] = await Promise.all([
-    stat(codexHome, { bigint: true }),
-    stat(child.home, { bigint: true }),
-  ]);
+  const [selected, actualHome] =
+    process.platform === 'linux'
+      ? [
+          statSync(codexHome, { bigint: true }),
+          statSync(child.home, { bigint: true }),
+        ]
+      : await Promise.all([
+          stat(codexHome, { bigint: true }),
+          stat(child.home, { bigint: true }),
+        ]);
   if (selected.dev !== actualHome.dev || selected.ino !== actualHome.ino)
     throw new Error('PROCESS_SCOPE_MISMATCH');
   if (child.nonce !== undefined && child.nonce !== nonce)
@@ -447,14 +457,19 @@ export async function proveManagedProcess(
   }
   throw new Error('PROCESS_OWNERSHIP_UNPROVEN');
 }
-/** Inspect local Codex candidates against a canonical home and native managed records. Each call reads fresh Linux procfs metadata synchronously, yielding between bounded candidate groups so signals can be observed. Vanished entries are omitted only after native absence proof. Unreadable or ambiguous scope blocks switching; no process is stopped. */
+/** Inspect local Codex candidates against a canonical home and native managed records. Each call reads fresh Linux procfs and physical-home metadata synchronously, yielding between bounded candidate groups so signals can be observed. Vanished entries are omitted only after native absence proof. Unreadable or ambiguous scope blocks switching; no process is stopped. */
 export async function inspectProcesses(
   options: { codexHome: string; codexExecutable?: string },
   managed: ManagedProcess[] = [],
 ): Promise<ScopedProcess[]> {
-  const home = await realpath(resolve(options.codexHome));
+  const home =
+    process.platform === 'linux'
+      ? realpathSync.native(resolve(options.codexHome))
+      : await realpath(resolve(options.codexHome));
   const executable = options.codexExecutable
-    ? await realpath(resolve(options.codexExecutable))
+    ? process.platform === 'linux'
+      ? realpathSync.native(resolve(options.codexExecutable))
+      : await realpath(resolve(options.codexExecutable))
     : undefined;
   let candidates: number[] = [];
   if (process.platform === 'win32') {
@@ -571,10 +586,16 @@ $r=@(Get-CimInstance Win32_Process | Where-Object { $_.Name -match '^codex(?:\\.
       if (row.home === home) sameHome = true;
       else
         try {
-          const [a, b] = await Promise.all([
-            stat(home, { bigint: true }),
-            stat(row.home, { bigint: true }),
-          ]);
+          const [a, b] =
+            process.platform === 'linux'
+              ? [
+                  statSync(home, { bigint: true }),
+                  statSync(row.home, { bigint: true }),
+                ]
+              : await Promise.all([
+                  stat(home, { bigint: true }),
+                  stat(row.home, { bigint: true }),
+                ]);
           sameHome = a.dev === b.dev && a.ino === b.ino;
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code === 'ENOENT')

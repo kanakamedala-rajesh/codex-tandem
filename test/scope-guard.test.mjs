@@ -851,6 +851,72 @@ test('batched private metadata preserves existing files when any parent protecti
   }
 });
 
+test(
+  'Linux private publication skips an already exact mode but still corrects umask and preserves bytes on correction failure',
+  { skip: process.platform !== 'linux' },
+  async () => {
+    const fs = (await import('node:fs')).default;
+    const promises = (await import('node:fs/promises')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { privateDirectory, verifyPrivate, writePrivateDurable } =
+      await import(new URL('dist/private-files.js', packageRoot));
+    const root = await mkdtemp(join(tmpdir(), 'tandem-private-mode-'));
+    const path = join(root, 'credential');
+    const nativeChmod = fs.chmodSync,
+      asyncChmod = promises.chmod;
+    const previousUmask = process.umask(0);
+    try {
+      const denied = () => {
+        throw Object.assign(new Error('synthetic mode correction denied'), {
+          code: 'EACCES',
+        });
+      };
+      fs.chmodSync = denied;
+      promises.chmod = async () => denied();
+      syncBuiltinESMExports();
+      // Creation already supplies exact private modes. Redundant mode mutation
+      // may be unavailable without preventing safely verified publication.
+      await writePrivateDurable(path, 'safe');
+      const directory = await privateDirectory(join(root, 'exact-directory'));
+      await verifyPrivate([path, directory]);
+      assert.equal((await promises.stat(path)).mode & 0o7777, 0o600);
+      process.umask(0o777);
+      await assert.rejects(writePrivateDurable(path, 'must-not-publish'), {
+        code: 'EACCES',
+      });
+      assert.equal(await promises.readFile(path, 'utf8'), 'safe');
+      assert(
+        !(await promises.readdir(root)).some((name) =>
+          name.startsWith('.pending-'),
+        ),
+      );
+      fs.chmodSync = nativeChmod;
+      promises.chmod = asyncChmod;
+      syncBuiltinESMExports();
+      await writePrivateDurable(path, 'corrected');
+      const corrected = await privateDirectory(
+        join(root, 'corrected-directory'),
+      );
+      assert.equal((await promises.stat(path)).mode & 0o7777, 0o600);
+      assert.equal((await promises.stat(corrected)).mode & 0o7777, 0o700);
+      assert.equal(await promises.readFile(path, 'utf8'), 'corrected');
+      await verifyPrivate([path, corrected]);
+      process.umask(0);
+      nativeChmod(root, 0o2700);
+      const inherited = await privateDirectory(
+        join(root, 'inherited-group-directory'),
+      );
+      assert.equal((await promises.stat(inherited)).mode & 0o7777, 0o700);
+    } finally {
+      process.umask(previousUmask);
+      fs.chmodSync = nativeChmod;
+      promises.chmod = asyncChmod;
+      syncBuiltinESMExports();
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
 test('unregistered background work is a conflict while proven other-home work is unrelated', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tandem-guard-'));
   const options = {

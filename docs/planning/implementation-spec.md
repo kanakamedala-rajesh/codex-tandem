@@ -252,7 +252,11 @@ Linux reads fresh procfs identities and bounded private credential/owner metadat
 through native synchronous descriptors, retaining the same permission, file-identity
 and size checks. Reads are not cached; candidate enumeration and detailed process
 inspection yield between groups of at most 16 so timers and signals remain observable.
-Credential publication, journal phases and durability barriers remain unchanged.
+Physical process-home comparisons also use fresh native Linux metadata, with no
+cached home identities. Private publication corrects modes only when fresh metadata
+shows they differ from exact 0600/0700, including restrictive-umask creation; it
+always verifies owner protection afterward. Credential publication, journal phases
+and durability barriers remain unchanged.
 
 The private target `.tandem-activation` directory owns the phase journal, active
 binding reference and validated staging credential. Phases are begun,
