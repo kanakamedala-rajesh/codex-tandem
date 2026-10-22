@@ -583,7 +583,7 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
     limit = 16777216 if preparing else 1048576
     def wait_for_exit(seconds):
         nonlocal size
-        until = time.monotonic() + seconds
+        until = min(time.monotonic() + seconds, deadline)
         streams = [child.stdout, child.stderr]
         while True:
             exited = child.poll() is not None
@@ -601,7 +601,9 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
                     streams.remove(reader)
             if exited and size > limit:
                 return True
-    deadline = time.monotonic() + (60 if preparing else 15)
+    # RPC and shutdown share the host request budget; reserve time for the
+    # final ownership/revalidation checks and response instead of restarting it.
+    deadline = time.monotonic() + (60 if preparing else 15) - 0.5
     try:
         send({'id': 0, 'method': 'initialize', 'params': {'clientInfo': {'name': 'codex-tandem', 'version': '0.1.0'}, 'capabilities': {'experimentalApi': True}}})
         while result is None:
@@ -705,8 +707,9 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
         try:
             # Drain both pipes while awaiting exit: shutdown output can otherwise
             # fill a pipe and prevent an owned helper from finishing. Discard it,
-            # but retain the cumulative output limit and original stop deadlines.
-            if not wait_for_exit(1.5):
+            # but retain the cumulative output limit. Native Codex can need five
+            # seconds to finish shutdown; all waits share the operation deadline.
+            if not wait_for_exit(6):
                 fresh = identity(child.pid)
                 if fresh is None or initial is None or fresh['creation'] != initial['creation']:
                     fail('REMOTE_POLICY_PROCESS_CHANGED')

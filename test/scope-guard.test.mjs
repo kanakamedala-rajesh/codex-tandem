@@ -651,8 +651,10 @@ test('analytics claims reject a raced database and permit an existing owned data
   await writeFile(options.bindingPath, '{}');
   const { DatabaseSync } = await import('node:sqlite');
   const fs = (await import('node:fs/promises')).default;
+  const native = (await import('node:fs')).default;
   const { syncBuiltinESMExports } = await import('node:module');
-  const nativeRename = fs.rename;
+  const nativeRename = fs.rename,
+    nativeRenameSync = native.renameSync;
   const marker = options.analyticsPath + '.tandem-environment';
   const createDatabase = () => {
     const database = new DatabaseSync(options.analyticsPath);
@@ -669,12 +671,20 @@ test('analytics claims reject a raced database and permit an existing owned data
       racedBytes = await fs.readFile(options.analyticsPath);
     }
   };
+  native.renameSync = (from, to) => {
+    nativeRenameSync(from, to);
+    if (to === join(marker, 'owner.json')) {
+      createDatabase();
+      racedBytes = native.readFileSync(options.analyticsPath);
+    }
+  };
   syncBuiltinESMExports();
   try {
     await assert.rejects(acquireGuard(options), /ANALYTICS_OWNER_REQUIRED/);
     assert.deepEqual(await fs.readFile(options.analyticsPath), racedBytes);
     await assert.rejects(fs.lstat(marker), { code: 'ENOENT' });
     fs.rename = nativeRename;
+    native.renameSync = nativeRenameSync;
     syncBuiltinESMExports();
     await fs.rm(options.analyticsPath);
     lease = await acquireGuard(options);
@@ -688,6 +698,7 @@ test('analytics claims reject a raced database and permit an existing owned data
     lease = undefined;
   } finally {
     fs.rename = nativeRename;
+    native.renameSync = nativeRenameSync;
     syncBuiltinESMExports();
     await lease?.release();
     await rm(root, { recursive: true, force: true });
@@ -850,6 +861,230 @@ test('batched private metadata preserves existing files when any parent protecti
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test(
+  'Linux native close errors never close reused descriptors or mask earlier failures',
+  { skip: process.platform !== 'linux' },
+  async (t) => {
+    const fs = (await import('node:fs')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { readFile, readdir } = await import('node:fs/promises');
+    const { privateDirectory, writePrivateDurable, writePrivateBatch } =
+      await import(new URL('dist/private-files.js', packageRoot));
+    const original = {
+      open: fs.openSync,
+      close: fs.closeSync,
+      flush: fs.fsyncSync,
+      stat: fs.fstatSync,
+    };
+    for (const { batch, earlierFailure, directoryClose = false } of [
+      { batch: false, earlierFailure: false },
+      { batch: false, earlierFailure: true },
+      { batch: true, earlierFailure: false },
+      { batch: true, earlierFailure: true },
+      { batch: false, earlierFailure: true, directoryClose: true },
+    ]) {
+      await t.test(
+        `${directoryClose ? 'directory' : batch ? 'batch' : 'durable'} ${earlierFailure ? 'flush then close failure' : 'close failure'}`,
+        async () => {
+          const root = await mkdtemp(join(tmpdir(), 'tandem-private-close-'));
+          const directory = await privateDirectory(join(root, 'private'));
+          const paths = [join(directory, 'first'), join(directory, 'second')];
+          for (const path of paths) await writePrivateDurable(path, 'before');
+          const closeFailure = Object.assign(
+            new Error('synthetic close failure'),
+            { code: 'EIO' },
+          );
+          const flushFailure = Object.assign(
+            new Error('synthetic earlier flush failure'),
+            { code: 'EIO' },
+          );
+          const opened = [];
+          let sentinel,
+            sentinelInfo,
+            armed = true;
+          const stillOwns = (fd, expected) => {
+            try {
+              const actual = original.stat(fd);
+              return actual.dev === expected.dev && actual.ino === expected.ino;
+            } catch (error) {
+              if (error.code === 'EBADF') return false;
+              throw error;
+            }
+          };
+          try {
+            fs.openSync = (...args) => {
+              const fd = original.open(...args);
+              opened.push({ fd, info: original.stat(fd) });
+              return fd;
+            };
+            fs.fsyncSync = (fd) => {
+              if (
+                earlierFailure &&
+                armed &&
+                (!directoryClose || original.stat(fd).isDirectory())
+              )
+                throw flushFailure;
+              return original.flush(fd);
+            };
+            fs.closeSync = (fd) => {
+              if (
+                armed &&
+                opened.some((entry) => entry.fd === fd) &&
+                (!directoryClose || original.stat(fd).isDirectory())
+              ) {
+                armed = false;
+                original.close(fd);
+                sentinel = original.open(
+                  join(directory, 'sentinel'),
+                  'wx',
+                  0o600,
+                );
+                sentinelInfo = original.stat(sentinel);
+                assert.equal(
+                  sentinel,
+                  fd,
+                  'the harmless sentinel reuses the released descriptor',
+                );
+                throw closeFailure;
+              }
+              return original.close(fd);
+            };
+            syncBuiltinESMExports();
+            await assert.rejects(
+              batch
+                ? writePrivateBatch(
+                    paths.map((path) => ({ path, bytes: 'after' })),
+                  )
+                : writePrivateDurable(paths[0], 'after'),
+              (error) =>
+                error === (earlierFailure ? flushFailure : closeFailure),
+            );
+            assert.notEqual(sentinel, undefined);
+            assert(
+              stillOwns(sentinel, sentinelInfo),
+              'cleanup leaves the reused descriptor open',
+            );
+            for (const entry of opened.filter((entry) => entry.fd !== sentinel))
+              assert.throws(
+                () => original.stat(entry.fd),
+                { code: 'EBADF' },
+                'later batch descriptors are closed',
+              );
+            for (const path of paths)
+              assert.equal(
+                await readFile(path, 'utf8'),
+                directoryClose && path === paths[0] ? 'after' : 'before',
+              );
+            assert(
+              !(await readdir(directory)).some((name) =>
+                name.startsWith('.pending-'),
+              ),
+            );
+          } finally {
+            fs.openSync = original.open;
+            fs.closeSync = original.close;
+            fs.fsyncSync = original.flush;
+            syncBuiltinESMExports();
+            // Close only these test-owned inodes, including when checking the broken implementation.
+            for (const entry of opened)
+              if (stillOwns(entry.fd, entry.info)) original.close(entry.fd);
+            if (sentinel !== undefined && stillOwns(sentinel, sentinelInfo))
+              original.close(sentinel);
+            await rm(root, { recursive: true, force: true });
+          }
+        },
+      );
+    }
+  },
+);
+
+test(
+  'Linux private writes preserve publication boundaries on native flush failure and await observers',
+  { skip: process.platform !== 'linux' },
+  async () => {
+    const fs = (await import('node:fs')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { readFile, readdir } = await import('node:fs/promises');
+    const { privateDirectory, writePrivateDurable, writePrivateBatch } =
+      await import(new URL('dist/private-files.js', packageRoot));
+    const root = await mkdtemp(join(tmpdir(), 'tandem-private-flush-'));
+    const nativeFlush = fs.fsyncSync;
+    try {
+      const directory = await privateDirectory(join(root, 'private'));
+      const first = join(directory, 'first');
+      const second = join(directory, 'second');
+      await writePrivateDurable(first, 'before');
+      await writePrivateDurable(second, 'second-before');
+      for (const failDirectory of [false, true]) {
+        fs.fsyncSync = (fd) => {
+          if (fs.fstatSync(fd).isDirectory() === failDirectory)
+            throw Object.assign(new Error('synthetic native flush failure'), {
+              code: 'EIO',
+            });
+          return nativeFlush(fd);
+        };
+        syncBuiltinESMExports();
+        await assert.rejects(writePrivateDurable(first, 'after'), {
+          code: 'EIO',
+        });
+        assert.equal(
+          await readFile(first, 'utf8'),
+          failDirectory ? 'after' : 'before',
+        );
+        assert(
+          !(await readdir(directory)).some((name) =>
+            name.startsWith('.pending-'),
+          ),
+        );
+        if (!failDirectory) {
+          await assert.rejects(
+            writePrivateBatch([
+              { path: first, bytes: 'batch-after' },
+              { path: second, bytes: 'second-after' },
+            ]),
+            { code: 'EIO' },
+          );
+          assert.equal(await readFile(first, 'utf8'), 'before');
+          assert.equal(await readFile(second, 'utf8'), 'second-before');
+          assert(
+            !(await readdir(directory)).some((name) =>
+              name.startsWith('.pending-'),
+            ),
+          );
+        }
+      }
+      fs.fsyncSync = nativeFlush;
+      syncBuiltinESMExports();
+      await assert.rejects(
+        writePrivateDurable(first, 'observer-after', {
+          boundary: async (event) => {
+            if (event === 'replace:before') {
+              await new Promise((resolve) => setImmediate(resolve));
+              throw new Error('SYNTHETIC_ASYNC_REFUSAL');
+            }
+          },
+        }),
+        /SYNTHETIC_ASYNC_REFUSAL/,
+      );
+      assert.equal(await readFile(first, 'utf8'), 'after');
+      await assert.rejects(
+        writePrivateDurable(first, 'exclusive-after', { exclusive: true }),
+        { code: 'EEXIST' },
+      );
+      assert.equal(await readFile(first, 'utf8'), 'after');
+      assert(
+        !(await readdir(directory)).some((name) =>
+          name.startsWith('.pending-'),
+        ),
+      );
+    } finally {
+      fs.fsyncSync = nativeFlush;
+      syncBuiltinESMExports();
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
 
 test(
   'Linux private publication skips an already exact mode but still corrects umask and preserves bytes on correction failure',
@@ -1313,13 +1548,15 @@ test('partial owner publication rolls back only this acquisition and preserves a
     codexExecutable: await probeExecutable(root),
   };
   const fs = (await import('node:fs/promises')).default;
+  const native = (await import('node:fs')).default;
   const { syncBuiltinESMExports } = await import('node:module');
   const { privateDirectory, writePrivate } = await import(
     new URL('dist/private-files.js', packageRoot)
   );
   await mkdir(options.codexHome);
   await writeFile(options.bindingPath, '{}');
-  const nativeRename = fs.rename;
+  const nativeRename = fs.rename,
+    nativeRenameSync = native.renameSync;
   const manager = join(options.stateHome, 'manager.lock'),
     homeLock = join(options.codexHome, '.tandem-home.lock'),
     bindingLock = options.bindingPath + '.tandem-binding.lock';
@@ -1349,6 +1586,30 @@ test('partial owner publication rolls back only this acquisition and preserves a
       }
       return nativeRename(from, to);
     };
+    native.renameSync = (from, to) => {
+      if (armed && to === join(homeLock, 'owner.json')) {
+        armed = false;
+        if (replace) {
+          replaced = {
+            ...JSON.parse(
+              native.readFileSync(join(manager, 'owner.json'), 'utf8'),
+            ),
+            nonce: 'f'.repeat(64),
+          };
+          native.rmSync(bindingLock, { recursive: true });
+          native.mkdirSync(bindingLock, { mode: 0o700 });
+          native.writeFileSync(
+            join(bindingLock, 'owner.json'),
+            JSON.stringify(replaced),
+            { mode: 0o600 },
+          );
+        }
+        throw Object.assign(new Error('injected publication failure'), {
+          code: 'EIO',
+        });
+      }
+      return nativeRenameSync(from, to);
+    };
     syncBuiltinESMExports();
     try {
       await assert.rejects(
@@ -1359,6 +1620,7 @@ test('partial owner publication rolls back only this acquisition and preserves a
       );
     } finally {
       fs.rename = nativeRename;
+      native.renameSync = nativeRenameSync;
       syncBuiltinESMExports();
     }
   }
@@ -1375,6 +1637,7 @@ test('partial owner publication rolls back only this acquisition and preserves a
     );
   } finally {
     fs.rename = nativeRename;
+    native.renameSync = nativeRenameSync;
     syncBuiltinESMExports();
     await rm(root, { recursive: true, force: true });
   }

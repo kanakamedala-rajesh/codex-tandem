@@ -11,6 +11,7 @@ import tempfile
 import subprocess
 import sys
 import threading
+import time
 import types
 import unittest
 
@@ -255,7 +256,7 @@ class PreparedResumeTests(unittest.TestCase):
         for name in ['auth.json', '.tandem-docker.lock', '.tandem-docker-owner.lock']:
             self.assertFalse((self.home / name).exists())
 
-    def write_rpc(self, version='0.163.0', mutate=False, row_cwd=None, rows=None, mutate_cache=False, shutdown_output=False, retained=False):
+    def write_rpc(self, version='0.163.0', mutate=False, row_cwd=None, rows=None, mutate_cache=False, shutdown_output=False, retained=False, shutdown_delay=0):
         row = {'id': LAUNCH, 'cwd': row_cwd or str(self.project), 'path': str(self.source), 'preview': 'SYNTHETIC-PREVIEW-MUST-NOT-ESCAPE', 'turns': ['SYNTHETIC-CONTENT']}
         program = '''import json,signal,sys,os,time
 HOME=%r
@@ -279,6 +280,12 @@ if %r:
   for fd in [1,2]:os.write(fd,b'SYNTHETIC-SHUTDOWN-NOT-METADATA'*%d)
   sys.exit(0)
  signal.signal(signal.SIGTERM,finished)
+if %r:
+ def delayed(signum,frame):
+  signal.signal(signal.SIGTERM,signal.SIG_IGN)
+  time.sleep(%r)
+  sys.exit(0)
+ signal.signal(signal.SIGTERM,delayed)
 for line in sys.stdin:
  r=json.loads(line);method=r.get('method')
  if 'id' not in r:continue
@@ -291,8 +298,9 @@ for line in sys.stdin:
   result={'data':[] if r['params']['archived'] else ROWS,'nextCursor':None}
  print(json.dumps({'id':r['id'],'result':result}),flush=True)
 if %r:finished(None,None)
+if %r:delayed(None,None)
 if %r:time.sleep(30)
-''' % (str(self.home), rows if rows is not None else [row], mutate, mutate_cache, retained, shutdown_output, 8192 if shutdown_output is True else shutdown_output, version, shutdown_output, retained)
+''' % (str(self.home), rows if rows is not None else [row], mutate, mutate_cache, retained, shutdown_output, 8192 if shutdown_output is True else shutdown_output, shutdown_delay, shutdown_delay, version, shutdown_output, shutdown_delay, retained)
         self.executable.write_text('#!' + sys.executable + '\n' + program)
         self.executable.chmod(0o700)
 
@@ -331,6 +339,38 @@ if %r:time.sleep(30)
                     self.assertEqual(children[0].poll(), 0)
                     self.assertTrue(children[0].stdout.closed)
                     self.assertTrue(children[0].stderr.closed)
+
+    def test_policy_allows_five_second_native_shutdown_without_retaining_the_process(self):
+        for include_resume in [False, True]:
+            with self.subTest(include_resume=include_resume):
+                self.write_rpc(shutdown_delay=5)
+                with self.policy_children() as children:
+                    result = self.code.policy(str(self.project), str(self.executable), [], None, include_resume=include_resume, home=str(self.home))
+                    self.assertEqual(result['config']['cli_auth_credentials_store'], 'file')
+                    self.assertEqual(children[0].poll(), 0)
+
+    def test_policy_shutdown_cannot_restart_the_operation_deadline(self):
+        self.write_rpc(shutdown_delay=5)
+        clock_offset = [0]
+        self.code.time = types.SimpleNamespace(monotonic=lambda: time.monotonic() + clock_offset[0])
+        with self.policy_children() as children:
+            original = self.code.subprocess.Popen
+            def launch(*args, **kwargs):
+                child = original(*args, **kwargs)
+                close = child.stdin.close
+                def close_after_slow_rpc():
+                    # Model eleven seconds already spent in RPC, without making
+                    # the test or a real child wait eleven unnecessary seconds.
+                    clock_offset[0] = 11
+                    close()
+                child.stdin.close = close_after_slow_rpc
+                return child
+            self.code.subprocess.Popen = launch
+            started = time.monotonic()
+            with self.assertRaisesRegex(self.code.Refused, 'REMOTE_POLICY_PROCESS_RETAINED'):
+                self.code.policy(str(self.project), str(self.executable), [], None)
+            self.assertLess(time.monotonic() - started, 4.5)
+            self.assertIsNone(children[0].poll())
 
     def test_policy_shutdown_output_still_obeys_the_metadata_limit(self):
         self.write_rpc(shutdown_output=65536)

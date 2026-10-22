@@ -255,8 +255,10 @@ inspection yield between groups of at most 16 so timers and signals remain obser
 Physical process-home comparisons also use fresh native Linux metadata, with no
 cached home identities. Private publication corrects modes only when fresh metadata
 shows they differ from exact 0600/0700, including restrictive-umask creation; it
-always verifies owner protection afterward. Credential publication, journal phases
-and durability barriers remain unchanged.
+always verifies owner protection afterward. Linux private writes use synchronous
+filesystem dispatch, retaining atomic replacement, exclusive publication, file and
+directory flushes, and awaited asynchronous observer boundaries. Credential
+publication, journal phases and durability barriers remain unchanged.
 
 The private target `.tandem-activation` directory owns the phase journal, active
 binding reference and validated staging credential. Phases are begun,
@@ -492,6 +494,18 @@ staging, active reference, transaction phases and immutable launch records. Ever
 replacement preserves outgoing matching refreshes first and uses target file fsync,
 same-directory atomic replacement and directory fsync. Interrupted state reconciles
 current validated bytes; ambiguous bindings and contradictory versions remain errors.
+
+The owned native policy probe drains and discards both output pipes during
+shutdown, preserving the cumulative metadata limit. It allows up to six seconds
+after its existing EOF or creation-checked SIGTERM boundary for natural exit,
+then retains the separately creation-checked SIGTERM fallback of at most 1.5
+seconds. RPC and shutdown share the existing 15-second host request budget
+(60 seconds for standalone resume preparation), reserving 0.5 seconds for final
+checks and response. A slow RPC reduces the remaining shutdown grace. No force
+kill or successful-policy result can substitute for observed child exit and the
+subsequent idle/descendant and resume-generation checks. The observed roughly
+five-second native shutdown remains part of launch latency; allowing it is a
+functional lifecycle repair and does not establish the SRS latency target.
 
 `docker-run` maps the actual host project, pins original target cwd and each raw
 directory resolution, and rechecks physical identities before policy and execution.

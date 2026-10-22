@@ -1,4 +1,15 @@
-import { lstatSync, chmodSync, realpathSync } from 'node:fs';
+import {
+  lstatSync,
+  chmodSync,
+  realpathSync,
+  openSync,
+  writeFileSync,
+  fsyncSync,
+  closeSync,
+  linkSync,
+  renameSync,
+  rmSync,
+} from 'node:fs';
 import {
   lstat,
   mkdir,
@@ -34,7 +45,7 @@ if (!$native::MoveFileExW($env:TANDEM_REPLACE_SOURCE,$env:TANDEM_REPLACE_DESTINA
 /** One actual private-file operation and its before/after boundary. Observers may throw to simulate a crash; they receive no file contents. */
 export type PrivateWriteBoundary =
   `${'open' | 'restrict' | 'write' | 'flush' | 'close' | 'replace' | 'verify' | 'publication-flush'}:${'before' | 'after'}`;
-/** Publish flushed private bytes with target-filesystem replacement and durability barriers. POSIX flushes the parent directory; Windows requests native write-through replacement. Linux verifies freshly observed exact private modes and corrects restrictive umask before publication. Exclusive records cannot replace an existing destination. Failures before publication preserve the destination bytes; failures after publication may leave the new bytes installed. No automatic rollback is provided. A failing observer leaves the same recoverable filesystem state as failure at that boundary. */
+/** Publish flushed private bytes with target-filesystem replacement and durability barriers. POSIX flushes the parent directory; Windows requests native write-through replacement. Linux verifies freshly observed exact private modes and corrects restrictive umask before publication. Exclusive records cannot replace an existing destination. Failures before publication preserve the destination bytes; failures after publication may leave the new bytes installed. No automatic rollback is provided. A failing observer leaves the same recoverable filesystem state as failure at that boundary. Linux filesystem calls are synchronous; observer callbacks remain awaited. */
 export async function writePrivateDurable(
   path: string,
   bytes: string | Buffer,
@@ -54,27 +65,44 @@ export async function writePrivateDurable(
   }
   const pending = join(dirname(path), '.pending-' + randomUUID());
   await boundary('open:before');
-  const handle = await open(pending, 'wx', 0o600);
+  const handle =
+    process.platform === 'linux'
+      ? openSync(pending, 'wx', 0o600)
+      : await open(pending, 'wx', 0o600);
   let closed = false;
+  let failure: { error: unknown } | undefined;
   try {
     await boundary('open:after');
     await boundary('restrict:before');
     await restrict([pending]);
     await boundary('restrict:after');
     await boundary('write:before');
-    await handle.writeFile(bytes);
+    if (typeof handle === 'number') writeFileSync(handle, bytes);
+    else await handle.writeFile(bytes);
     await boundary('write:after');
     await boundary('flush:before');
-    await handle.sync();
+    if (typeof handle === 'number') fsyncSync(handle);
+    else await handle.sync();
     await boundary('flush:after');
     await boundary('close:before');
-    await handle.close();
-    closed = true;
+    if (typeof handle === 'number') {
+      // Linux releases ownership even when close reports a delayed I/O error.
+      closed = true;
+      closeSync(handle);
+    } else {
+      await handle.close();
+      closed = true;
+    }
     await boundary('close:after');
     await boundary('replace:before');
     if (options.exclusive && process.platform !== 'win32') {
-      await link(pending, path);
-      await rm(pending);
+      if (process.platform === 'linux') {
+        linkSync(pending, path);
+        rmSync(pending);
+      } else {
+        await link(pending, path);
+        await rm(pending);
+      }
     } else if (process.platform === 'win32') {
       try {
         await execute(
@@ -101,18 +129,37 @@ export async function writePrivateDurable(
       } catch {
         throw new Error('PRIVATE_REPLACE_FAILED');
       }
-    } else await rename(pending, path);
+    } else if (process.platform === 'linux') renameSync(pending, path);
+    else await rename(pending, path);
     await boundary('replace:after');
     await boundary('verify:before');
     await verifyPrivate(path);
     await boundary('verify:after');
     await boundary('publication-flush:before');
     if (process.platform !== 'win32') {
-      const directory = await open(dirname(path), 'r');
-      try {
-        await directory.sync();
-      } finally {
-        await directory.close();
+      const directory =
+        process.platform === 'linux'
+          ? openSync(dirname(path), 'r')
+          : await open(dirname(path), 'r');
+      if (typeof directory === 'number') {
+        let directoryFailure: { error: unknown } | undefined;
+        try {
+          fsyncSync(directory);
+        } catch (error) {
+          directoryFailure = { error };
+        }
+        try {
+          closeSync(directory);
+        } catch (error) {
+          directoryFailure ??= { error };
+        }
+        if (directoryFailure) throw directoryFailure.error;
+      } else {
+        try {
+          await directory.sync();
+        } finally {
+          await directory.close();
+        }
       }
     } else {
       const destination = await open(path, 'r+');
@@ -123,10 +170,29 @@ export async function writePrivateDurable(
       }
     }
     await boundary('publication-flush:after');
+  } catch (error) {
+    failure = { error };
   } finally {
-    if (!closed) await handle.close();
-    await rm(pending, { force: true });
+    if (typeof handle === 'number') {
+      if (!closed) {
+        try {
+          closeSync(handle);
+        } catch (error) {
+          failure ??= { error };
+        }
+      }
+      try {
+        rmSync(pending, { force: true });
+      } catch (error) {
+        failure ??= { error };
+      }
+      // Preserve the primary error while still cleaning up the pending path.
+    } else {
+      if (!closed) await handle.close();
+      await rm(pending, { force: true });
+    }
   }
+  if (failure) throw failure.error;
 }
 const aclScript = `
 $ErrorActionPreference = 'Stop'
@@ -249,7 +315,7 @@ export async function writePrivate(
 ): Promise<void> {
   await writePrivateBatch([{ path, bytes }]);
 }
-/** Replace private metadata files with batched native protection checks. Linux checks fresh modes and corrects restrictive umask before publication. Each replacement is atomic, but the batch is not a transaction: later failures may leave earlier files replaced. Throws on any protection, write, replacement or cleanup failure. */
+/** Replace private metadata files with batched native protection checks. Linux checks fresh modes and corrects restrictive umask before publication. Linux filesystem writes are synchronous. Each replacement is atomic, but the batch is not a transaction: later failures may leave earlier files replaced. Throws on any protection, write, replacement or cleanup failure. */
 export async function writePrivateBatch(
   records: readonly { path: string; bytes: string | Buffer }[],
 ): Promise<void> {
@@ -275,13 +341,17 @@ export async function writePrivateBatch(
     path: string;
     destination: string;
     bytes: string | Buffer;
-    handle: Awaited<ReturnType<typeof open>>;
+    handle: number | Awaited<ReturnType<typeof open>>;
     closed: boolean;
   }[] = [];
+  let failure: { error: unknown } | undefined;
   try {
     for (const { path, bytes } of records) {
       const pending = join(dirname(path), '.pending-' + randomUUID());
-      const handle = await open(pending, 'wx', 0o600);
+      const handle =
+        process.platform === 'linux'
+          ? openSync(pending, 'wx', 0o600)
+          : await open(pending, 'wx', 0o600);
       temporary.push({
         path: pending,
         destination: path,
@@ -292,17 +362,47 @@ export async function writePrivateBatch(
     }
     await restrict(temporary.map((r) => r.path));
     for (const entry of temporary) {
-      await entry.handle.writeFile(entry.bytes);
-      await entry.handle.sync();
-      await entry.handle.close();
+      if (typeof entry.handle === 'number') {
+        writeFileSync(entry.handle, entry.bytes);
+        fsyncSync(entry.handle);
+        entry.closed = true;
+        closeSync(entry.handle);
+      } else {
+        await entry.handle.writeFile(entry.bytes);
+        await entry.handle.sync();
+        await entry.handle.close();
+      }
       entry.closed = true;
     }
-    for (const entry of temporary) await rename(entry.path, entry.destination);
+    for (const entry of temporary) {
+      if (process.platform === 'linux')
+        renameSync(entry.path, entry.destination);
+      else await rename(entry.path, entry.destination);
+    }
     await verifyPrivate(records.map((r) => r.path));
+  } catch (error) {
+    failure = { error };
   } finally {
     for (const entry of temporary) {
-      if (!entry.closed) await entry.handle.close();
-      await rm(entry.path, { force: true });
+      if (typeof entry.handle === 'number') {
+        if (!entry.closed) {
+          entry.closed = true;
+          try {
+            closeSync(entry.handle);
+          } catch (error) {
+            failure ??= { error };
+          }
+        }
+        try {
+          rmSync(entry.path, { force: true });
+        } catch (error) {
+          failure ??= { error };
+        }
+      } else {
+        if (!entry.closed) await entry.handle.close();
+        await rm(entry.path, { force: true });
+      }
     }
   }
+  if (failure) throw failure.error;
 }
