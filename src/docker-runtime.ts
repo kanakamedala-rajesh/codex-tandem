@@ -67,7 +67,12 @@ export type DockerRuntime = {
   policy: (argumentsForPolicy: string[]) => Promise<unknown>;
   /** Return fresh remote ownership metadata without process argv or arbitrary environment values. */
   inventory: () => Promise<DockerProcess[]>;
-  /** Resolve an explicit rollout UUID or opt-in last session from bounded metadata in this target's physical project. */
+  /** Prepare one project-scoped UUID through the existing target's version-pinned native metadata RPC, outside launch. Publishes only bounded private selection metadata; unsupported capability or unstable generations throw. */
+  prepareResume: (
+    selection: string,
+    policyArguments: string[],
+  ) => Promise<string>;
+  /** Resolve an explicit UUID or opt-in last session from one private prepared record and fixed filesystem witnesses. Stale or missing preparation throws before credential replacement; no history or database contents are read. */
   resume: (selection: string) => Promise<string>;
   /** Forward a caller's signal only to freshly verified descendants of this owned launch, retaining the supervisor. */
   interrupt: (launchId: string, signal: 'SIGINT' | 'SIGTERM') => Promise<void>;
@@ -164,13 +169,13 @@ export async function openDockerRuntime(
       waiting = undefined;
     }
   };
-  const response = () =>
+  const response = (timeoutMs = 15000) =>
     new Promise<unknown>((resolve, reject) => {
       if (closed || waiting) return reject(new Error('DOCKER_CONTROL_LOST'));
       const timer = setTimeout(() => {
         failed();
         child.stdin.destroy();
-      }, 15000);
+      }, timeoutMs);
       waiting = { resolve, reject, timer };
     });
   const ready = response();
@@ -245,7 +250,11 @@ export async function openDockerRuntime(
       const bytes = JSON.stringify(value) + '\n';
       if (Buffer.byteLength(bytes) > 262144)
         throw new Error('REMOTE_REQUEST_TOO_LARGE');
-      const result = response();
+      const result = response(
+        (value as { action?: string }).action === 'resume-prepare'
+          ? 60000
+          : 15000,
+      );
       child.stdin.write(bytes);
       return result;
     };
@@ -299,6 +308,30 @@ export async function openDockerRuntime(
       )
         return Promise.reject(new Error('REMOTE_PATH_INVALID'));
       return empty({ action: 'pin', paths, wrapper: wrapper ?? null });
+    },
+    prepareResume: async (selection, policyArguments) => {
+      if (
+        selection !== 'last' &&
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+          selection,
+        )
+      )
+        throw new Error('RESUME_ID_INVALID');
+      const value = await request({
+        action: 'resume-prepare',
+        selection,
+        arguments: policyArguments,
+      });
+      if (
+        typeof value !== 'string' ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+          value,
+        )
+      )
+        throw new Error('RESUME_METADATA_INVALID');
+      if (selection !== 'last' && value !== selection)
+        throw new Error('RESUME_METADATA_CONFLICT');
+      return value;
     },
     resume: async (selection) => {
       if (

@@ -328,16 +328,69 @@ probe. Named Codex profiles fail before activation with
 app-server, so its base policy cannot prove runtime named-profile policy. CLI-003
 named configuration-profile compatibility is owner-deferred from G1; saved Tandem identities remain supported. The refusal remains the safety boundary for these deferred inputs.
 
-Resume is a separate bounded native metadata read, invoked only when requested.
-It validates UUID-bearing `session_meta` first lines against the same canonical
-home/project; it neither imports history nor attributes it to the selected identity.
-Explicit UUID lookup filters filenames before reading metadata. Opt-in last lookup
-chooses a unique newest matching metadata timestamp. Reads are bounded to 10,000
-entries, three directory levels, 64 KiB per first line and 16 MiB total, with links,
-partial/unknown metadata and conflicts refused. Raw explicit Codex resume argv is
-validated unchanged, with command/UUID positions distinguished from literal resume prompt tokens. Missing/inaccessible home, project and metadata source boundaries report redacted RESUME_* codes without native paths or causes. Unproved raw last-session grammar requires the top-level
-Tandem resolver. The adapter's native upstream metadata/configuration support
-requires actual installed-version evidence; synthetic fixtures alone do not qualify it.
+Local resume separates explicit preparation from launch. `resume prepare UUID|--last`
+never selects/activates an identity or starts a session. It first inspects the
+ordinary effective native policy, then generation-fences read-only file copies of
+the native `state_5.sqlite` database and any WAL in restricted temporary storage.
+Only the copy is opened with host SQLite, dynamically inside preparation; copied
+native content is removed in `finally`. The initial supported index capability is
+Codex 0.163.0 with a primary-key thread ID, required metadata columns and completed
+backfill. Unsupported/incomplete indexes are explicit failures, with no upgrade,
+source mutation or launch-time repair. Preparation is an explicit exceptional
+workflow and its history work must never be hidden in launch/selector timings.
+
+Preparation binds an indexed UUID to its existing selected source, canonical native
+home and physical project. Last lookup examines at most 10,000 indexed metadata
+rows and selects the unique newest matching native `created_at_ms`; ties refuse.
+Available cwd aliases resolve to a physical project during preparation, and that
+membership is retained. Retargeting a recorded alias invalidates its selection;
+repreparation must not reassign an existing prepared membership to another project.
+First explicit preparation binds a previously unprepared UUID to native metadata's
+then-current physical project; it does not prove historical physical membership.
+Skipped, unprepared rows are not indexed by Tandem. Normal prepared last lookup
+never promotes them after alias retargeting. A later explicit preparation may
+establish their first physical binding.
+This replaces the earlier rollout-wide duplicate/timestamp/recanonicalization policy:
+a valid authoritative native index row selects the source; unindexed duplicate
+copies do not override it. Source resolution requires installed-version evidence,
+including native UUID selection with an unindexed conflicting copy.
+
+Each private UUID/project-last record is at most 64 KiB and contains allowlisted
+metadata only: source/header identity, home/project/cwd bindings, native command,
+safe effective SQLite-home/boolean-feature/config-file metadata, and fixed native
+DB/WAL/journal generation witnesses. Tandem never opens original files with SQLite;
+the existing native policy probe may perform ordinary native operational-database
+maintenance.
+Preparation copies at most 256 MiB per database/WAL file and reads at most 64 KiB
+for a selected metadata first line. Native source links/hardlinks, inaccessible
+projects, malformed headers and changed files refuse. Config/project ancestry is
+bounded to 64 levels. Raw config, override values, conversation content and
+credentials are excluded from persistent records and diagnostics.
+
+Normal resume performs only one bounded record read and fixed file/directory stat
+checks, independent of history count; no rollout read, history traversal, SQLite
+import, reporting access or extra metadata RPC is allowed. The native database,
+rollback journal and every nonempty WAL pin complete identity/size/mtime/ctime
+generations. Only an absent WAL and an exactly zero-byte WAL are equivalent,
+including zero-byte WAL recreation; transitions involving nonempty WAL data refuse.
+SHM is a disposable coordination cache, so its presence and generation may change.
+Every boundary still freshly checks all four native paths, including SHM and empty
+WAL, rejecting symbolic/dangling links, hardlinks, nonregular or inaccessible files
+and unavailable exact timestamp precision. Prepared records retain the actual
+observations rather than fabricated normalized metadata. Directories pin physical identity and mode without
+child counts/timestamps. The proof is checked before activation, again after the
+existing mandatory policy probe and before credential/journal writes, and finally
+immediately before spawn. Effective storage/features must match without persisting
+or hashing raw argv; unrelated model overrides pass unchanged. Missing/stale proofs
+give explicit preparation guidance and never use an older last-session fallback.
+These checks do not provide an atomic filesystem-to-spawn guarantee.
+
+Raw explicit Codex resume argv remains unchanged, with command/UUID positions
+distinguished from literal prompt tokens. Missing/inaccessible home, project and
+source boundaries report redacted RESUME_* codes without native paths or causes.
+Unproved raw last-session grammar requires the top-level Tandem resolver. Native
+Windows qualification remains paused; synthetic fixtures alone do not qualify the
+installed native capability or a complete SRS acceptance family.
 
 `verify:activation-recovery -- --list` enumerates 137 maintained cases and their
 coverage mapping. Every role directly injects failures before/after write, flush
@@ -435,10 +488,29 @@ current validated bytes; ambiguous bindings and contradictory versions remain er
 `docker-run` maps the actual host project, pins original target cwd and each raw
 directory resolution, and rechecks physical identities before policy and execution.
 The target supervisor verifies committed activation and invocation paths, then starts
-the existing Codex with unchanged argv and the configured environment wrapper. Target
-resume reads only bounded session metadata under the selected physical home and
-project; UUID selection precedes credential replacement. Raw `--last` remains refused;
-Tandem `resume --last` passes an explicit proved UUID.
+the existing Codex with unchanged argv and the configured environment wrapper.
+Target resume uses explicit standalone `resume prepare UUID|--last`; preparation
+does not select credentials or start a session. The existing native Codex performs
+metadata-only RPC outside the launch path, with completed native-index backfill
+and bounded indexed-source headers. No raw database or conversation crosses the
+bridge. The supported native-index capability initially requires Codex 0.163.0;
+legacy 0.159 and unknown capabilities fail explicitly without upgrading the target.
+
+Owner-only per-UUID records retain immutable project path/device/inode bindings.
+Each canonical-project last pointer contains a complete bounded selection proof,
+so normal resume has fixed record/stat work and never walks history or starts a
+metadata RPC. The same persistent database/journal/nonempty-WAL and disposable
+SHM/empty-WAL rules apply, with fresh path safety checks at every boundary. Exact
+target integer nanosecond timestamps are required even for present disposable
+sidecars; missing precision fails closed. Environment wrappers require
+an explicit absolute effective `sqlite_home`, because the controller cannot infer
+the wrapper child's `CODEX_SQLITE_HOME`. Storage, feature, config, source, native
+command and target identities must match preparation. The proof is checked before
+credential replacement and again by the final target supervisor before execution.
+Once the child has run, changed index/source generations do not block preservation
+of matching credential refreshes or process-safe release. Raw `--last` remains
+refused; Tandem `resume --last` passes the explicit proved UUID. Synthetic protocol
+checks do not qualify an actual Docker or legacy target.
 
 The remote guard protocol 2 records exact controller creation identity and nonce.
 An immutable owner-only `.tandem-docker-owner.lock` inode holds a non-inherited

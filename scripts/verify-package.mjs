@@ -36,6 +36,7 @@ await withTempPackage(
           'test/scoped-stop.test.mjs',
           'test/activation.test.mjs',
           'test/local-launch.test.mjs',
+          'test/resume.test.mjs',
         ],
         {
           encoding: 'utf8',

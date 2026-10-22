@@ -6,6 +6,7 @@ import {
   activateDockerIdentity,
   type DockerActivationLease,
 } from './docker-activation.js';
+import { openDockerRuntime } from './docker-runtime.js';
 import { discoverTarget } from './discovery.js';
 
 /** Selected identity and unchanged Codex invocation for a named existing Docker target. Host projects map only through the target's explicit registrations. */
@@ -24,10 +25,12 @@ export type DockerRunOptions = {
   /** Emit a sanitized diagnostic and return the status chosen by the caller. */
   error: (code: string, message: string) => number;
 };
-/** Launch a named pinned Docker target with private selected credentials, inherited terminal/streams and exact child status. Client loss preserves remote and saved-binding ownership; post-exit synchronization failures remain explicit. */
-export async function runDockerTarget(
-  options: DockerRunOptions,
-): Promise<number> {
+async function mappedRuntimeInputs(
+  options: Pick<
+    DockerRunOptions,
+    'stateHome' | 'targetId' | 'hostProject' | 'directories'
+  >,
+) {
   const target = (await readDockerTargets(options.stateHome)).find(
     (t) => t.id === options.targetId,
   );
@@ -64,6 +67,44 @@ export async function runDockerTarget(
   ];
   let project = initialPhysical;
   for (const path of paths.slice(1)) project = await inspect(path);
+  return {
+    target,
+    project,
+    invocationPaths: paths.map((path) => ({ path, root: mapping.targetRoot })),
+  };
+}
+
+/** Prepare one Docker resume selection without selecting credentials or launching a session. Uses the pinned target's supported metadata RPC outside the launch path; returns only the proved UUID and preparation acknowledgement time. Missing capability, unstable metadata or changed target paths throw. */
+export async function prepareDockerResume(
+  options: Pick<
+    DockerRunOptions,
+    'stateHome' | 'targetId' | 'hostProject' | 'directories' | 'policyArguments'
+  > & { selection: string },
+): Promise<{ id: string; preparedAt: string }> {
+  const inputs = await mappedRuntimeInputs(options);
+  const runtime = await openDockerRuntime(inputs.target, inputs.project);
+  try {
+    await runtime.pinInvocation(
+      inputs.invocationPaths,
+      inputs.target.environmentWrapper,
+    );
+    const id = await runtime.prepareResume(
+      options.selection,
+      options.policyArguments,
+    );
+    await runtime.release();
+    return { id, preparedAt: new Date().toISOString() };
+  } finally {
+    runtime.disconnect();
+  }
+}
+
+/** Launch a named pinned Docker target with private selected credentials, inherited terminal/streams and exact child status. Client loss preserves remote and saved-binding ownership; post-exit synchronization failures remain explicit. */
+export async function runDockerTarget(
+  options: DockerRunOptions,
+): Promise<number> {
+  const { target, project, invocationPaths } =
+    await mappedRuntimeInputs(options);
   let lease: DockerActivationLease | undefined,
     status: number | undefined,
     started = false;
@@ -74,10 +115,7 @@ export async function runDockerTarget(
       profileId: options.profileId,
       target,
       project,
-      invocationPaths: paths.map((path) => ({
-        path,
-        root: mapping.targetRoot,
-      })),
+      invocationPaths,
       policyArguments: options.policyArguments,
       resumeSelection: options.resume ?? options.rawResume,
     });

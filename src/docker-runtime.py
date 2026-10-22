@@ -4,7 +4,7 @@ prefix = getattr(sys, 'base_prefix', sys.prefix).rstrip('/')
 version = '%d.%d' % sys.version_info[:2]
 stdlib = [prefix + '/lib/python' + version, prefix + '/lib64/python' + version]
 sys.path[:] = [p.rstrip('/') for p in sys.path if p.startswith('/') and p.rstrip('/') in stdlib + [s + '/lib-dynload' for s in stdlib] + [prefix + '/lib/python%d%d.zip' % sys.version_info[:2]]]
-import os, json, stat, errno, base64, uuid, time, signal, subprocess, ctypes, select, re, datetime, calendar, contextlib
+import os, json, stat, errno, base64, uuid, time, signal, subprocess, ctypes, select, re, datetime, calendar, contextlib, unicodedata, hashlib
 
 class Refused(Exception):
     pass
@@ -319,121 +319,250 @@ def recheck_invocation(records):
         if invocation_path(entry['path'], entry['root']) != entry:
             fail('REMOTE_INVOCATION_PATH_CHANGED')
 
-def resume_session(home, project, selection):
-    if selection != 'last' and (not isinstance(selection, str) or not uuid_pattern.match(selection)):
-        fail('RESUME_ID_INVALID')
-    visited, metadata_bytes, sessions = [0], [0], {}
-    def inspect(path, filename_id):
-        physical = os.path.realpath(path)
-        if not physical.startswith(home.rstrip('/') + '/'):
-            fail('RESUME_SOURCE_UNSAFE')
-        before = os.lstat(path)
-        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
-            fail('RESUME_SOURCE_UNSAFE')
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
-        first, completed = b'', False
-        try:
-            opened = os.fstat(fd)
-            if opened.st_dev != before.st_dev or opened.st_ino != before.st_ino:
-                fail('RESUME_SOURCE_CHANGED')
-            while len(first) < 65536:
-                chunk = os.read(fd, min(1024, 65536 - len(first)))
-                metadata_bytes[0] += len(chunk)
-                if metadata_bytes[0] > 16777216:
-                    fail('RESUME_LOOKUP_LIMIT')
-                if not chunk:
-                    fail('RESUME_METADATA_INCOMPLETE')
-                if b'\n' in chunk:
-                    first += chunk.split(b'\n', 1)[0]
-                    completed = True
-                    break
-                first += chunk
-        finally:
-            os.close(fd)
-        if not completed or len(first) >= 65536:
-            fail('RESUME_METADATA_LIMIT')
-        try:
-            value = json.loads(first.decode('utf8'))
-            meta = value.get('payload')
-            if value.get('type') != 'session_meta' or not isinstance(meta, dict) or meta.get('id') != filename_id or not uuid_pattern.match(filename_id) or not isinstance(meta.get('cwd'), str) or not meta['cwd'].startswith('/') or any(ord(c) < 32 or ord(c) == 127 for c in meta['cwd']) or not isinstance(meta.get('timestamp'), str):
-                fail('RESUME_METADATA_INVALID')
-            match = re.match(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}:\d{2})$', meta['timestamp'])
-            if not match:
-                fail('RESUME_METADATA_INVALID')
-            seconds = calendar.timegm(datetime.datetime.strptime(match.group(1), '%Y-%m-%dT%H:%M:%S').timetuple())
-            zone = match.group(3)
-            if zone != 'Z':
-                hours, minutes = int(zone[1:3]), int(zone[4:6])
-                if hours > 23 or minutes > 59:
-                    fail('RESUME_METADATA_INVALID')
-                seconds -= (1 if zone[0] == '+' else -1) * (hours * 3600 + minutes * 60)
-            stamp = seconds * 1000000000 + int((match.group(2) or '').ljust(9, '0') or '0')
-        except Refused:
-            raise
-        except Exception:
-            fail('RESUME_METADATA_INVALID')
-        physical_project = os.path.realpath(meta['cwd'])
-        if not os.path.isdir(physical_project):
-            if selection != 'last' or meta['cwd'] == project:
-                fail('RESUME_PROJECT_UNAVAILABLE')
-            return
-        entry = (physical_project, stamp)
-        if filename_id in sessions and sessions[filename_id] != entry:
-            fail('RESUME_METADATA_CONFLICT')
-        sessions[filename_id] = entry
-    def walk(path, depth):
-        info = os.lstat(path)
-        if not stat.S_ISDIR(info.st_mode) or not os.path.realpath(path).startswith(home.rstrip('/') + '/'):
-            fail('RESUME_SOURCE_UNSAFE')
-        iterator = os.scandir(path)
-        try:
-            for entry in iterator:
-                visited[0] += 1
-                if visited[0] > 10000:
-                    fail('RESUME_LOOKUP_LIMIT')
-                if entry.is_symlink():
-                    fail('RESUME_SOURCE_UNSAFE')
-                if entry.is_dir(follow_symlinks=False):
-                    if depth >= 3:
-                        fail('RESUME_LOOKUP_LIMIT')
-                    walk(entry.path, depth + 1)
-                else:
-                    match = re.match(r'^rollout-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-([0-9a-f-]{36})\.jsonl$', entry.name)
-                    if match and (selection == 'last' or match.group(1) == selection):
-                        inspect(entry.path, match.group(1))
-        finally:
-            close = getattr(iterator, 'close', None)
-            if close is not None:
-                close()
-            del iterator
+def resume_path(value):
+    return isinstance(value, str) and 0 < len(value) <= 4096 and value.startswith('/') and os.path.normpath(value) == value and not any(unicodedata.category(c) in ['Cc', 'Cf'] for c in value)
+
+def resume_witness(path, identity_only=False, data=False):
+    if not resume_path(path):
+        fail('RESUME_SOURCE_UNSAFE')
     try:
-        for name in ['sessions', 'archived_sessions']:
-            source = os.path.join(home, name)
-            try:
-                os.lstat(source)
-            except OSError as error:
-                if error.errno == errno.ENOENT:
-                    continue
-                raise
-            walk(source, 0)
+        before = os.lstat(path)
+        physical, info = os.path.realpath(path), os.stat(path)
+    except OSError as error:
+        if error.errno == errno.ENOENT:
+            # A dangling link is not an absent native source.
+            if os.path.lexists(path):
+                fail('RESUME_SOURCE_UNSAFE')
+            return {'path': path, 'kind': 'missing'}
+        fail('RESUME_SOURCE_UNAVAILABLE')
+    if not stat.S_ISDIR(info.st_mode) and not stat.S_ISREG(info.st_mode):
+        fail('RESUME_SOURCE_UNSAFE')
+    if data and (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or physical != path or (before.st_dev, before.st_ino) != (info.st_dev, info.st_ino)):
+        fail('RESUME_SOURCE_UNSAFE')
+    value = {'path': path, 'physical': physical, 'kind': 'directory' if stat.S_ISDIR(info.st_mode) else 'file', 'device': str(info.st_dev), 'inode': str(info.st_ino), 'mode': str(info.st_mode)}
+    if stat.S_ISREG(info.st_mode):
+        value['links'] = str(info.st_nlink)
+        modified, changed = getattr(info, 'st_mtime_ns', None), getattr(info, 'st_ctime_ns', None)
+        if (data or not identity_only) and (type(modified) is not int or type(changed) is not int):
+            fail('RESUME_WITNESS_PRECISION_UNSUPPORTED')
+        if identity_only:
+            value['identityOnly'] = True
+        else:
+            # Never round float timestamps into an apparently exact generation.
+            value.update({'size': str(info.st_size), 'modified': str(modified), 'changed': str(changed)})
+    return value
+
+def resume_database(sqlite_home):
+    result = [resume_witness(os.path.join(sqlite_home, 'state_5.sqlite' + suffix), suffix == '-shm', True) for suffix in ['', '-wal', '-shm', '-journal']]
+    if result[0]['kind'] != 'file':
+        fail('RESUME_INDEX_UNAVAILABLE')
+    return result
+
+def resume_database_unchanged(previous, sqlite_home):
+    current = resume_database(sqlite_home)
+    def empty_wal(entry):
+        return entry['kind'] == 'missing' or (entry['kind'] == 'file' and entry.get('size') == '0')
+    # Fresh safety/precision checks above apply even to disposable coordination
+    # caches. Only absent/exactly empty WAL files are equivalent; data stays strict.
+    return all(index == 2 or (index == 1 and empty_wal(before) and empty_wal(current[index])) or before == current[index] for index, before in enumerate(previous))
+
+def resume_ancestors(paths):
+    parents = set()
+    for path in paths:
+        parent = os.path.dirname(path)
+        for depth in range(64):
+            parents.add(parent)
+            if len(parents) > 256:
+                fail('RESUME_METADATA_LIMIT')
+            if parent == '/':
+                break
+            parent = os.path.dirname(parent)
+        else:
+            fail('RESUME_METADATA_LIMIT')
+    return [resume_witness(path) for path in sorted(parents)]
+
+def resume_policy(config, layers, home, project, wrapper):
+    configured = config.get('sqlite_home')
+    if configured is not None and not resume_path(configured):
+        fail('RESUME_CONFIG_UNSUPPORTED')
+    # A wrapper's private environment cannot be inferred from the controller.
+    if wrapper and configured is None:
+        fail('RESUME_CONFIG_UNSUPPORTED')
+    sqlite_home = os.path.realpath(configured or os.environ.get('CODEX_SQLITE_HOME', '').strip() or home)
+    if not os.path.isdir(sqlite_home):
+        fail('RESUME_INDEX_UNAVAILABLE')
+    features = config.get('features')
+    if features is None:
+        features = {}
+    if not isinstance(features, dict) or len(features) > 256 or any(not isinstance(k, str) or not re.match(r'^[a-z][a-z0-9_]{0,63}$', k) or type(v) is not bool for k, v in features.items()):
+        fail('RESUME_CONFIG_UNSUPPORTED')
+    files = set([os.path.join(home, 'config.toml')])
+    for layer in layers:
+        source = layer.get('name') if isinstance(layer, dict) else None
+        if not isinstance(source, dict):
+            fail('RESUME_CONFIG_UNSUPPORTED')
+        kind = source.get('type')
+        if kind == 'sessionFlags':
+            continue
+        path = os.path.join(source['dotCodexFolder'], 'config.toml') if kind == 'project' and isinstance(source.get('dotCodexFolder'), str) else source.get('file') if kind in ['system', 'user', 'packagedDefaults', 'legacyManagedConfigTomlFromFile'] else None
+        if not resume_path(path):
+            fail('RESUME_CONFIG_UNSUPPORTED')
+        files.add(path)
+    if len(files) > 128:
+        fail('RESUME_CONFIG_UNSUPPORTED')
+    return {'sqliteHome': sqlite_home, 'features': features, 'files': sorted(files)}
+
+def resume_configuration_paths(context, project):
+    # Missing applicable inputs must stay absent through the final spawn fence;
+    # the native policy response only lists project/managed layers that exist.
+    files = set(context['files'])
+    files.update(['/etc/codex/requirements.toml', '/etc/codex/managed_config.toml'])
+    current = project
+    for depth in range(64):
+        files.add(os.path.join(current, '.codex', 'config.toml'))
+        files.add(os.path.join(current, '.git'))
+        if current == '/':
+            break
+        current = os.path.dirname(current)
+    else:
+        fail('RESUME_METADATA_LIMIT')
+    if len(files) > 256:
+        fail('RESUME_METADATA_LIMIT')
+    return sorted(files)
+
+def resume_revalidate(value, home, project, executable, wrapper, context=None, check_current=True):
+    keys = ['schemaVersion', 'nativeVersion', 'id', 'preparedAt', 'home', 'project', 'cwd', 'nativeCwd', 'source', 'command', 'policy', 'configuration', 'database', 'ancestors']
+    try:
+        if not isinstance(value, dict) or set(value) != set(keys) or (type(value['schemaVersion']) is not int or value['schemaVersion'] != 1) or value['nativeVersion'] != '0.163.0' or not isinstance(value['id'], str) or not uuid_pattern.match(value['id']) or not isinstance(value['preparedAt'], str) or not re.match(r'^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$', value['preparedAt']):
+            fail('RESUME_PREPARATION_INVALID')
+        policy_context = value['policy']
+        if not isinstance(policy_context, dict) or set(policy_context) != set(['sqliteHome', 'features', 'files']) or not resume_path(policy_context['sqliteHome']) or not isinstance(policy_context['features'], dict) or len(policy_context['features']) > 256 or any(not isinstance(k, str) or not re.match(r'^[a-z][a-z0-9_]{0,63}$', k) or type(v) is not bool for k, v in policy_context['features'].items()) or not isinstance(policy_context['files'], list) or len(policy_context['files']) > 128 or policy_context['files'] != sorted(set(policy_context['files'])) or not all(resume_path(path) for path in policy_context['files']):
+            fail('RESUME_PREPARATION_INVALID')
+        if value['home']['path'] != home or value['project']['path'] != project or value['cwd']['physical'] != project or value['nativeCwd']['physical'] != project:
+            fail('RESUME_PROJECT_MISMATCH')
+        source = value['source']['path']
+        if not resume_path(source) or not any(source.startswith(os.path.join(home, name) + '/') for name in ['sessions', 'archived_sessions']):
+            fail('RESUME_SOURCE_UNSAFE')
+        expected_command = [executable] + ([wrapper] if wrapper else [])
+        if [entry['path'] for entry in value['command']] != expected_command or [entry['path'] for entry in value['configuration']] != resume_configuration_paths(policy_context, project) or [entry['path'] for entry in value['database']] != [os.path.join(policy_context['sqliteHome'], 'state_5.sqlite' + suffix) for suffix in ['', '-wal', '-shm', '-journal']]:
+            fail('RESUME_PREPARATION_INVALID')
+        if not check_current:
+            return
+        entries = [value[k] for k in ['home', 'project', 'cwd', 'nativeCwd']] + value['command'] + value['configuration']
+        if any(resume_witness(entry['path']) != entry for entry in entries) or resume_witness(source, data=True) != value['source'] or not resume_database_unchanged(value['database'], policy_context['sqliteHome']):
+            fail('RESUME_PREPARATION_STALE')
+        expected_ancestors = resume_ancestors([entry['path'] for entry in entries] + [source] + [entry['path'] for entry in value['database']])
+        if expected_ancestors != value['ancestors'] or (context is not None and context != policy_context):
+            fail('RESUME_PREPARATION_STALE')
     except Refused:
         raise
     except Exception:
-        fail('RESUME_SOURCE_UNAVAILABLE')
-    if selection != 'last':
-        if selection not in sessions:
-            fail('RESUME_UNAVAILABLE')
-        if sessions[selection][0] != project:
-            fail('RESUME_PROJECT_MISMATCH')
-        return selection
-    matching = sorted([(value[1], key) for key, value in sessions.items() if value[0] == project], reverse=True)
-    if not matching:
-        fail('RESUME_UNAVAILABLE')
-    if len(matching) > 1 and matching[0][0] == matching[1][0]:
-        fail('RESUME_LAST_AMBIGUOUS')
-    return matching[0][1]
+        fail('RESUME_PREPARATION_INVALID')
 
-def policy(project, executable, arguments, wrapper):
+def resume_record_path(home, project, selection):
+    directory = os.path.join(home, '.tandem-activation', 'resume')
+    if selection != 'last':
+        return os.path.join(directory, selection + '.json')
+    current = resume_witness(project)
+    key = '\0'.join([current['physical'], current['device'], current['inode']]).encode('utf8')
+    return os.path.join(directory, 'last-' + hashlib.sha256(key).hexdigest() + '.json')
+
+def resume_store(home, project, executable, wrapper, value, selection):
+    resume_revalidate(value, home, project, executable, wrapper)
+    if selection != 'last' and selection != value['id']:
+        fail('RESUME_ID_INVALID')
+    directory = os.path.join(home, '.tandem-activation', 'resume')
+    folder(directory)
+    path = resume_record_path(home, project, value['id'])
+    previous = record(path, True)
+    if previous is not None:
+        try:
+            commands = previous['command']
+            resume_revalidate(previous, home, project, commands[0]['path'], commands[1]['path'] if len(commands) == 2 else None, check_current=False)
+            if any(previous['project'][key] != value['project'][key] for key in ['path', 'physical', 'device', 'inode']):
+                fail('RESUME_PROJECT_MISMATCH')
+        except Refused:
+            raise
+        except Exception:
+            fail('RESUME_PREPARATION_INVALID')
+    put(path, value)
+    # Only a native latest-selection proof may replace project-last. Preparing
+    # an older explicit UUID does not prove that UUID is the latest conversation.
+    if selection == 'last':
+        put(resume_record_path(home, project, 'last'), value)
+
+def resume_session(home, project, executable, wrapper, selection):
+    if selection != 'last' and (not isinstance(selection, str) or not uuid_pattern.match(selection)):
+        fail('RESUME_ID_INVALID')
+    try:
+        value = record(resume_record_path(home, project, selection), True)
+    except Exception:
+        fail('RESUME_PREPARATION_INVALID')
+    if value is None:
+        fail('RESUME_PREPARATION_REQUIRED')
+    resume_revalidate(value, home, project, executable, wrapper)
+    if selection != 'last' and selection != value['id']:
+        fail('RESUME_PREPARATION_REQUIRED')
+    return value
+
+def resume_indexed_metadata(home, project, row, budget):
+    if not isinstance(row, dict) or not isinstance(row.get('id'), str) or not uuid_pattern.match(row['id']) or not resume_path(row.get('cwd')):
+        fail('RESUME_METADATA_INVALID')
+    if os.path.realpath(row['cwd']) != project:
+        return None
+    source = row.get('path')
+    if not resume_path(source) or not any(source.startswith(os.path.join(home, name) + '/') for name in ['sessions', 'archived_sessions']):
+        fail('RESUME_SOURCE_UNSAFE')
+    before = resume_witness(source, data=True)
+    if before['kind'] != 'file':
+        fail('RESUME_SOURCE_UNAVAILABLE')
+    fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW)
+    first, complete = b'', False
+    try:
+        opened = os.fstat(fd)
+        if str(opened.st_dev) != before['device'] or str(opened.st_ino) != before['inode']:
+            fail('RESUME_SOURCE_CHANGED')
+        while len(first) < 65536:
+            chunk = os.read(fd, min(1024, 65536 - len(first)))
+            budget[0] += len(chunk)
+            if budget[0] > 16777216:
+                fail('RESUME_METADATA_LIMIT')
+            if not chunk:
+                break
+            if b'\n' in chunk:
+                first += chunk.split(b'\n', 1)[0]
+                complete = True
+                break
+            first += chunk
+    finally:
+        os.close(fd)
+    if not complete or len(first) >= 65536:
+        fail('RESUME_METADATA_INCOMPLETE')
+    try:
+        value = json.loads(first.decode('utf8'))
+        meta = value.get('payload')
+        if value.get('type') != 'session_meta' or not isinstance(meta, dict) or meta.get('id') != row['id'] or not resume_path(meta.get('cwd')) or os.path.realpath(meta['cwd']) != project or not isinstance(meta.get('timestamp'), str):
+            fail('RESUME_METADATA_CONFLICT')
+        match = re.match(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}:\d{2})$', meta['timestamp'])
+        if not match:
+            fail('RESUME_METADATA_INVALID')
+        seconds = calendar.timegm(datetime.datetime.strptime(match.group(1), '%Y-%m-%dT%H:%M:%S').timetuple())
+        zone = match.group(3)
+        if zone != 'Z':
+            hours, minutes = int(zone[1:3]), int(zone[4:6])
+            if hours > 23 or minutes > 59:
+                fail('RESUME_METADATA_INVALID')
+            seconds -= (1 if zone[0] == '+' else -1) * (hours * 3600 + minutes * 60)
+        stamp = seconds * 1000000000 + int((match.group(2) or '').ljust(9, '0') or '0')
+    except Refused:
+        raise
+    except Exception:
+        fail('RESUME_METADATA_INVALID')
+    if resume_witness(source, data=True) != before:
+        fail('RESUME_SOURCE_CHANGED')
+    return {'id': row['id'], 'timestamp': stamp, 'source': before, 'cwd': resume_witness(meta['cwd']), 'nativeCwd': resume_witness(row['cwd'])}
+
+def policy(project, executable, arguments, wrapper, resume_selection=None, include_resume=False, home=None):
     if not isinstance(arguments, list) or len(arguments) % 2 or any(arguments[i] not in ['-c', '--config', '--enable', '--disable'] for i in range(0, len(arguments), 2)):
         fail('REMOTE_POLICY_ARGUMENTS_INVALID')
     if wrapper and (os.path.realpath(wrapper) != wrapper or not os.path.isfile(wrapper) or not os.access(wrapper, os.X_OK)):
@@ -443,9 +572,15 @@ def policy(project, executable, arguments, wrapper):
     def send(value):
         child.stdin.write((json.dumps(value) + '\n').encode('utf8'))
         child.stdin.flush()
+    preparing = resume_selection is not None
+    if preparing and resume_selection != 'last' and (not isinstance(resume_selection, str) or not uuid_pattern.match(resume_selection)):
+        fail('RESUME_ID_INVALID')
     config, layers, requirements = None, None, None
     result, buffer, size = None, b'', 0
-    deadline = time.monotonic() + 15
+    prepared, selected, budget, seen, archived, cursor, request_id, rows_seen = None, {}, [0], set(), False, None, 3, 0
+    def list_page():
+        send({'id': request_id, 'method': 'thread/list', 'params': {'limit': 8, 'cursor': cursor, 'sortKey': 'created_at', 'sortDirection': 'desc', 'modelProviders': [], 'sourceKinds': ['cli', 'vscode', 'exec', 'appServer', 'subAgent', 'subAgentReview', 'subAgentCompact', 'subAgentThreadSpawn', 'subAgentOther', 'unknown'], 'archived': archived, 'useStateDbOnly': True}})
+    deadline = time.monotonic() + (60 if preparing else 15)
     try:
         send({'id': 0, 'method': 'initialize', 'params': {'clientInfo': {'name': 'codex-tandem', 'version': '0.1.0'}, 'capabilities': {'experimentalApi': True}}})
         while result is None:
@@ -455,7 +590,7 @@ def policy(project, executable, arguments, wrapper):
             for reader in readers:
                 chunk = os.read(reader.fileno(), 65536)
                 size += len(chunk)
-                if not chunk or size > 1048576:
+                if not chunk or size > (16777216 if preparing else 1048576):
                     fail('REMOTE_POLICY_INSPECTION_FAILED')
                 if reader is child.stderr:
                     continue
@@ -466,6 +601,12 @@ def policy(project, executable, arguments, wrapper):
                     if message.get('error'):
                         fail('REMOTE_POLICY_INSPECTION_FAILED')
                     if message.get('id') == 0:
+                        if preparing:
+                            agent = message.get('result', {}).get('userAgent')
+                            # The pinned 0.163 implementation awaits complete backfill
+                            # before serving and defines the no-fallback DB-only flag.
+                            if not isinstance(agent, str) or len(agent) > 4096 or not re.search(r'(?:^|[ /])0\.163\.0(?:[ (]|$)', agent):
+                                fail('RESUME_INDEX_UNSUPPORTED')
                         send({'method': 'initialized'})
                         send({'id': 1, 'method': 'config/read', 'params': {'includeLayers': True, 'cwd': project}})
                     elif message.get('id') == 1:
@@ -484,7 +625,61 @@ def policy(project, executable, arguments, wrapper):
                         projected = {'cli_auth_credentials_store': mode if mode in ['file', 'keyring', 'auto', 'ephemeral'] else 'unknown', 'forced_login_method': method if method in [None, 'chatgpt', 'api'] else 'unknown', 'forced_chatgpt_workspace_id': config.get('forced_chatgpt_workspace_id'), 'model_provider': config.get('model_provider') if config.get('model_provider') in [None, 'openai'] else 'unsupported', 'model_providers': {} if providers in [None, {}] else {'unsupported': True}}
                         restriction = requirements.get('cliAuthCredentialsStore') if isinstance(requirements, dict) else 'unknown'
                         result = {'config': projected, 'managed': any('enterpriseManaged' in json.dumps(layer) for layer in layers), 'requirements': None if requirements is None else {'cliAuthCredentialsStore': restriction if restriction in [None, 'file', 'keyring', 'auto', 'ephemeral'] else 'unknown'}}
+                        if preparing or include_resume:
+                            result['resume'] = resume_policy(config, layers, home, project, wrapper)
+                        if preparing:
+                            context = result['resume']
+                            prepared = {'schemaVersion': 1, 'nativeVersion': '0.163.0', 'id': None, 'preparedAt': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'home': resume_witness(home), 'project': resume_witness(project), 'command': [resume_witness(path) for path in [executable] + ([wrapper] if wrapper else [])], 'policy': context, 'configuration': [resume_witness(path) for path in resume_configuration_paths(context, project)], 'database': resume_database(context['sqliteHome'])}
+                            result = None
+                            list_page()
+                    elif preparing and message.get('id') == request_id:
+                        payload = message.get('result')
+                        if not isinstance(payload, dict) or not isinstance(payload.get('data'), list) or len(payload['data']) > 8 or 'nextCursor' not in payload:
+                            fail('RESUME_METADATA_INVALID')
+                        for row in payload['data']:
+                            rows_seen += 1
+                            if rows_seen > 10000:
+                                fail('RESUME_METADATA_LIMIT')
+                            if resume_selection != 'last' and isinstance(row, dict) and row.get('id') != resume_selection:
+                                continue
+                            if resume_selection != 'last' and isinstance(row, dict) and resume_path(row.get('cwd')) and os.path.realpath(row['cwd']) != project:
+                                fail('RESUME_PROJECT_MISMATCH')
+                            entry = resume_indexed_metadata(home, project, row, budget)
+                            if entry is not None:
+                                previous = selected.get(entry['id'])
+                                if previous is not None and previous != entry:
+                                    fail('RESUME_METADATA_CONFLICT')
+                                selected[entry['id']] = entry
+                        next_cursor = payload['nextCursor']
+                        if next_cursor is not None:
+                            if not isinstance(next_cursor, str) or len(next_cursor) > 4096 or (archived, next_cursor) in seen:
+                                fail('RESUME_METADATA_INVALID')
+                            seen.add((archived, next_cursor))
+                            cursor = next_cursor
+                        elif not archived:
+                            archived, cursor = True, None
+                        else:
+                            choices = sorted(selected.values(), key=lambda entry: entry['timestamp'], reverse=True)
+                            if not choices:
+                                fail('RESUME_UNAVAILABLE')
+                            if resume_selection == 'last' and len(choices) > 1 and choices[0]['timestamp'] == choices[1]['timestamp']:
+                                fail('RESUME_LAST_AMBIGUOUS')
+                            chosen = choices[0]
+                            prepared.update({key: chosen[key] for key in ['id', 'source', 'cwd', 'nativeCwd']})
+                            entries = [prepared[k] for k in ['home', 'project', 'cwd', 'nativeCwd', 'source']] + prepared['command'] + prepared['configuration'] + prepared['database']
+                            prepared['ancestors'] = resume_ancestors([entry['path'] for entry in entries])
+                            result = prepared
+                            continue
+                        request_id += 1
+                        list_page()
     finally:
+        # Prepare fences include helper shutdown. EOF can trigger a checkpoint,
+        # so use the same owned SIGTERM lifecycle as a bounded policy helper.
+        if (preparing or include_resume) and child.poll() is None:
+            fresh = identity(child.pid)
+            if fresh is None or initial is None or fresh['creation'] != initial['creation']:
+                fail('REMOTE_POLICY_PROCESS_CHANGED')
+            child.terminate()
         child.stdin.close()
         until = time.monotonic() + 1.5
         while child.poll() is None and time.monotonic() < until:
@@ -500,6 +695,10 @@ def policy(project, executable, arguments, wrapper):
                 fail('REMOTE_POLICY_PROCESS_RETAINED')
         child.stdout.close()
         child.stderr.close()
+    if preparing:
+        if child.returncode not in [0, -signal.SIGTERM]:
+            fail('RESUME_METADATA_PROCESS_FAILED')
+        resume_revalidate(result, home, project, executable, wrapper)
     return result
 
 @contextlib.contextmanager
@@ -560,7 +759,7 @@ def control(home, project, executable, nonce):
         os.mkdir(lock, 0o700)
         put(os.path.join(lock, 'owner.json'), {'schemaVersion': 2, 'home': home, 'nonce': nonce, 'manager': current}, True)
         lock_identity = (os.stat(lock).st_dev, os.stat(lock).st_ino)
-        invocation, wrapper = [], None
+        invocation, wrapper, resume_proof = [], None, None
         def check():
             mutex = private(os.path.join(home, '.tandem-docker-owner.lock'))
             opened = os.fstat(held[0])
@@ -605,13 +804,27 @@ def control(home, project, executable, nonce):
                         invocation.append(invocation_path(wrapper))
                 elif action == 'policy':
                     idle()
-                    result = policy(project, executable, value.get('arguments'), value.get('wrapper'))
+                    result = policy(project, executable, value.get('arguments'), value.get('wrapper'), include_resume=resume_proof is not None, home=home)
                     idle()
+                    if resume_proof is not None:
+                        resume_revalidate(resume_proof, home, project, executable, wrapper, result.pop('resume'))
                 elif action == 'inventory':
                     result = inventory(home, executable, journal)
                 elif action == 'resume':
                     idle()
-                    result = resume_session(home, project, value.get('selection'))
+                    resume_proof = resume_session(home, project, executable, wrapper, value.get('selection'))
+                    result = resume_proof['id']
+                elif action == 'resume-prepare':
+                    idle()
+                    if not invocation:
+                        fail('REMOTE_INVOCATION_UNPROVEN')
+                    selection = value.get('selection')
+                    if selection != 'last' and (not isinstance(selection, str) or not uuid_pattern.match(selection)):
+                        fail('RESUME_ID_INVALID')
+                    prepared_resume = policy(project, executable, value.get('arguments'), wrapper, resume_selection=selection, home=home)
+                    idle()
+                    resume_store(home, project, executable, wrapper, prepared_resume, selection)
+                    result = prepared_resume['id']
                 elif action == 'interrupt':
                     launch_id = value.get('launchId')
                     signum = signal.SIGINT if value.get('signal') == 'SIGINT' else signal.SIGTERM if value.get('signal') == 'SIGTERM' else None
@@ -652,6 +865,11 @@ def control(home, project, executable, nonce):
                     recheck_invocation(invocation)
                     if launch.get('environmentWrapper') != wrapper:
                         fail('REMOTE_ENVIRONMENT_WRAPPER_CHANGED')
+                    if resume_proof is not None:
+                        resume_revalidate(resume_proof, home, project, executable, wrapper)
+                        launch['resumeProof'] = resume_proof
+                    elif 'resumeProof' in launch:
+                        fail('RESUME_PREPARATION_INVALID')
                     launch['spawnProject'] = invocation[0]['physical']
                     launch['invocationPaths'] = invocation
                     put(os.path.join(journal, 'launch-' + launch['id'] + '.json'), launch, True)
@@ -717,6 +935,15 @@ def launch(home, project, executable, nonce, launch_id, args):
     signal.signal(signal.SIGHUP, signal.SIG_IGN)
     wrapper = prepared.get('environmentWrapper')
     command = ([wrapper, executable] if wrapper else [executable]) + args
+    try:
+        if 'resumeProof' in prepared:
+            resume_revalidate(prepared['resumeProof'], home, project, executable, wrapper)
+    except Exception:
+        # No child was started. Publish this supervisor's refusal so a known
+        # pre-execution failure cannot masquerade as an unobserved survivor.
+        process_record['state'], process_record['exitCode'] = 'exited', 2
+        put(process_file, process_record)
+        raise
     child = subprocess.Popen(command, cwd=prepared['spawnProject'])
     process_record['state'] = 'running'
     process_record['child'] = identity(child.pid)

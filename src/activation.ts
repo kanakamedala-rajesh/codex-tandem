@@ -22,7 +22,11 @@ import {
   readProfileManifest,
   type Binding,
 } from './profiles.js';
-import { verifyActivationPolicy, type CodexCommand } from './profile-login.js';
+import {
+  verifyActivationPolicy,
+  type CodexCommand,
+  type ResumePolicy,
+} from './profile-login.js';
 import {
   privateDirectory,
   verifyPrivate,
@@ -41,6 +45,8 @@ export type ActivationOptions = {
   projectPath: string;
   /** Qualified Codex config/feature flags used to inspect the same effective policy as the intended child. Launch argument passthrough remains the caller's responsibility. */
   policyArguments?: string[];
+  /** Require fresh prepared resume metadata after effective-policy inspection and before credential or activation-journal writes. Throwing cancels activation under the retained guard. */
+  validateResume?: (policy: ResumePolicy) => void | Promise<void>;
   operation?: 'activate' | 'recover' | 'sync';
   /** Observe actual credential/journal filesystem boundaries without receiving bytes. Throwing interrupts the operation for fault-injection verification. */
   boundary?: (
@@ -339,6 +345,7 @@ export async function activateIdentity(
         stateHome: root,
         cwd: project,
         policyArguments: options.policyArguments,
+        validateResume: options.validateResume,
       },
       selected.account,
     );

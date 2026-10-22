@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { writeFile, rm } from 'node:fs/promises';
+import { writeFile, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   modulePath,
@@ -64,7 +64,7 @@ test('remote control keeps credentials inside the bounded private stdin protocol
   }
 });
 
-test('Docker activation preserves refreshed outgoing credentials across A to B to A', async () => {
+test('Docker activation preserves refreshes and prepared resume fences across A to B to A', async () => {
   const { activateDockerIdentity } = await import(
     modulePath('docker-activation.js')
   );
@@ -87,7 +87,7 @@ test('Docker activation preserves refreshed outgoing credentials across A to B t
   const refresh = Buffer.from(
     syntheticAuth('A', 'SYNTHETIC-REFRESHED-A'),
   ).toString('base64');
-  const script = `import readline from 'node:readline';import {readFileSync,writeFileSync} from 'node:fs'; const path=process.argv[1];let state=JSON.parse(readFileSync(path,'utf8'));console.log(JSON.stringify({ok:true,manager:{pid:41,creation:'synthetic:12:10000',uid:10000}}));readline.createInterface({input:process.stdin}).on('line',line=>{const r=JSON.parse(line);let result=null;if(r.action==='snapshot')result={auth:state.auth,active:state.active?Object.fromEntries(Object.entries(state.active).reverse()):null,transaction:state.transaction};if(r.action==='policy')result={config:{cli_auth_credentials_store:'file'},managed:false,requirements:null};if(r.action==='metadata')state[r.name]=r.value;if(r.action==='stage')state.staged=r.auth;if(r.action==='replace'){if(state.auth!==r.expected){console.log(JSON.stringify({ok:false,code:'EXTERNAL_REFRESH_CONFLICT'}));return;}state.auth=state.staged;}if(r.action==='prepare' && state.refresh){state.auth=state.refresh;state.refresh=null;}writeFileSync(path,JSON.stringify(state));console.log(JSON.stringify({ok:true,result}));if(r.action==='release')process.exit(0);});`;
+  const script = `import readline from 'node:readline';import {readFileSync,writeFileSync} from 'node:fs'; const path=process.argv[1];let state=JSON.parse(readFileSync(path,'utf8'));console.log(JSON.stringify({ok:true,manager:{pid:41,creation:'synthetic:12:10000',uid:10000}}));readline.createInterface({input:process.stdin}).on('line',line=>{const r=JSON.parse(line);state=JSON.parse(readFileSync(path,'utf8'));let result=null;if(r.action==='resume'){if(state.resumeStale){console.log(JSON.stringify({ok:false,code:'RESUME_PREPARATION_STALE'}));return;}result=state.resumeChanged?'00000000-0000-0000-0000-000000000006':'00000000-0000-0000-0000-000000000005';}if(r.action==='snapshot')result={auth:state.auth,active:state.active?Object.fromEntries(Object.entries(state.active).reverse()):null,transaction:state.transaction};if(r.action==='policy')result={config:{cli_auth_credentials_store:'file'},managed:false,requirements:null};if(r.action==='metadata')state[r.name]=r.value;if(r.action==='stage')state.staged=r.auth;if(r.action==='replace'){if(state.auth!==r.expected){console.log(JSON.stringify({ok:false,code:'EXTERNAL_REFRESH_CONFLICT'}));return;}state.auth=state.staged;}if(r.action==='prepare' && state.refresh){state.auth=state.refresh;state.refresh=null;}writeFileSync(path,JSON.stringify(state));console.log(JSON.stringify({ok:true,result}));if(r.action==='release')process.exit(0);});`;
   const transport = () =>
     spawn(process.execPath, ['--input-type=module', '-e', script, state], {
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -102,8 +102,24 @@ test('Docker activation preserves refreshed outgoing credentials across A to B t
     lease = await activateDockerIdentity({
       ...options,
       profileId: f.profiles[0].id,
+      resumeSelection: '00000000-0000-0000-0000-000000000005',
     });
     await lease.prepareLaunch('tracked');
+    await lease.revalidateBeforeLaunch();
+    const remote = JSON.parse(await readFile(state, 'utf8'));
+    await writeFile(state, JSON.stringify({ ...remote, resumeChanged: true }));
+    await assert.rejects(
+      lease.revalidateBeforeLaunch(),
+      /RESUME_METADATA_CONFLICT/,
+    );
+    await writeFile(state, JSON.stringify({ ...remote, resumeStale: true }));
+    await assert.rejects(
+      lease.revalidateBeforeLaunch(),
+      /RESUME_PREPARATION_STALE/,
+    );
+    // A real child changes native history. Post-exit refresh and release must
+    // still succeed while the old prelaunch resume proof is necessarily stale.
+
     await lease.syncAfterExit();
     await lease.release();
     lease = undefined;
@@ -164,7 +180,7 @@ test('remote resume refuses unscoped selections before a target lookup', async (
       [
         '--input-type=module',
         '-e',
-        `import readline from 'node:readline';console.log(JSON.stringify({ok:true,manager:{pid:41,creation:'synthetic:12:10000',uid:10000}}));readline.createInterface({input:process.stdin}).on('line',line=>{const r=JSON.parse(line);console.log(JSON.stringify({ok:true,result:r.action==='resume'?'${uuid}':null}));if(r.action==='release')process.exit(0);});`,
+        `import readline from 'node:readline';console.log(JSON.stringify({ok:true,manager:{pid:41,creation:'synthetic:12:10000',uid:10000}}));readline.createInterface({input:process.stdin}).on('line',line=>{const r=JSON.parse(line);console.log(JSON.stringify({ok:true,result:['resume','resume-prepare'].includes(r.action)?'${uuid}':null}));if(r.action==='release')process.exit(0);});`,
       ],
       { stdio: ['pipe', 'pipe', 'pipe'] },
     );
@@ -174,7 +190,20 @@ test('remote resume refuses unscoped selections before a target lookup', async (
       session.resume('../another-project'),
       /RESUME_ID_INVALID/,
     );
+    await assert.rejects(
+      session.prepareResume('../another-project', []),
+      /RESUME_ID_INVALID/,
+    );
+    assert.equal(
+      await session.prepareResume(uuid, ['-c', 'sqlite_home=/private/index']),
+      uuid,
+    );
+    assert.equal(await session.prepareResume('last', []), uuid);
     assert.equal(await session.resume(uuid), uuid);
+    await assert.rejects(
+      session.resume('00000000-0000-0000-0000-000000000006'),
+      /RESUME_METADATA_CONFLICT/,
+    );
     await session.release();
   } finally {
     session.disconnect();

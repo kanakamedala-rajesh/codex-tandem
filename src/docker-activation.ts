@@ -32,7 +32,7 @@ export type DockerActivationOptions = {
   project: string;
   /** Original target spawn cwd followed by raw -C resolutions, each within its explicit mapped root. Omission pins the effective project as the cwd. */
   invocationPaths?: { path: string; root: string }[];
-  /** Optional bounded project-scoped resume selection, resolved before any credential replacement. */
+  /** Optional prepared project-scoped resume selection, checked before credential replacement and again immediately before launch. */
   resumeSelection?: string;
   policyArguments?: string[];
   transport?: DockerControlTransport;
@@ -51,7 +51,7 @@ export type DockerActivationLease = {
   ) => Promise<{ id: string; mode: 'tracked' | 'untracked' }>;
   /** Save only current matching target refreshes after verified remote process absence. Target bytes remain recoverable on error. */
   syncAfterExit: () => Promise<void>;
-  /** Recheck target ownership and selected active binding immediately before spawn. */
+  /** Recheck target ownership, active binding and the same prepared resume UUID immediately before spawn. Post-exit refresh validation does not reuse prelaunch history witnesses. */
   revalidateBeforeLaunch: () => Promise<void>;
   /** Release remote and saved-binding ownership only after fresh remote idle proof. */
   release: () => Promise<void>;
@@ -323,7 +323,15 @@ export async function activateDockerIdentity(
         }
         return { id, mode };
       },
-      revalidateBeforeLaunch: revalidate,
+      revalidateBeforeLaunch: async () => {
+        await revalidate();
+        if (
+          resolvedResume &&
+          (await activeRuntime.resume(options.resumeSelection!)) !==
+            resolvedResume
+        )
+          throw new Error('RESUME_METADATA_CONFLICT');
+      },
       syncAfterExit: async () => {
         await revalidate();
         const current = (await activeRuntime.snapshot()).auth!;

@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { readFile, rm, lstat, open } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, isAbsolute } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import {
   privateDirectory,
@@ -17,6 +17,12 @@ export type StagedLoginOptions = {
   cwd: string;
   approveFileMode?: boolean;
 };
+/** Safe effective storage inputs used to bind prepared resume metadata to the same native Codex invocation. Configuration contents and arbitrary override values are excluded. */
+export type ResumePolicy = {
+  sqliteHome: string;
+  features: Record<string, boolean>;
+  files: string[];
+};
 type Policy = {
   mode: string;
   forcedMethod: unknown;
@@ -24,7 +30,74 @@ type Policy = {
   provider: unknown;
   providers: unknown;
   baseUrl: unknown;
+  resume?: ResumePolicy;
 };
+function resumePolicy(
+  config: Record<string, unknown>,
+  layers: unknown[],
+  home: string,
+  cwd: string,
+): ResumePolicy {
+  const configured = config.sqlite_home;
+  if (
+    configured !== undefined &&
+    configured !== null &&
+    (typeof configured !== 'string' || !isAbsolute(configured))
+  )
+    throw new Error('RESUME_CONFIG_UNSUPPORTED');
+  const sqliteHome = resolve(
+    cwd,
+    String(configured ?? (process.env.CODEX_SQLITE_HOME?.trim() || home)),
+  );
+  const features: Record<string, boolean> = {};
+  const rawFeatures = config.features ?? {};
+  if (
+    !rawFeatures ||
+    typeof rawFeatures !== 'object' ||
+    Array.isArray(rawFeatures)
+  )
+    throw new Error('RESUME_CONFIG_UNSUPPORTED');
+  const entries = Object.entries(rawFeatures);
+  if (entries.length > 256) throw new Error('RESUME_CONFIG_UNSUPPORTED');
+  for (const [name, value] of entries.sort(([a], [b]) => a.localeCompare(b))) {
+    if (!/^[a-z][a-z0-9_]{0,63}$/.test(name) || typeof value !== 'boolean')
+      throw new Error('RESUME_CONFIG_UNSUPPORTED');
+    features[name] = value;
+  }
+  const files = new Set<string>([join(home, 'config.toml')]);
+  for (const layer of layers) {
+    const source = (
+      layer as {
+        name?: { type?: unknown; file?: unknown; dotCodexFolder?: unknown };
+      }
+    )?.name;
+    if (!source || typeof source.type !== 'string')
+      throw new Error('RESUME_CONFIG_UNSUPPORTED');
+    if (source.type === 'sessionFlags') continue;
+    const file =
+      source.type === 'project'
+        ? typeof source.dotCodexFolder === 'string'
+          ? join(source.dotCodexFolder, 'config.toml')
+          : undefined
+        : [
+              'system',
+              'user',
+              'packagedDefaults',
+              'legacyManagedConfigTomlFromFile',
+            ].includes(source.type)
+          ? source.file
+          : undefined;
+    if (
+      typeof file !== 'string' ||
+      !isAbsolute(file) ||
+      /[\p{Cc}\p{Cf}]/u.test(file)
+    )
+      throw new Error('RESUME_CONFIG_UNSUPPORTED');
+    files.add(file);
+  }
+  if (files.size > 128) throw new Error('RESUME_CONFIG_UNSUPPORTED');
+  return { sqliteHome, features, files: [...files].sort() };
+}
 function projectedPolicy(value: unknown): Policy {
   const v = value as {
     config?: Record<string, unknown>;
@@ -106,6 +179,7 @@ async function inspect(
   home: string,
   cwd: string,
   policyArguments: string[] = [],
+  includeResume = false,
 ): Promise<Policy> {
   return new Promise((resolve, reject) => {
     const child = spawn(
@@ -124,6 +198,7 @@ async function inspect(
     let settled = false;
     let result: Policy | undefined;
     let config: Record<string, unknown> | undefined;
+    let configurationLayers: unknown[] = [];
     const stop = (error?: string) => {
       if (settled) return;
       settled = true;
@@ -174,6 +249,7 @@ async function inspect(
               )
             )
               return kill('POLICY_UNVERIFIABLE');
+            configurationLayers = layers;
             send({ id: 2, method: 'configRequirements/read', params: null });
           }
           if (message.id === 2) {
@@ -189,6 +265,13 @@ async function inspect(
                 managed: false,
                 requirements: message.result.requirements,
               });
+              if (includeResume)
+                result.resume = resumePolicy(
+                  config,
+                  configurationLayers,
+                  home,
+                  cwd,
+                );
             } catch (error) {
               return kill(
                 error instanceof Error ? error.message : 'POLICY_UNVERIFIABLE',
@@ -256,6 +339,8 @@ export async function verifyActivationPolicy(
   options: StagedLoginOptions & {
     /** Qualified config/feature flag-value pairs for this activation's policy probe. Prompts, subcommands and named profiles are not supported. */
     policyArguments?: string[];
+    /** Validate prepared resume against this same effective policy before activation can change credentials. Throws to cancel; the callback receives allowlisted storage metadata only. */
+    validateResume?: (policy: ResumePolicy) => void | Promise<void>;
   },
   account: string,
 ): Promise<void> {
@@ -274,8 +359,24 @@ export async function verifyActivationPolicy(
     options.codexHome,
     options.cwd,
     options.policyArguments,
+    options.validateResume !== undefined,
   );
   activationPolicy(policy, account);
+  if (options.validateResume) await options.validateResume(policy.resume!);
+}
+/** Inspect native resume storage during explicit preparation, without activating an identity or submitting a turn. Native Codex performs its ordinary operational database initialization; callers copy source databases only after this probe exits. */
+export async function inspectResumePolicy(
+  options: StagedLoginOptions & { policyArguments?: string[] },
+): Promise<ResumePolicy> {
+  const policy = await inspect(
+    options.command,
+    options.codexHome,
+    options.cwd,
+    options.policyArguments,
+    true,
+  );
+  if (policy.mode !== 'file') throw new Error('FILE_STORAGE_REQUIRED');
+  return policy.resume!;
 }
 /**
  * Run explicitly requested Codex login in a restricted staging home and return

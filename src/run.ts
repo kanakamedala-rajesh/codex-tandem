@@ -260,11 +260,13 @@ async function runFixture(args: string[]): Promise<number> {
   });
 }
 
-/** Launch existing local Codex with a guarded saved identity, or resume a project-scoped UUID when operation is `resume`. Root flags follow resolveStateHome before state access. Options precede `--`; trailing child arguments and streams remain unchanged, including resume prompt tokens. Physical spawn cwd and raw directory inputs are checked again immediately before spawn; this is not an atomic OS guarantee. Signal observers remain installed through post-exit synchronization and failure cleanup, then are removed. Linux registration failure may await the exact child's close only after observed exit or native terminal proof; live or uncertain ownership stays blocked. Observed child exit status survives post-exit health errors, reported on stderr; pre-execution failures return 2 and selection cancellation returns 130. Named Codex profiles are refused until their effective policy can be proved. Fixture mode retains the harmless G0 adapter. */
+/** Launch existing local Codex with a guarded saved identity, or resume an explicitly prepared project-scoped UUID when operation is `resume`. Standalone `resume prepare` prepares metadata without selecting or activating an identity; native index or source changes require preparing again. Root flags follow resolveStateHome before state access. Options precede `--`; trailing child arguments and streams remain unchanged, including resume prompt tokens. Physical spawn cwd and raw directory inputs are checked again immediately before spawn; this is not an atomic OS guarantee. Signal observers remain installed through post-exit synchronization and failure cleanup, then are removed. Linux registration failure may await the exact child's close only after observed exit or native terminal proof; live or uncertain ownership stays blocked. Observed child exit status survives post-exit health errors, reported on stderr; pre-execution failures return 2 and selection cancellation returns 130. Named Codex profiles are refused until their effective policy can be proved. Fixture mode retains the harmless G0 adapter. */
 export async function run(
   args: string[],
   operation: 'run' | 'resume' = 'run',
 ): Promise<number> {
+  const preparingResume = operation === 'resume' && args[0] === 'prepare';
+  if (preparingResume) args = args.slice(1);
   const boundary = args.indexOf('--');
   const options = boundary < 0 ? args : args.slice(0, boundary);
   if (options.includes('--g0-fixture')) return runFixture(args);
@@ -287,7 +289,7 @@ export async function run(
       'TARGET_REQUIRED',
       'Specify --target local or a registered Docker target ID.',
     );
-  if (!options.includes('--identity') && !usableTerminal)
+  if (!preparingResume && !options.includes('--identity') && !usableTerminal)
     return error(
       'IDENTITY_REQUIRED',
       'Without a usable terminal, specify --identity STABLE_ID.',
@@ -353,8 +355,9 @@ export async function run(
       home: values.get('--home'),
       stateHome: values.get('--state-home'),
     });
+    if (preparingResume && untracked) throw new Error('INVALID_ARGUMENTS');
     let profileId = values.get('--identity');
-    if (!profileId) {
+    if (!profileId && !preparingResume) {
       const root = await claimPrivateState(resolve(stateHome), 'installation');
       const profiles = (await readProfileManifest(root)).profiles.filter(
         (p) => p.status === 'available',
@@ -371,10 +374,27 @@ export async function run(
       )
         throw new Error('TARGET_OVERRIDE_CONFLICT');
       if (invocation.last) throw new Error('RESUME_SCOPE_UNPROVEN');
+      if (preparingResume) {
+        const { prepareDockerResume } = await import('./docker-run.js');
+        const result = await prepareDockerResume({
+          stateHome,
+          targetId: values.get('--target')!,
+          hostProject: values.get('--project') ?? process.cwd(),
+          directories: invocation.directories,
+          policyArguments: invocation.configArguments,
+          selection: resumeSelection!,
+        });
+        process.stdout.write(
+          json
+            ? JSON.stringify({ schemaVersion: 1, ok: true, ...result }) + '\n'
+            : `Prepared resume ${result.id}. Run the same resume selection to launch; changed native state requires preparation again.\n`,
+        );
+        return 0;
+      }
       const { runDockerTarget } = await import('./docker-run.js');
       return await runDockerTarget({
         stateHome,
-        profileId,
+        profileId: profileId!,
         targetId: values.get('--target')!,
         hostProject: values.get('--project') ?? process.cwd(),
         args: childArgs,
@@ -427,22 +447,44 @@ export async function run(
         ? { prefix: [resolve(values.get('--codex-script')!)] }
         : {}),
     };
+    if (preparingResume) {
+      const { prepareLocalResume } = await import('./resume.js');
+      const result = await prepareLocalResume(
+        {
+          stateHome,
+          codexHome: discovery.paths.codexHome,
+          projectPath: project,
+          command,
+          policyArguments: invocation.configArguments,
+        },
+        resumeSelection!,
+      );
+      process.stdout.write(
+        json
+          ? JSON.stringify({ schemaVersion: 1, ok: true, ...result }) + '\n'
+          : `Prepared resume ${result.id}. Run the same resume selection to launch; changed native state requires preparation again.\n`,
+      );
+      return 0;
+    }
+    let resumeProof: import('./resume.js').ResumeSelection | undefined;
     if (resumeSelection || rawResume) {
       const { resolveLocalResume } = await import('./resume.js');
-      const id = await resolveLocalResume(
+      resumeProof = await resolveLocalResume(
         discovery.paths.codexHome,
         project,
         resumeSelection ?? rawResume!,
+        { stateHome, command },
       );
-      if (resumeSelection) childArgs = ['resume', id, ...childArgs];
+      if (resumeSelection) childArgs = ['resume', resumeProof.id, ...childArgs];
     }
     lease = await activateIdentity({
       stateHome,
       codexHome: discovery.paths.codexHome,
-      profileId,
+      profileId: profileId!,
       command,
       projectPath: project,
       policyArguments: invocation.configArguments,
+      validateResume: resumeProof?.revalidate,
     });
     const launch = await lease.prepareLaunch(
       untracked ? 'untracked' : 'tracked',
@@ -466,6 +508,7 @@ export async function run(
         throw new Error('LAUNCH_PATH_CHANGED');
       }
     }
+    await resumeProof?.revalidate();
     const child = spawn(
       command.executable,
       [...(command.prefix ?? []), ...childArgs],
@@ -542,9 +585,13 @@ export async function run(
         : 'LOCAL_LAUNCH_FAILED';
     error(
       code,
-      childStarted
-        ? 'Managed launch needs diagnosis; target credentials are preserved.'
-        : 'Local launch was refused; check identity, target paths, policy and scoped processes.',
+      /^RESUME_PREPARATION_(?:REQUIRED|STALE)$/.test(code)
+        ? 'Run codex-tandem resume prepare with the same UUID or --last, target, project and native command, then retry resume.'
+        : /^RESUME_INDEX_/.test(code)
+          ? 'Resume preparation requires the supported Codex 0.163.0 native index with completed backfill. Initialize the existing Codex metadata normally, then run codex-tandem resume prepare with the intended UUID or --last.'
+          : childStarted
+            ? 'Managed launch needs diagnosis; target credentials are preserved.'
+            : 'Local launch was refused; check identity, target paths, policy and scoped processes.',
     );
     if (lease && (!childStarted || childStatus !== undefined)) {
       try {

@@ -52,7 +52,9 @@ compression stay off the launch command's import path.
 ```sh
 codex-tandem run --target local --identity PROFILE_ID --codex-executable /existing/codex -- CODEX_ARGUMENTS
 codex-tandem --target local --codex-executable /existing/codex
+codex-tandem resume prepare SESSION_UUID --target local --codex-executable /existing/codex
 codex-tandem resume SESSION_UUID --target local --identity PROFILE_ID --codex-executable /existing/codex -- PROMPT
+codex-tandem resume prepare --last --target local --codex-executable /existing/codex
 codex-tandem resume --last --target local --identity PROFILE_ID --codex-executable /existing/codex
 ```
 
@@ -79,14 +81,31 @@ Remote execution, a newly managed worktree, alternate local providers and ignore
 user configuration are refused with `CODEX_SCOPE_UNPROVEN` because this local
 adapter cannot prove their effective project or policy. Docker launching is separate.
 
-Resume accepts UUIDs from this home's native `sessions`/`archived_sessions` rollouts.
-It reads only the first `session_meta` line and checks its physical project path.
-`--last` before the passthrough boundary selects the newest matching metadata
-timestamp and passes that explicit UUID to Codex. Lookup is bounded to 10,000
-directory entries, three dated directory levels, 64 KiB per metadata line and
-16 MiB total reads; exceeding a limit fails explicitly. Links, incomplete or
-unknown metadata, conflicting copies, tied newest timestamps and unavailable
-project paths are refused. Session names and compressed sources are unsupported.
+Local resume uses explicit preparation against the supported Codex 0.163.0 native
+index. Run `resume prepare SESSION_UUID` or `resume prepare --last` with the same
+target, project and existing executable before launching. Preparation does not
+select or activate an identity, submit a turn, or launch a session. It checks
+native metadata using a restricted temporary database copy; SQLite and bounded
+rollout-header reads happen only in this standalone command. Tandem opens source
+databases read-only as files and opens only its temporary copy with SQLite; native
+Codex may perform its ordinary operational database initialization during the
+policy probe.
+
+Normal resume reads one bounded private metadata record and checks file identities;
+it does not walk history, parse rollouts, open SQLite or start a metadata RPC.
+`--last` selects the unique newest native indexed creation timestamp in the
+canonical project, including indexed archives. Prepared physical project membership
+is retained: retargeting a recorded cwd alias invalidates the selection. Missing,
+changed or unavailable metadata fails closed with preparation guidance. Normal
+Codex use changes its index or rollout, so prepare again before a later resume.
+Safe SHM cache changes and absent or exactly empty WAL files do not invalidate a
+preparation; persistent database, journal or nonempty WAL changes still do.
+The same effective storage and feature configuration must hold during the ordinary
+policy check; unrelated model overrides and trailing arguments remain supported.
+Unindexed sources and unsupported native index versions need explicit capability
+resolution; resume does not fall back to a history scan. Native version output
+alone does not qualify resume support.
+
 Raw `resume UUID` or `exec resume UUID` is also scoped while its argv stays intact.
 Raw `--last` cannot prove the same upstream selection order and fails with
 `RESUME_SCOPE_UNPROVEN`; use Tandem `resume --last` instead.
@@ -149,6 +168,7 @@ codex-tandem targets check --id legacy-build --json
 codex-tandem targets edit --config target.json --confirm-id legacy-build --json
 codex-tandem targets remove --id legacy-build --confirm-id legacy-build --json
 codex-tandem run --target legacy-build --identity PROFILE_ID --project /host/project -- CODEX_ARGUMENTS
+codex-tandem resume prepare --last --target legacy-build --project /host/project
 codex-tandem resume --last --target legacy-build --identity PROFILE_ID --project /host/project
 codex-tandem processes --target legacy-build --project /host/project --json
 codex-tandem processes stop --target legacy-build --project /host/project
@@ -172,8 +192,20 @@ Outgoing refreshes are saved before replacement; incomplete journals reconcile c
 validated bytes and retain ambiguous alternatives. File-backed effective policy is
 checked through the existing target Codex; unsupported managed/provider/storage policy
 blocks before activation. Raw directory arguments retain their argv and original spawn
-cwd; every resolution is pinned within its registered root. Target resume follows the
-same bounded metadata rules as local resume and returns an explicit project-scoped UUID.
+cwd; every resolution is pinned within its registered root.
+
+Docker resume also requires standalone `resume prepare UUID|--last`. Preparation
+uses the existing target Codex's metadata-only RPC and bounded indexed headers;
+normal resume reads one private prepared proof and fixed file identities, with no
+history walk or metadata RPC. It requires the supported Codex 0.163.0 native index
+with completed backfill and exact native nanosecond file witnesses. Legacy 0.159,
+unknown capabilities and missing timestamp precision fail explicitly; Tandem does
+not upgrade the container. An environment wrapper requires an explicit absolute
+`sqlite_home` in effective Codex configuration because its child-only environment
+cannot be inferred safely. A prepared UUID retains its project path/device/inode;
+changed index/source/configuration requires preparation again. The guarded policy
+check precedes credentials, and the target supervisor rechecks the proof before
+execution. Actual legacy-container qualification remains outstanding.
 
 A remote supervisor retains verified descendants, including adopted children after
 client loss. An unreachable Docker client does not prove those processes exited;

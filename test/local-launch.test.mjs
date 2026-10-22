@@ -22,6 +22,8 @@ import {
   syntheticAuth,
 } from './fixtures/activation.mjs';
 
+import { resumeIndexFixture } from './fixtures/resume.mjs';
+
 const cli = fileURLToPath(modulePath('cli.js'));
 const invoke = (args) =>
   spawnSync(process.execPath, [cli, ...args], {
@@ -30,81 +32,80 @@ const invoke = (args) =>
     timeout: 5000,
   });
 
-test('resume resolves explicit UUID and opt-in last only within the canonical project and home', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'ct13-resume-'));
+test('prepared resume resolves only the canonical project and native home', async () => {
+  const f = await activationFixture();
   try {
-    const home = join(root, 'home'),
-      project = join(root, 'project'),
-      other = join(root, 'other');
-    await Promise.all([
-      mkdir(join(home, 'sessions', '2026', '10', '04'), { recursive: true }),
-      mkdir(project),
-      mkdir(other),
-    ]);
+    const other = join(f.root, 'other');
+    await mkdir(other);
     const ids = [
       '00000000-0000-4000-8000-000000000001',
       '00000000-0000-4000-8000-000000000002',
     ];
-    for (let i = 0; i < 2; i++)
-      await writeFile(
-        join(
-          home,
-          'sessions',
-          '2026',
-          '10',
-          '04',
-          `rollout-2026-10-04T00-00-0${i}-${ids[i]}.jsonl`,
-        ),
-        JSON.stringify({
-          type: 'session_meta',
-          payload: {
-            id: ids[i],
-            cwd: i === 0 ? project : other,
-            timestamp: `2026-10-04T00:00:0${i}.000Z`,
-          },
-        }) +
-          '\n' +
-          'SYNTHETIC-NON-METADATA-CONTENT\n',
-      );
-    const { resolveLocalResume } = await import(modulePath('resume.js'));
-    assert.equal(await resolveLocalResume(home, project, ids[0]), ids[0]);
-    assert.equal(await resolveLocalResume(home, project, 'last'), ids[0]);
-    await assert.rejects(
-      resolveLocalResume(home, project, ids[1]),
-      /RESUME_PROJECT_MISMATCH/,
-    );
-    const wrongProject = invoke([
-      'resume',
-      ids[1],
-      '--identity',
-      'saved-id',
-      '--target',
-      'local',
-      '--codex-home',
-      home,
-      '--codex-executable',
-      process.execPath,
-      '--project',
-      project,
-      '--json',
+    const prepare = await resumeIndexFixture(f, [
+      { id: ids[0] },
+      { id: ids[1], cwd: other },
     ]);
-    assert.equal(wrongProject.status, 2);
-    assert.equal(
-      JSON.parse(wrongProject.stderr).code,
-      'RESUME_PROJECT_MISMATCH',
-    );
-    assert.equal(wrongProject.stdout, '');
+    const { resolveLocalResume } = await import(modulePath('resume.js'));
+    const options = { stateHome: f.state, command: f.options.command };
     await assert.rejects(
-      resolveLocalResume(home, project, '00000000-0000-4000-8000-000000000003'),
-      /RESUME_UNAVAILABLE/,
+      resolveLocalResume(f.home, f.root, ids[0], options),
+      /RESUME_PREPARATION_REQUIRED/,
+    );
+    await prepare('last');
+    assert.equal(
+      (await resolveLocalResume(f.home, f.root, ids[0], options)).id,
+      ids[0],
+    );
+    assert.equal(
+      (await resolveLocalResume(f.home, f.root, 'last', options)).id,
+      ids[0],
+    );
+    await assert.rejects(prepare(ids[1]), /RESUME_PROJECT_MISMATCH/);
+    await prepare(ids[1], other);
+    await assert.rejects(
+      resolveLocalResume(f.home, f.root, ids[1], options),
+      /RESUME_PROJECT_MISMATCH/,
     );
     await rm(other, { recursive: true });
     await assert.rejects(
-      resolveLocalResume(home, project, ids[1]),
+      resolveLocalResume(f.home, other, ids[1], options),
       /RESUME_PROJECT_UNAVAILABLE/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test('Docker preparation dispatches without identity selection and rejects launch-only overrides first', async () => {
+  const f = await activationFixture();
+  try {
+    const base = [
+      'resume',
+      'prepare',
+      '00000000-0000-4000-8000-000000000015',
+      '--target',
+      'unregistered',
+      '--state-home',
+      f.state,
+      '--project',
+      f.root,
+      '--json',
+    ];
+    for (const [extra, expected] of [
+      [[], 'TARGET_UNKNOWN'],
+      [['--codex-executable', process.execPath], 'TARGET_OVERRIDE_CONFLICT'],
+      [['--untracked'], 'INVALID_ARGUMENTS'],
+    ]) {
+      const result = invoke([...base, ...extra]);
+      assert.equal(result.status, 2);
+      assert.equal(JSON.parse(result.stderr).code, expected);
+      assert.equal(result.stdout, '');
+    }
+    await assert.rejects(readFile(join(f.home, 'auth.json')), {
+      code: 'ENOENT',
+    });
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
   }
 });
 
@@ -585,7 +586,9 @@ test('the CLI launches explicit and last resume with a scoped UUID and unchanged
       script,
       `if(process.argv.includes('app-server')){${policy}}else{console.log(JSON.stringify(process.argv.slice(2)));}`,
     );
+    const prepare = await resumeIndexFixture(f, [{ id }]);
     for (const selection of [[id], ['--last']]) {
+      await prepare(selection[0] === '--last' ? 'last' : id);
       const untracked = selection[0] === '--last';
       const trailing = [
         '--config',
@@ -981,6 +984,8 @@ test('valid resume prompt tokens preserve exact argv in both resume grammars', a
       script,
       `if(process.argv.includes('app-server')){${policy}}else{console.log(JSON.stringify(process.argv.slice(2)));}`,
     );
+    const prepare = await resumeIndexFixture(f, [{ id }]);
+    await prepare(id);
     for (const [operation, selection, trailing, expected] of [
       ['resume', [id], ['resume'], ['resume', id, 'resume']],
       [
@@ -1219,7 +1224,11 @@ test('resume filesystem boundary errors are redacted for missing and inaccessibl
       await mkdir(join(home, 'sessions'));
       await chmod(join(home, 'sessions'), 0o000);
       try {
-        inaccessible(join(home, 'sessions'), 'RESUME_SOURCE_UNAVAILABLE', true);
+        inaccessible(
+          join(home, 'sessions'),
+          'RESUME_PREPARATION_REQUIRED',
+          true,
+        );
       } finally {
         await chmod(join(home, 'sessions'), 0o700);
       }
