@@ -580,6 +580,27 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
     prepared, selected, budget, seen, archived, cursor, request_id, rows_seen = None, {}, [0], set(), False, None, 3, 0
     def list_page():
         send({'id': request_id, 'method': 'thread/list', 'params': {'limit': 8, 'cursor': cursor, 'sortKey': 'created_at', 'sortDirection': 'desc', 'modelProviders': [], 'sourceKinds': ['cli', 'vscode', 'exec', 'appServer', 'subAgent', 'subAgentReview', 'subAgentCompact', 'subAgentThreadSpawn', 'subAgentOther', 'unknown'], 'archived': archived, 'useStateDbOnly': True}})
+    limit = 16777216 if preparing else 1048576
+    def wait_for_exit(seconds):
+        nonlocal size
+        until = time.monotonic() + seconds
+        streams = [child.stdout, child.stderr]
+        while True:
+            exited = child.poll() is not None
+            remaining = until - time.monotonic()
+            if not exited and remaining <= 0:
+                return False
+            readers, _, _ = select.select(streams, [], [], 0 if exited else min(0.02, remaining))
+            if exited and not readers:
+                return True
+            for reader in readers:
+                chunk = os.read(reader.fileno(), 65536)
+                if chunk:
+                    size += len(chunk)
+                else:
+                    streams.remove(reader)
+            if exited and size > limit:
+                return True
     deadline = time.monotonic() + (60 if preparing else 15)
     try:
         send({'id': 0, 'method': 'initialize', 'params': {'clientInfo': {'name': 'codex-tandem', 'version': '0.1.0'}, 'capabilities': {'experimentalApi': True}}})
@@ -590,7 +611,7 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
             for reader in readers:
                 chunk = os.read(reader.fileno(), 65536)
                 size += len(chunk)
-                if not chunk or size > (16777216 if preparing else 1048576):
+                if not chunk or size > limit:
                     fail('REMOTE_POLICY_INSPECTION_FAILED')
                 if reader is child.stderr:
                     continue
@@ -681,20 +702,22 @@ def policy(project, executable, arguments, wrapper, resume_selection=None, inclu
                 fail('REMOTE_POLICY_PROCESS_CHANGED')
             child.terminate()
         child.stdin.close()
-        until = time.monotonic() + 1.5
-        while child.poll() is None and time.monotonic() < until:
-            time.sleep(0.02)
-        if child.poll() is None:
-            fresh = identity(child.pid)
-            if fresh is None or initial is None or fresh['creation'] != initial['creation']:
-                fail('REMOTE_POLICY_PROCESS_CHANGED')
-            child.terminate()
-            try:
-                child.wait(timeout=1.5)
-            except subprocess.TimeoutExpired:
-                fail('REMOTE_POLICY_PROCESS_RETAINED')
-        child.stdout.close()
-        child.stderr.close()
+        try:
+            # Drain both pipes while awaiting exit: shutdown output can otherwise
+            # fill a pipe and prevent an owned helper from finishing. Discard it,
+            # but retain the cumulative output limit and original stop deadlines.
+            if not wait_for_exit(1.5):
+                fresh = identity(child.pid)
+                if fresh is None or initial is None or fresh['creation'] != initial['creation']:
+                    fail('REMOTE_POLICY_PROCESS_CHANGED')
+                child.terminate()
+                if not wait_for_exit(1.5):
+                    fail('REMOTE_POLICY_PROCESS_RETAINED')
+        finally:
+            child.stdout.close()
+            child.stderr.close()
+    if size > limit:
+        fail('REMOTE_POLICY_INSPECTION_FAILED')
     if preparing:
         if child.returncode not in [0, -signal.SIGTERM]:
             fail('RESUME_METADATA_PROCESS_FAILED')

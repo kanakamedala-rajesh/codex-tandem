@@ -1,6 +1,7 @@
 """Exercise remote ownership using real private files and bounded process metadata."""
 import ast
 import base64
+import contextlib
 import io
 import json
 import os
@@ -254,9 +255,9 @@ class PreparedResumeTests(unittest.TestCase):
         for name in ['auth.json', '.tandem-docker.lock', '.tandem-docker-owner.lock']:
             self.assertFalse((self.home / name).exists())
 
-    def write_rpc(self, version='0.163.0', mutate=False, row_cwd=None, rows=None, mutate_cache=False):
+    def write_rpc(self, version='0.163.0', mutate=False, row_cwd=None, rows=None, mutate_cache=False, shutdown_output=False, retained=False):
         row = {'id': LAUNCH, 'cwd': row_cwd or str(self.project), 'path': str(self.source), 'preview': 'SYNTHETIC-PREVIEW-MUST-NOT-ESCAPE', 'turns': ['SYNTHETIC-CONTENT']}
-        program = '''import json,signal,sys,os
+        program = '''import json,signal,sys,os,time
 HOME=%r
 ROWS=%r
 if %r:
@@ -271,6 +272,13 @@ if %r:
    except FileNotFoundError:pass
   sys.exit(0)
  signal.signal(signal.SIGTERM,cleared)
+if %r:signal.signal(signal.SIGTERM,signal.SIG_IGN)
+if %r:
+ def finished(signum,frame):
+  signal.signal(signal.SIGTERM,signal.SIG_IGN)
+  for fd in [1,2]:os.write(fd,b'SYNTHETIC-SHUTDOWN-NOT-METADATA'*%d)
+  sys.exit(0)
+ signal.signal(signal.SIGTERM,finished)
 for line in sys.stdin:
  r=json.loads(line);method=r.get('method')
  if 'id' not in r:continue
@@ -282,12 +290,74 @@ for line in sys.stdin:
   if r['params'].get('useStateDbOnly') is not True:sys.exit(17)
   result={'data':[] if r['params']['archived'] else ROWS,'nextCursor':None}
  print(json.dumps({'id':r['id'],'result':result}),flush=True)
-''' % (str(self.home), rows if rows is not None else [row], mutate, mutate_cache, version)
+if %r:finished(None,None)
+if %r:time.sleep(30)
+''' % (str(self.home), rows if rows is not None else [row], mutate, mutate_cache, retained, shutdown_output, 8192 if shutdown_output is True else shutdown_output, version, shutdown_output, retained)
         self.executable.write_text('#!' + sys.executable + '\n' + program)
         self.executable.chmod(0o700)
 
     def prepare(self, selection=LAUNCH):
         return self.code.policy(str(self.project), str(self.executable), [], None, resume_selection=selection, home=str(self.home))
+
+    @contextlib.contextmanager
+    def policy_children(self):
+        children = []
+        original = self.code.subprocess
+        def launch(*args, **kwargs):
+            child = subprocess.Popen(*args, **kwargs)
+            children.append(child)
+            return child
+        self.code.subprocess = types.SimpleNamespace(Popen=launch, PIPE=subprocess.PIPE, TimeoutExpired=subprocess.TimeoutExpired)
+        try:
+            yield children
+        finally:
+            self.code.subprocess = original
+            # These are only the harmless children created by this test.
+            for child in children:
+                if child.poll() is None:
+                    child.kill()
+                child.wait(timeout=5)
+                for stream in [child.stdin, child.stdout, child.stderr]:
+                    stream.close()
+
+    def test_policy_drains_both_shutdown_pipes_after_eof_and_owned_sigterm(self):
+        for include_resume in [False, True]:
+            with self.subTest(include_resume=include_resume):
+                self.write_rpc(shutdown_output=True)
+                with self.policy_children() as children:
+                    result = self.code.policy(str(self.project), str(self.executable), [], None, include_resume=include_resume, home=str(self.home))
+                    self.assertEqual(result['config']['cli_auth_credentials_store'], 'file')
+                    self.assertNotIn('SYNTHETIC-SHUTDOWN', json.dumps(result))
+                    self.assertEqual(children[0].poll(), 0)
+                    self.assertTrue(children[0].stdout.closed)
+                    self.assertTrue(children[0].stderr.closed)
+
+    def test_policy_shutdown_output_still_obeys_the_metadata_limit(self):
+        self.write_rpc(shutdown_output=65536)
+        with self.policy_children() as children:
+            with self.assertRaisesRegex(self.code.Refused, 'REMOTE_POLICY_INSPECTION_FAILED'):
+                self.code.policy(str(self.project), str(self.executable), [], None)
+            self.assertEqual(children[0].poll(), 0)
+
+    def test_policy_refuses_a_genuinely_retained_owned_child(self):
+        self.write_rpc(retained=True)
+        with self.policy_children() as children:
+            with self.assertRaisesRegex(self.code.Refused, 'REMOTE_POLICY_PROCESS_RETAINED'):
+                self.code.policy(str(self.project), str(self.executable), [], None, include_resume=True, home=str(self.home))
+            self.assertIsNone(children[0].poll())
+
+    def test_policy_refuses_changed_identity_without_signalling_it(self):
+        original = self.code.identity
+        calls = [0]
+        def changed(pid):
+            value = original(pid)
+            calls[0] += 1
+            return dict(value, creation=value['creation'] + '-changed') if value and calls[0] > 1 else value
+        self.code.identity = changed
+        with self.policy_children() as children:
+            with self.assertRaisesRegex(self.code.Refused, 'REMOTE_POLICY_PROCESS_CHANGED'):
+                self.code.policy(str(self.project), str(self.executable), [], None, include_resume=True, home=str(self.home))
+            self.assertIsNone(children[0].poll())
 
     def test_empty_wal_and_safe_shm_disposal_survive_preparation_and_ordinary_policy(self):
         self.write_rpc(mutate_cache=True)
