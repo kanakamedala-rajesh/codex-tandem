@@ -110,6 +110,62 @@ if ($o.ReturnValue -ne 0 -or !$p.CreationDate -or !$o.Sid) { exit 2 }
   }
 }
 
+/** Prove a Linux PID has terminated before waiting for an owned child's exact Node close event. Absence requires fresh native proof; a zombie must retain `expected` creation evidence and have no other tasks. `expected: null` permits absence only. Live or multi-task processes return false; unavailable, malformed or reused identity throws. This query does not establish ownership or an exit status. */
+export async function processTerminated(
+  pid: number,
+  expected: ProcessIdentity | null,
+): Promise<boolean> {
+  if (process.platform !== 'linux')
+    throw new Error('PROCESS_PLATFORM_UNSUPPORTED');
+  if (expected !== null && expected.pid !== pid)
+    throw new Error('PROCESS_IDENTITY_CHANGED');
+  const before = await processIdentity(pid);
+  if (!before) return true;
+  if (
+    !expected ||
+    before.creation !== expected.creation ||
+    before.environment !== expected.environment
+  )
+    throw new Error('PROCESS_IDENTITY_CHANGED');
+  try {
+    const raw = readFileSync(`/proc/${pid}/stat`, 'utf8');
+    const fields = raw
+      .slice(raw.lastIndexOf(')') + 2)
+      .trim()
+      .split(/\s+/);
+    if (
+      !raw.startsWith(`${pid} (`) ||
+      !/^[A-Za-z]$/.test(fields[0] ?? '') ||
+      !/^\d+$/.test(fields[19] ?? '')
+    )
+      throw new Error('PROCESS_IDENTITY_UNAVAILABLE');
+    if (fields[19] !== before.creation.split(':')[1])
+      throw new Error('PROCESS_IDENTITY_CHANGED');
+    if (fields[0] !== 'Z' && fields[0] !== 'X') return false;
+    // A dead thread-group leader alone does not prove its other threads exited.
+    const tasks = readdirSync(`/proc/${pid}/task`);
+    if (tasks.length !== 1 || tasks[0] !== String(pid)) return false;
+    const after = await processIdentity(pid);
+    if (!after) return true;
+    if (
+      after.creation !== before.creation ||
+      after.environment !== before.environment
+    )
+      throw new Error('PROCESS_IDENTITY_CHANGED');
+    return true;
+  } catch (error) {
+    if (
+      ['ENOENT', 'ESRCH'].includes(
+        (error as NodeJS.ErrnoException).code ?? '',
+      ) &&
+      (await processIdentity(pid)) === null
+    )
+      return true;
+    if ((error as Error).message === 'PROCESS_IDENTITY_CHANGED') throw error;
+    throw new Error('PROCESS_IDENTITY_UNAVAILABLE', { cause: error });
+  }
+}
+
 /** A sanitized process row. Unknown scope remains a conflict; commands and environment contents are never returned. */
 export type ScopedProcess = ProcessIdentity & {
   role: 'foreground' | 'worker' | 'background';

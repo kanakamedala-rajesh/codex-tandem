@@ -8,6 +8,7 @@ import { activateIdentity, type ActivationLease } from './activation.js';
 import { discoverTarget } from './discovery.js';
 import { claimPrivateState, resolveStateHome } from './private-state.js';
 import { readProfileManifest } from './profiles.js';
+import { processIdentity, processTerminated } from './processes.js';
 
 function invocationOptions(args: string[], operation: 'run' | 'resume') {
   const configArguments: string[] = [];
@@ -259,7 +260,7 @@ async function runFixture(args: string[]): Promise<number> {
   });
 }
 
-/** Launch existing local Codex with a guarded saved identity, or resume a project-scoped UUID when operation is `resume`. Root flags follow resolveStateHome before state access. Options precede `--`; trailing child arguments and streams remain unchanged, including resume prompt tokens. Physical spawn cwd and raw directory inputs are checked again immediately before spawn; this is not an atomic OS guarantee. Signal observers remain installed through post-exit synchronization and failure cleanup, then are removed. Observed child exit status survives post-exit health errors, reported on stderr; pre-execution failures return 2 and selection cancellation returns 130. Named Codex profiles are refused until their effective policy can be proved. Fixture mode retains the harmless G0 adapter. */
+/** Launch existing local Codex with a guarded saved identity, or resume a project-scoped UUID when operation is `resume`. Root flags follow resolveStateHome before state access. Options precede `--`; trailing child arguments and streams remain unchanged, including resume prompt tokens. Physical spawn cwd and raw directory inputs are checked again immediately before spawn; this is not an atomic OS guarantee. Signal observers remain installed through post-exit synchronization and failure cleanup, then are removed. Linux registration failure may await the exact child's close only after observed exit or native terminal proof; live or uncertain ownership stays blocked. Observed child exit status survives post-exit health errors, reported on stderr; pre-execution failures return 2 and selection cancellation returns 130. Named Codex profiles are refused until their effective policy can be proved. Fixture mode retains the harmless G0 adapter. */
 export async function run(
   args: string[],
   operation: 'run' | 'resume' = 'run',
@@ -509,16 +510,22 @@ export async function run(
     };
     if (child.pid) {
       childStarted = true;
+      const nativeChild =
+        process.platform === 'linux' ? await processIdentity(child.pid) : null;
       try {
         await lease.registerProcess(child.pid);
       } catch (registrationError) {
-        // Fresh Linux procfs reads can observe a terminated child before Node
-        // delivers close. Two check turns allow an intervening poll/close phase;
-        // only observed status plus fresh validation permits the fallback.
-        if (process.platform === 'linux' && childStatus === undefined)
-          await new Promise<void>((resolve) =>
-            setImmediate(() => setImmediate(resolve)),
-          );
+        // Native termination can precede Node's close notification. Wait on this
+        // exact child lifecycle only after native proof; never infer its status
+        // from procfs or retry registration for a live or ambiguous process.
+        if (
+          process.platform === 'linux' &&
+          childStatus === undefined &&
+          (child.exitCode !== null ||
+            child.signalCode !== null ||
+            (await processTerminated(child.pid, nativeChild)))
+        )
+          childStatus = await exit;
         if (childStatus === undefined) throw registrationError;
         await lease.revalidateBeforeLaunch();
       }

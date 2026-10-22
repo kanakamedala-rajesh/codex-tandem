@@ -307,7 +307,13 @@ native ownership, the active binding and unchanged physical home/project/executa
 and entrypoint paths pinned before policy inspection, after durable preparation and immediately before shell-free spawn. The run owner also pins and freshly rechecks the actual spawn cwd and every raw -C/--cd resolution from that cwd, so an alias retarget or cwd replacement cannot silently select another project.
 It does not establish an atomic OS check-and-spawn guarantee. A child that exits
 before native registration must have an observed exit and independently proved idle
-scope; failed registration alone never proves absence. Survivors retain protection.
+scope; failed registration alone never proves absence. On Linux, a pending close
+notification is awaited only for the exact spawned child after Node has observed
+its exit or fresh native evidence proves absence or a single-task terminal state
+with unchanged creation identity. A zombie leader with surviving tasks is not proof
+of termination. No event-loop turn count or native state supplies an exit code;
+live, inaccessible, malformed or reused native evidence retains protection.
+Survivors retain protection.
 Inherited streams remain unchanged, POSIX signals are forwarded and Windows uses
 the inherited console without implicit forced stopping. Signal observers remain active through post-exit sync, release and failure cleanup, so another interrupt during cleanup does not discard the observed child status or bypass protected-state checks. The run owner removes its listeners after cleanup completes. Observed child exit codes
 survive post-exit sync/release errors, which remain explicit stderr health diagnostics.

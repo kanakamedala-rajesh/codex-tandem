@@ -234,8 +234,8 @@ test(
           "\nif(!process.argv.includes('app-server'))process.exitCode=Number(process.env.TANDEM_TEST_EXIT);\n",
       );
       for (const status of [0, 7]) {
-        const result = await new Promise((resolve) => {
-          const child = execFile(
+        const result = await new Promise((resolve, reject) => {
+          const child = spawn(
             process.execPath,
             [
               '--import=' + loader,
@@ -263,18 +263,53 @@ test(
                 TANDEM_BENCHMARK_STATE: f.state,
                 TANDEM_TEST_EXIT: String(status),
                 TANDEM_TEST_NATIVE_TERMINAL: control,
+                TANDEM_TEST_HOLD_CLOSE: '1',
               },
-              timeout: 5000,
-              encoding: 'utf8',
+              stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
             },
-            (error, stdout, stderr) =>
-              resolve({ code: error?.code ?? 0, stdout, stderr }),
           );
+          let stdout = '',
+            stderr = '',
+            held = false,
+            verified = false,
+            released = false;
+          const release = () => {
+            if (
+              held &&
+              !released &&
+              (verified || stderr.includes('PROCESS_OWNERSHIP_UNPROVEN'))
+            ) {
+              released = true;
+              child.send({ releaseRegistrationClose: true });
+            }
+          };
+          child.on('message', (message) => {
+            held ||= message.registrationCloseHeld === true;
+            verified ||= message.nativeTerminationVerified === true;
+            release();
+          });
+          child.stdout.setEncoding('utf8');
+          child.stderr.setEncoding('utf8');
+          child.stdout.on('data', (chunk) => {
+            stdout += chunk;
+          });
+          child.stderr.on('data', (chunk) => {
+            stderr += chunk;
+            release();
+          });
+          const timer = setTimeout(() => child.kill(), 5000);
+          child.once('error', reject);
+          child.once('close', (code) => {
+            clearTimeout(timer);
+            resolve({ code, stdout, stderr, held, verified });
+          });
           child.stdin.end();
         });
         assert.equal(result.code, status, result.stderr);
         assert.equal(result.stdout, 'TANDEM_BENCHMARK_READY\n');
         assert.equal(result.stderr, '');
+        assert.equal(result.held, true);
+        assert.equal(result.verified, true);
         assert.equal(
           (await readFile(control, 'utf8')).trim().split('\n').length,
           status === 0 ? 1 : 2,
@@ -285,6 +320,96 @@ test(
       }
     } finally {
       await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'Linux terminal proof rejects live tasks, reused identity, denied and malformed native evidence',
+  { skip: process.platform !== 'linux' },
+  async () => {
+    const fs = (await import('node:fs')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const { processIdentity, processTerminated } = await import(
+      modulePath('processes.js')
+    );
+    const pid = process.pid,
+      expected = await processIdentity(pid);
+    const read = fs.readFileSync,
+      list = fs.readdirSync;
+    const raw = read(`/proc/${pid}/stat`, 'utf8');
+    const fields = raw
+      .slice(raw.lastIndexOf(')') + 2)
+      .trim()
+      .split(/\s+/);
+    let mode = 'live',
+      reads = 0;
+    try {
+      fs.readFileSync = (path, ...args) => {
+        if (path !== `/proc/${pid}/stat`) return read(path, ...args);
+        reads++;
+        if (mode === 'denied' || mode === 'absent')
+          throw Object.assign(new Error('synthetic native boundary'), {
+            code: mode === 'denied' ? 'EACCES' : 'ENOENT',
+          });
+        if (mode === 'malformed') return 'malformed';
+        if (mode === 'live') return raw;
+        const current = [...fields];
+        current[0] = 'Z';
+        if (mode === 'reused' && reads >= 3)
+          current[19] = String(BigInt(current[19]) + 1n);
+        return `${pid} (synthetic) ${current.join(' ')}\n`;
+      };
+      fs.readdirSync = (path, ...args) => {
+        if (path !== `/proc/${pid}/task`) return list(path, ...args);
+        if (mode === 'task-missing')
+          throw Object.assign(new Error('synthetic task boundary'), {
+            code: 'ENOENT',
+          });
+        return mode === 'other-thread'
+          ? [String(pid), String(pid + 1)]
+          : [String(pid)];
+      };
+      syncBuiltinESMExports();
+      assert.equal(await processTerminated(pid, expected), false);
+      mode = 'zombie';
+      reads = 0;
+      assert.equal(await processTerminated(pid, expected), true);
+      assert.equal(reads, 3);
+      mode = 'other-thread';
+      assert.equal(await processTerminated(pid, expected), false);
+      mode = 'reused';
+      reads = 0;
+      await assert.rejects(
+        processTerminated(pid, expected),
+        /PROCESS_IDENTITY_CHANGED/,
+      );
+      for (const invalid of ['denied', 'malformed', 'task-missing']) {
+        mode = invalid;
+        reads = 0;
+        await assert.rejects(
+          processTerminated(pid, expected),
+          /PROCESS_IDENTITY_UNAVAILABLE/,
+        );
+      }
+      mode = 'zombie';
+      reads = 0;
+      await assert.rejects(
+        processTerminated(pid, null),
+        /PROCESS_IDENTITY_CHANGED/,
+      );
+      mode = 'absent';
+      reads = 0;
+      assert.equal(await processTerminated(pid, expected), true);
+      assert.equal(
+        reads,
+        2,
+        'a missing read requires another native absence lookup',
+      );
+    } finally {
+      fs.readFileSync = read;
+      fs.readdirSync = list;
+      syncBuiltinESMExports();
     }
   },
 );
