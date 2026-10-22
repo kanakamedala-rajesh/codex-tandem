@@ -3,25 +3,61 @@
 // deliver close. The real ownership proof still runs and must refuse the child.
 import { registerHooks, syncBuiltinESMExports } from 'node:module';
 import childProcess from 'node:child_process';
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, readdirSync } from 'node:fs';
 
 globalThis.__tandemRegistrationCloseControl = (pid) => {
   const deadline = Date.now() + 1500;
   const pause = new Int32Array(new SharedArrayBuffer(4));
-  let terminal = false;
+  let terminal = false,
+    creation;
   while (Date.now() < deadline) {
     try {
       const raw = readFileSync(`/proc/${pid}/stat`, 'utf8');
-      if (/^Z\s/.test(raw.slice(raw.lastIndexOf(')') + 2))) {
-        terminal = true;
-        break;
+      const fields = raw
+        .slice(raw.lastIndexOf(')') + 2)
+        .trim()
+        .split(/\s+/);
+      if (
+        !raw.startsWith(`${pid} (`) ||
+        !/^[A-Za-z]$/.test(fields[0] ?? '') ||
+        !/^\d+$/.test(fields[19] ?? '')
+      )
+        throw new Error('REGISTRATION_CONTROL_UNPROVEN');
+      creation ??= fields[19];
+      if (fields[19] !== creation)
+        throw new Error('REGISTRATION_CONTROL_IDENTITY_CHANGED');
+      if (['Z', 'X'].includes(fields[0])) {
+        const tasks = readdirSync(`/proc/${pid}/task`);
+        const fresh = readFileSync(`/proc/${pid}/stat`, 'utf8');
+        const confirmed = fresh
+          .slice(fresh.lastIndexOf(')') + 2)
+          .trim()
+          .split(/\s+/);
+        if (!fresh.startsWith(`${pid} (`) || confirmed[19] !== creation)
+          throw new Error('REGISTRATION_CONTROL_IDENTITY_CHANGED');
+        // Match the production terminal-proof precondition: a dead leader
+        // alone does not prove the remaining task group has terminated.
+        if (
+          tasks.length === 1 &&
+          tasks[0] === String(pid) &&
+          ['Z', 'X'].includes(confirmed[0])
+        ) {
+          terminal = true;
+          break;
+        }
       }
     } catch (error) {
       if (['ENOENT', 'ESRCH'].includes(error.code)) {
-        terminal = true;
-        break;
-      }
-      throw error;
+        try {
+          readFileSync(`/proc/${pid}/stat`);
+        } catch (again) {
+          if (['ENOENT', 'ESRCH'].includes(again.code)) {
+            terminal = true;
+            break;
+          }
+          throw again;
+        }
+      } else throw error;
     }
     Atomics.wait(pause, 0, 0, 5);
   }

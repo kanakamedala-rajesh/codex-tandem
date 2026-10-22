@@ -239,6 +239,20 @@ class PreparedResumeTests(unittest.TestCase):
         self.executable = pathlib.Path(self.root.name) / 'codex'
         self.write_rpc()
         self.code.folder(str(self.home / '.tandem-activation'))
+        # In-process controller fixtures supply native identities separately from
+        # the CI runner's UID; retain fresh physical pins without qualifying root.
+        self.code.pinned_paths = lambda *paths: [(os.stat(path).st_dev, os.stat(path).st_ino) for path in paths]
+
+    def test_controller_refuses_root_before_credentials_or_ownership_files(self):
+        code = runtime()
+        code.os = types.SimpleNamespace(**{name: getattr(os, name) for name in dir(os)})
+        code.os.geteuid = lambda: 0
+        # Setup verified the real private home; isolate the unmodified root guard.
+        code.folder = lambda path: None
+        with self.assertRaisesRegex(code.Refused, 'ROOT_TARGET_UNSUPPORTED'):
+            code.control(str(self.home), str(self.project), str(self.executable), 'a' * 64)
+        for name in ['auth.json', '.tandem-docker.lock', '.tandem-docker-owner.lock']:
+            self.assertFalse((self.home / name).exists())
 
     def write_rpc(self, version='0.163.0', mutate=False, row_cwd=None, rows=None, mutate_cache=False):
         row = {'id': LAUNCH, 'cwd': row_cwd or str(self.project), 'path': str(self.source), 'preview': 'SYNTHETIC-PREVIEW-MUST-NOT-ESCAPE', 'turns': ['SYNTHETIC-CONTENT']}
