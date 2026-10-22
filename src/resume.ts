@@ -383,6 +383,47 @@ async function commandWitnesses(command: CodexCommand): Promise<Witness[]> {
     throw new Error('RESUME_SOURCE_UNAVAILABLE');
   return result;
 }
+async function commandDigests(records: Witness[]): Promise<string[]> {
+  const result: string[] = [];
+  for (const record of records) {
+    const size = BigInt(record.size!);
+    if (size > 536870912n) throw new Error('RESUME_METADATA_LIMIT');
+    const handle = await open(record.path, constants.O_RDONLY);
+    try {
+      const info = await handle.stat({ bigint: true });
+      if (
+        !info.isFile() ||
+        String(info.dev) !== record.device ||
+        String(info.ino) !== record.inode ||
+        String(info.size) !== record.size ||
+        String(info.mtimeNs) !== record.modified ||
+        String(info.ctimeNs) !== record.changed
+      )
+        throw new Error('RESUME_PREPARATION_STALE');
+      const digest = createHash('sha256');
+      const buffer = Buffer.alloc(65536);
+      let remaining = Number(size);
+      while (remaining) {
+        const { bytesRead } = await handle.read(
+          buffer,
+          0,
+          Math.min(buffer.length, remaining),
+          null,
+        );
+        if (!bytesRead) throw new Error('RESUME_PREPARATION_STALE');
+        digest.update(buffer.subarray(0, bytesRead));
+        remaining -= bytesRead;
+      }
+      if ((await handle.read(buffer, 0, 1, null)).bytesRead)
+        throw new Error('RESUME_PREPARATION_STALE');
+      result.push(digest.digest('hex'));
+    } finally {
+      await handle.close();
+    }
+  }
+  await requireUnchanged(records);
+  return result;
+}
 async function sourceAncestors(
   home: string,
   source: string,
@@ -503,7 +544,7 @@ async function snapshotDatabase(
   await requireDatabaseUnchanged(original);
 }
 
-/** Prepare one native indexed UUID or the newest indexed session for the physical project without launching or activating credentials. Ordinary Codex policy initialization runs first; only a private generation-fenced database copy is opened with SQLite. Preparation may read bounded selected rollout metadata and examine up to 10,000 indexed rows; temporary copied native content is deleted. Unsupported versions/schema, incomplete backfill, ambiguous latest rows and changed sources are refused. */
+/** Prepare one native indexed UUID or the newest indexed session for the physical project without launching or activating credentials. Windows preparation streams at most 512 MiB per command file before and after the native probes, allowing their first execution to change only ctime when bytes and all other metadata remain identical; digests are discarded and the final full generation is retained. Ordinary Codex policy initialization runs first; only a private generation-fenced database copy is opened with SQLite. Preparation may read bounded selected rollout metadata and examine up to 10,000 indexed rows; temporary copied native content is deleted. Unsupported versions/schema, incomplete backfill, ambiguous latest rows and changed sources are refused. */
 export async function prepareLocalResume(
   options: LocalResumeOptions,
   selection: string,
@@ -519,7 +560,9 @@ export async function prepareLocalResume(
       options.projectPath,
       'RESUME_PROJECT_UNAVAILABLE',
     );
-    const command = await commandWitnesses(options.command);
+    let command = await commandWitnesses(options.command);
+    const digests =
+      process.platform === 'win32' ? await commandDigests(command) : undefined;
     const version = await execute(
       options.command.executable,
       [...(options.command.prefix ?? []), '--version'],
@@ -540,6 +583,20 @@ export async function prepareLocalResume(
       cwd: project,
       policyArguments: options.policyArguments,
     });
+    if (digests) {
+      const current = await commandWitnesses(options.command);
+      // Windows first execution can update executable ctime without changing its
+      // bytes. Prove that exception during preparation only; persist the actual
+      // final ctime so ordinary resume still refuses every generation change.
+      const metadata = (records: Witness[]) =>
+        records.map((entry) => ({ ...entry, changed: undefined }));
+      if (
+        !same(metadata(command), metadata(current)) ||
+        !same(digests, await commandDigests(current))
+      )
+        throw new Error('RESUME_PREPARATION_STALE');
+      command = current;
+    }
     const sqliteHome = await directory(
       policy.sqliteHome,
       'RESUME_INDEX_UNAVAILABLE',

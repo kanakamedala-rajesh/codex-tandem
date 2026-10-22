@@ -11,6 +11,10 @@ import {
   rename,
   chmod,
   link,
+  stat,
+  utimes,
+  copyFile,
+  truncate,
 } from 'node:fs/promises';
 import { join } from 'node:path';
 import fsPromises from 'node:fs/promises';
@@ -25,6 +29,9 @@ const execute = promisify(execFile);
 const id = '00000000-0000-4000-8000-000000000041';
 const otherId = '00000000-0000-4000-8000-000000000042';
 const cli = fileURLToPath(modulePath('cli.js'));
+// Native Windows ACL and ownership checks make a complete resume take over a
+// minute here; use the same bounded allowance as the full launch contract tests.
+const cliTimeout = process.platform === 'win32' ? 180000 : 10000;
 const resolver = () => import(modulePath('resume.js'));
 const lookup = async (f, selection = id, project = f.root) =>
   (await resolver()).resolveLocalResume(f.home, project, selection, {
@@ -60,7 +67,7 @@ test('explicit CLI preparation never activates credentials and stores only bound
     const args = launchArgs(f);
     args.splice(1, 0, 'prepare');
     const result = await execute(process.execPath, [cli, ...args], {
-      timeout: 10000,
+      timeout: cliTimeout,
     });
     assert.equal(JSON.parse(result.stdout).id, id);
     await assert.rejects(readFile(join(f.home, 'auth.json')), {
@@ -87,6 +94,146 @@ test('explicit CLI preparation never activates credentials and stores only bound
   }
 });
 
+test(
+  'Windows prepares a fresh executable but keeps subsequent command generations strict',
+  { skip: process.platform !== 'win32' },
+  async () => {
+    const f = await activationFixture();
+    try {
+      const prepare = await resumeIndexFixture(f, [{ id }]);
+      const script = f.options.command.prefix[0];
+      const timestamp = new Date('2026-10-04T00:00:00.000Z');
+      await utimes(script, timestamp, timestamp);
+      await prepare(id);
+      assert.equal((await lookup(f)).id, id);
+      const original = await stat(script, { bigint: true });
+      // Rewriting identical bytes still changes the command generation. This
+      // preparation-only exception must never become a launch-time relaxation.
+      await writeFile(script, await readFile(script));
+      await utimes(script, timestamp, timestamp);
+      assert.equal(
+        (await stat(script, { bigint: true })).mtimeNs,
+        original.mtimeNs,
+      );
+      await assert.rejects(lookup(f), /RESUME_PREPARATION_STALE/);
+      await prepare(id);
+      const executable = f.options.command.executable;
+      const replacement = join(f.root, 'replacement.exe');
+      await copyFile(executable, replacement);
+      await rename(executable, join(f.root, 'original.exe'));
+      await rename(replacement, executable);
+      await assert.rejects(lookup(f), /RESUME_PREPARATION_STALE/);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'Windows preparation rejects same-size command byte changes with preserved mtime during policy',
+  { skip: process.platform !== 'win32' },
+  async () => {
+    const f = await activationFixture();
+    try {
+      const prepare = await resumeIndexFixture(f, [{ id }]);
+      const script = f.options.command.prefix[0];
+      const source = await readFile(script, 'utf8');
+      await writeFile(
+        script,
+        `import {readFileSync,writeFileSync,statSync,utimesSync} from 'node:fs';\n${source.replace('if(r.id===1)', `if(r.id===1){const p=${JSON.stringify(script)};const s=statSync(p);const b=readFileSync(p);b[b.length-2]=66;writeFileSync(p,b);utimesSync(p,s.atime,s.mtime);}if(r.id===1)`)}\n// A\n`,
+      );
+      const timestamp = new Date('2026-10-04T00:00:00.000Z');
+      await utimes(script, timestamp, timestamp);
+      const before = await stat(script, { bigint: true });
+      await assert.rejects(prepare(id), /RESUME_PREPARATION_STALE/);
+      const after = await stat(script, { bigint: true });
+      assert.equal(after.size, before.size);
+      assert.equal(after.mtimeNs, before.mtimeNs);
+      assert.notEqual(after.ctimeNs, before.ctimeNs);
+      assert.ok((await readFile(script, 'utf8')).endsWith('// B\n'));
+      await assert.rejects(lookup(f), /RESUME_PREPARATION_REQUIRED/);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'Windows preparation refuses retargeted command directory aliases',
+  { skip: process.platform !== 'win32' },
+  async () => {
+    const f = await activationFixture();
+    try {
+      const prepare = await resumeIndexFixture(f, [{ id }]);
+      const first = join(f.root, 'first-command');
+      const second = join(f.root, 'second-command');
+      const alias = join(f.root, 'command-alias');
+      await mkdir(first);
+      await mkdir(second);
+      await copyFile(f.options.command.executable, join(first, 'probe.exe'));
+      await copyFile(f.options.command.executable, join(second, 'probe.exe'));
+      await symlink(first, alias, 'junction');
+      f.options.command.executable = join(alias, 'probe.exe');
+      const script = f.options.command.prefix[0];
+      const source = await readFile(script, 'utf8');
+      await writeFile(
+        script,
+        `import {unlinkSync,symlinkSync} from 'node:fs';\n${source.replace('if(r.id===1)', `if(r.id===1){unlinkSync(${JSON.stringify(alias)});symlinkSync(${JSON.stringify(second)},${JSON.stringify(alias)},'junction');}if(r.id===1)`)}`,
+      );
+      await assert.rejects(prepare(id), /RESUME_PREPARATION_STALE/);
+      await assert.rejects(lookup(f), /RESUME_PREPARATION_REQUIRED/);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'Windows preparation bounds command reads and refuses changes during streaming',
+  { skip: process.platform !== 'win32' },
+  async () => {
+    const f = await activationFixture();
+    const originalOpen = fsPromises.open;
+    let closed = false;
+    try {
+      const prepare = await resumeIndexFixture(f, [{ id }]);
+      const script = f.options.command.prefix[0];
+      fsPromises.open = async (path, ...args) => {
+        const handle = await originalOpen(path, ...args);
+        if (String(path) === script) {
+          const read = handle.read.bind(handle);
+          const close = handle.close.bind(handle);
+          let changed = false;
+          handle.read = async (...readArgs) => {
+            if (!changed) {
+              changed = true;
+              await appendFile(script, '\n// concurrent synthetic change\n');
+            }
+            return read(...readArgs);
+          };
+          handle.close = async () => {
+            closed = true;
+            await close();
+          };
+        }
+        return handle;
+      };
+      syncBuiltinESMExports();
+      await assert.rejects(prepare(id), /RESUME_PREPARATION_STALE/);
+      assert.equal(closed, true);
+      fsPromises.open = originalOpen;
+      syncBuiltinESMExports();
+      await truncate(script, 536870913);
+      await assert.rejects(prepare(id), /RESUME_METADATA_LIMIT/);
+      await assert.rejects(lookup(f), /RESUME_PREPARATION_REQUIRED/);
+    } finally {
+      fsPromises.open = originalOpen;
+      syncBuiltinESMExports();
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
 test('native database changes invalidate explicit and last proofs instead of silently using older metadata', async () => {
   const f = await activationFixture();
   try {
@@ -105,7 +252,7 @@ test('native database changes invalidate explicit and last proofs instead of sil
     await assert.rejects(lookup(f), /RESUME_PREPARATION_STALE/);
     await assert.rejects(lookup(f, 'last'), /RESUME_PREPARATION_STALE/);
     const failed = await execute(process.execPath, [cli, ...launchArgs(f)], {
-      timeout: 10000,
+      timeout: cliTimeout,
     }).catch((error) => error);
     assert.equal(failed.code, 2);
     assert.equal(JSON.parse(failed.stderr).code, 'RESUME_PREPARATION_STALE');
@@ -132,7 +279,7 @@ test('the mandatory policy check invalidates a changed native index before crede
     await writeFile(trigger, 'synthetic trigger');
     assert.equal((await lookup(f)).id, id);
     const failed = await execute(process.execPath, [cli, ...launchArgs(f)], {
-      timeout: 10000,
+      timeout: cliTimeout,
     }).catch((error) => error);
     assert.equal(failed.code, 2);
     assert.equal(JSON.parse(failed.stderr).code, 'RESUME_PREPARATION_STALE');
@@ -172,7 +319,7 @@ test('storage and native-feature overrides are checked before credentials withou
       const failed = await execute(
         process.execPath,
         [cli, ...launchArgs(f), '--', ...override],
-        { timeout: 10000 },
+        { timeout: cliTimeout },
       ).catch((error) => error);
       assert.equal(failed.code, 2);
       assert.equal(JSON.parse(failed.stderr).code, 'RESUME_PREPARATION_STALE');
@@ -285,7 +432,7 @@ ${await readFile(script, 'utf8')}`,
     await writeFile(shm, 'synthetic ordinary-policy cache');
     await writeFile(clearCache, 'synthetic trigger');
     await execute(process.execPath, [cli, ...launchArgs(f)], {
-      timeout: 10000,
+      timeout: cliTimeout,
     });
     assert.ok((await readFile(join(f.home, 'auth.json'))).length > 0);
   } finally {
@@ -308,7 +455,7 @@ test('mandatory policy creating a nonempty WAL refuses resume before credential 
     await prepare(id);
     await writeFile(trigger, 'synthetic trigger');
     const failed = await execute(process.execPath, [cli, ...launchArgs(f)], {
-      timeout: 10000,
+      timeout: cliTimeout,
     }).catch((error) => error);
     assert.equal(failed.code, 2);
     assert.equal(JSON.parse(failed.stderr).code, 'RESUME_PREPARATION_STALE');
@@ -602,11 +749,30 @@ test('preparation reads current committed WAL rows through a private copy and le
       await appendFile(wal, 'synthetic changed nonempty WAL');
       await assert.rejects(proof.revalidate(), /RESUME_PREPARATION_STALE/);
       await writeFile(wal, before[1]);
+      // Windows forbids renaming SQLite's live WAL. After proving the live
+      // writer's changed bytes refuse, close it and explicitly reconstruct the
+      // captured main/WAL bytes. A fresh proof then tests missing/empty WAL
+      // transitions without an open native handle preventing the operation.
+      if (process.platform === 'win32') {
+        writer.close();
+        writer = undefined;
+        await writeFile(join(f.home, 'state_5.sqlite'), before[0]);
+        await writeFile(wal, before[1]);
+        await prepare('last');
+      }
+      const removableProof =
+        process.platform === 'win32' ? await lookup(f, 'last') : proof;
       await rename(wal, parked);
       parkedOriginal = true;
-      await assert.rejects(proof.revalidate(), /RESUME_PREPARATION_STALE/);
+      await assert.rejects(
+        removableProof.revalidate(),
+        /RESUME_PREPARATION_STALE/,
+      );
       await writeFile(wal, '');
-      await assert.rejects(proof.revalidate(), /RESUME_PREPARATION_STALE/);
+      await assert.rejects(
+        removableProof.revalidate(),
+        /RESUME_PREPARATION_STALE/,
+      );
     } finally {
       if (parkedOriginal) {
         await rm(wal, { force: true });

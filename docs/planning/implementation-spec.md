@@ -367,6 +367,14 @@ projects, malformed headers and changed files refuse. Config/project ancestry is
 bounded to 64 levels. Raw config, override values, conversation content and
 credentials are excluded from persistent records and diagnostics.
 
+Windows preparation supports a freshly copied executable whose first native
+execution changes only ctime. Before and after the existing version/policy probes,
+it streams at most 512 MiB per command file into transient SHA-256 digests. Bytes
+and every other witness field must match; replacements, alias retargeting and
+concurrent changes refuse. Digests are discarded, and records retain the actual
+post-probe ctime. Ordinary resume keeps strict stat-only generation checks,
+including command ctime, and never hashes command files.
+
 Normal resume performs only one bounded record read and fixed file/directory stat
 checks, independent of history count; no rollout read, history traversal, SQLite
 import, reporting access or extra metadata RPC is allowed. The native database,
