@@ -24,26 +24,33 @@ await withTempPackage(
     assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0);
     for (const hook of ['preinstall', 'install', 'postinstall'])
       assert.equal(manifest.scripts[hook], undefined);
-    execFileSync(
-      process.execPath,
-      [
-        '--test',
-        'test/profiles.test.mjs',
-        'test/private-state.test.mjs',
-        'test/profile-login.test.mjs',
-        'test/scope-guard.test.mjs',
-        'test/scoped-stop.test.mjs',
-        'test/activation.test.mjs',
-        'test/local-launch.test.mjs',
-      ],
-      {
-        encoding: 'utf8',
-        env: { ...consumerEnv, TANDEM_TEST_PACKAGE: packageRoot },
-        // Native Windows process and ACL probes need a bounded 30-minute suite budget.
-        timeout: process.platform === 'win32' ? 1800000 : 600000,
-        maxBuffer: 1048576,
-      },
-    );
+    try {
+      execFileSync(
+        process.execPath,
+        [
+          '--test',
+          'test/profiles.test.mjs',
+          'test/private-state.test.mjs',
+          'test/profile-login.test.mjs',
+          'test/scope-guard.test.mjs',
+          'test/scoped-stop.test.mjs',
+          'test/activation.test.mjs',
+          'test/local-launch.test.mjs',
+        ],
+        {
+          encoding: 'utf8',
+          env: { ...consumerEnv, TANDEM_TEST_PACKAGE: packageRoot },
+          // Native Windows process and ACL probes need a bounded 30-minute suite budget.
+          timeout: process.platform === 'win32' ? 1800000 : 600000,
+          maxBuffer: 1048576,
+        },
+      );
+    } catch (error) {
+      // Error inspection truncates long test output before its final assertion.
+      if (typeof error.stdout === 'string') process.stdout.write(error.stdout);
+      // eslint-disable-next-line preserve-caught-error -- Child errors include argv and private installation paths.
+      throw new Error('INSTALLED_CONTRACT_TESTS_FAILED');
+    }
     const entry = join(packageRoot, 'dist', 'cli.js');
     const direct = execFileSync(process.execPath, [entry, 'doctor', '--json'], {
       encoding: 'utf8',
