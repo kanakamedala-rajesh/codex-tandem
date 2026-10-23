@@ -325,10 +325,15 @@ the inherited console without implicit forced stopping. Signal observers remain 
 survive post-exit sync/release errors, which remain explicit stderr health diagnostics.
 Untracked mode emits `UNTRACKED_LAUNCH` and records the intended binding privately.
 Config/feature overrides are forwarded unchanged to the read-only effective policy
-probe. Named Codex profiles fail before activation with
-`PROFILE_POLICY_UNVERIFIABLE`: actual Codex 0.160.0 excludes profiles from
-app-server, so its base policy cannot prove runtime named-profile policy. CLI-003
-named configuration-profile compatibility is owner-deferred from G1; saved Tandem identities remain supported. The refusal remains the safety boundary for these deferred inputs.
+probe. CLI-003 named Codex configuration-profile support is required for G1 and
+is blocked on a qualified native effective-policy inspection interface. Installed
+Codex 0.163.0 rejects profile selection for app-server; inspected
+[0.164.0 CLI source](https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/cli/src/main.rs)
+and [configuration protocol](https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/app-server-protocol/src/protocol/v2/config.rs)
+provide no equivalent profile-aware policy inspection boundary. Tandem refuses
+these inputs before activation with `PROFILE_POLICY_UNVERIFIABLE`. This refusal
+preserves safety but does not satisfy named-profile compatibility. Saved Tandem
+identities remain supported.
 
 Local resume separates explicit preparation from launch. `resume prepare UUID|--last`
 never selects/activates an identity or starts a session. It first inspects the
