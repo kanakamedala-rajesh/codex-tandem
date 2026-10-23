@@ -92,10 +92,7 @@ test('validates synthetic metadata and selects stable IDs rather than duplicate 
       .stderr,
     /INVALID_FIXTURE/,
   );
-  assert.match(
-    run(['--identity', 'id-a', '--target', 'local']).stderr,
-    /G1_ACTIVATION_UNAVAILABLE/,
-  );
+  assert.match(run(['--target', 'local']).stderr, /IDENTITY_REQUIRED/);
 });
 test(
   'forwards POSIX termination to the harmless child and propagates its exit',

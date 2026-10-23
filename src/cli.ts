@@ -41,7 +41,22 @@ if (args[0] === 'doctor') {
       );
     process.exitCode = 2;
   }
+} else if (args[0] === 'guard' || args[0] === 'processes') {
+  const { guardCommand } = await import('./guard-command.js');
+  process.exitCode = await guardCommand(args[0], args.slice(1));
+} else if (args[0] === 'targets') {
+  const { dockerTargetsCommand } = await import('./docker-targets.js');
+  process.exitCode = await dockerTargetsCommand(args.slice(1));
+} else if (args[0] === 'profiles') {
+  const { profilesCommand } = await import('./profiles.js');
+  process.exitCode = await profilesCommand(args.slice(1));
+} else if (args[0] === 'activate') {
+  const { activationCommand } = await import('./activation.js');
+  process.exitCode = await activationCommand(args.slice(1));
 } else {
   const { run } = await import('./run.js');
-  process.exitCode = await run(args[0] === 'run' ? args.slice(1) : args);
+  process.exitCode = await run(
+    args[0] === 'run' || args[0] === 'resume' ? args.slice(1) : args,
+    args[0] === 'resume' ? 'resume' : 'run',
+  );
 }

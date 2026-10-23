@@ -2,6 +2,100 @@ import { readSync, openSync, fstatSync, closeSync } from 'node:fs';
 import { selectProfile } from './selector.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { realpath, stat } from 'node:fs/promises';
+import { activateIdentity, type ActivationLease } from './activation.js';
+import { discoverTarget } from './discovery.js';
+import { claimPrivateState, resolveStateHome } from './private-state.js';
+import { readProfileManifest } from './profiles.js';
+import { processIdentity, processTerminated } from './processes.js';
+
+function invocationOptions(args: string[], operation: 'run' | 'resume') {
+  const configArguments: string[] = [];
+  const directories: string[] = [];
+  let resume: string | undefined;
+  let last = false;
+  let commandSeen = operation === 'resume',
+    execSeen = false,
+    positional = operation === 'resume';
+  const valueFlags = [
+    '-c',
+    '--config',
+    '-p',
+    '--profile',
+    '-C',
+    '--cd',
+    '-m',
+    '--model',
+    '-s',
+    '--sandbox',
+    '-a',
+    '--ask-for-approval',
+    '--enable',
+    '--disable',
+    '--add-dir',
+    '-i',
+    '--image',
+    '-o',
+    '--output-last-message',
+    '--output-schema',
+    '--thread-source',
+  ];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--') break;
+    if (
+      [
+        '--remote',
+        '--code-mode-host',
+        '--worktree',
+        '--oss',
+        '--local-provider',
+        '--ignore-user-config',
+      ].some((name) => arg === name || arg.startsWith(name + '='))
+    )
+      throw new Error('CODEX_SCOPE_UNPROVEN');
+    if (arg === '--last') last = true;
+    const attachedShort = /^-[cpCmsaio].+/.test(arg)
+      ? arg.slice(0, 2)
+      : undefined;
+    const flag = attachedShort ?? arg.split('=', 1)[0];
+    if (valueFlags.includes(flag)) {
+      const value = attachedShort
+        ? arg.slice(2)
+        : arg.includes('=')
+          ? arg.slice(arg.indexOf('=') + 1)
+          : args[++i];
+      if (!value) throw new Error('INVALID_ARGUMENTS');
+      if (
+        ['-c', '--config', '-p', '--profile', '--enable', '--disable'].includes(
+          flag,
+        )
+      )
+        configArguments.push(flag, value);
+      if (flag === '-C' || flag === '--cd') directories.push(value);
+      continue;
+    }
+    if (arg.startsWith('-')) continue;
+    if (positional) continue;
+    if ((!commandSeen || execSeen) && arg === 'resume') {
+      resume = '';
+      commandSeen = true;
+      execSeen = false;
+      continue;
+    }
+    if (!commandSeen && (arg === 'exec' || arg === 'e')) {
+      execSeen = true;
+      commandSeen = true;
+      continue;
+    }
+    if (resume === '') resume = arg;
+    positional = true;
+  }
+  if (resume === '' || (resume !== undefined && last))
+    throw new Error('RESUME_SCOPE_UNPROVEN');
+  return { configArguments, directories, resume, last };
+}
 /**
  * Run the bundled harmless G0 child using a bounded synthetic profile fixture;
  * production credential activation is unavailable. args are run options followed
@@ -9,7 +103,7 @@ import { fileURLToPath } from 'node:url';
  * Returns the child exit status, 130 on selection cancellation, or 2 on validation
  * or launch failure; failures are written to stderr, using JSON with --json.
  */
-export async function run(args: string[]): Promise<number> {
+async function runFixture(args: string[]): Promise<number> {
   const boundary = args.indexOf('--');
   const options = boundary < 0 ? args : args.slice(0, boundary);
   const json = options.includes('--json');
@@ -164,4 +258,358 @@ export async function run(args: string[]): Promise<number> {
       );
     });
   });
+}
+
+/** Launch existing local Codex with a guarded saved identity, or resume an explicitly prepared project-scoped UUID when operation is `resume`. Standalone `resume prepare` prepares metadata without selecting or activating an identity; native index or source changes require preparing again. Root flags follow resolveStateHome before state access. Options precede `--`; trailing child arguments and streams remain unchanged, including resume prompt tokens. Physical spawn cwd and raw directory inputs are checked again immediately before spawn; this is not an atomic OS guarantee. Signal observers remain installed through post-exit synchronization and failure cleanup, then are removed. Linux registration failure may await the exact child's close only after observed exit or native terminal proof; live or uncertain ownership stays blocked. Observed child exit status survives post-exit health errors, reported on stderr; pre-execution failures return 2 and selection cancellation returns 130. Named Codex profiles are refused until their effective policy can be proved. Fixture mode retains the harmless G0 adapter. */
+export async function run(
+  args: string[],
+  operation: 'run' | 'resume' = 'run',
+): Promise<number> {
+  const preparingResume = operation === 'resume' && args[0] === 'prepare';
+  if (preparingResume) args = args.slice(1);
+  const boundary = args.indexOf('--');
+  const options = boundary < 0 ? args : args.slice(0, boundary);
+  if (options.includes('--g0-fixture')) return runFixture(args);
+  const json = options.includes('--json');
+  const usableTerminal =
+    process.stdin.isTTY &&
+    process.stdout.isTTY &&
+    process.stderr.isTTY &&
+    !json;
+  const error = (code: string, message: string) => {
+    process.stderr.write(
+      json
+        ? JSON.stringify({ schemaVersion: 1, ok: false, code, message }) + '\n'
+        : `${code}: ${message}\n`,
+    );
+    return 2;
+  };
+  if (!options.includes('--target') && !usableTerminal)
+    return error(
+      'TARGET_REQUIRED',
+      'Specify --target local or a registered Docker target ID.',
+    );
+  if (!preparingResume && !options.includes('--identity') && !usableTerminal)
+    return error(
+      'IDENTITY_REQUIRED',
+      'Without a usable terminal, specify --identity STABLE_ID.',
+    );
+  let lease: ActivationLease | undefined;
+  let childStarted = false;
+  let childStatus: number | undefined;
+  let removeSignalHandlers: (() => void) | undefined;
+  try {
+    let resumeSelection: string | undefined;
+    let untracked = false;
+    const values = new Map<string, string>();
+    for (let i = 0; i < options.length; i++) {
+      if (options[i] === '--json') continue;
+      if (options[i] === '--untracked') {
+        if (untracked) throw new Error('INVALID_ARGUMENTS');
+        untracked = true;
+        continue;
+      }
+      if (operation === 'resume' && options[i] === '--last') {
+        if (resumeSelection) throw new Error('INVALID_ARGUMENTS');
+        resumeSelection = 'last';
+        continue;
+      }
+      if (operation === 'resume' && !options[i].startsWith('-')) {
+        if (resumeSelection) throw new Error('INVALID_ARGUMENTS');
+        resumeSelection = options[i];
+        continue;
+      }
+      if (
+        ![
+          '--identity',
+          '--target',
+          '--home',
+          '--state-home',
+          '--codex-home',
+          '--codex-executable',
+          '--codex-script',
+          '--project',
+        ].includes(options[i]) ||
+        !options[i + 1] ||
+        options[i + 1].startsWith('--') ||
+        values.has(options[i])
+      )
+        throw new Error('INVALID_ARGUMENTS');
+      values.set(options[i], options[++i]);
+    }
+    if (operation === 'resume' && !resumeSelection)
+      throw new Error('RESUME_SELECTION_REQUIRED');
+    let childArgs = boundary < 0 ? [] : args.slice(boundary + 1);
+    const invocation = invocationOptions(childArgs, operation);
+    if (
+      invocation.configArguments.some(
+        (flag, index) =>
+          index % 2 === 0 && (flag === '-p' || flag === '--profile'),
+      )
+    )
+      throw new Error('PROFILE_POLICY_UNVERIFIABLE');
+    const rawResume = invocation.resume;
+    if (operation === 'resume' && (rawResume || invocation.last))
+      throw new Error('RESUME_SCOPE_UNPROVEN');
+    const stateHome = await resolveStateHome({
+      home: values.get('--home'),
+      stateHome: values.get('--state-home'),
+    });
+    if (preparingResume && untracked) throw new Error('INVALID_ARGUMENTS');
+    let profileId = values.get('--identity');
+    if (!profileId && !preparingResume) {
+      const root = await claimPrivateState(resolve(stateHome), 'installation');
+      const profiles = (await readProfileManifest(root)).profiles.filter(
+        (p) => p.status === 'available',
+      );
+      if (!profiles.length) throw new Error('NO_PROFILES');
+      profileId = (await selectProfile(profiles)) ?? undefined;
+      if (!profileId) return 130;
+    }
+    if ((values.get('--target') ?? 'local') !== 'local') {
+      if (
+        ['--codex-home', '--codex-executable', '--codex-script'].some((flag) =>
+          values.has(flag),
+        )
+      )
+        throw new Error('TARGET_OVERRIDE_CONFLICT');
+      if (invocation.last) throw new Error('RESUME_SCOPE_UNPROVEN');
+      if (preparingResume) {
+        const { prepareDockerResume } = await import('./docker-run.js');
+        const result = await prepareDockerResume({
+          stateHome,
+          targetId: values.get('--target')!,
+          hostProject: values.get('--project') ?? process.cwd(),
+          directories: invocation.directories,
+          policyArguments: invocation.configArguments,
+          selection: resumeSelection!,
+        });
+        process.stdout.write(
+          json
+            ? JSON.stringify({ schemaVersion: 1, ok: true, ...result }) + '\n'
+            : `Prepared resume ${result.id}. Run the same resume selection to launch; changed native state requires preparation again.\n`,
+        );
+        return 0;
+      }
+      const { runDockerTarget } = await import('./docker-run.js');
+      return await runDockerTarget({
+        stateHome,
+        profileId: profileId!,
+        targetId: values.get('--target')!,
+        hostProject: values.get('--project') ?? process.cwd(),
+        args: childArgs,
+        policyArguments: invocation.configArguments,
+        directories: invocation.directories,
+        resume: resumeSelection,
+        rawResume,
+        untracked,
+        interactive: !!usableTerminal,
+        error,
+      });
+    }
+    const initialProject = await realpath(
+      resolve(values.get('--project') ?? process.cwd()),
+    );
+    // Codex resolves unchanged raw -C arguments from this exact spawn cwd, not the canonical effective project.
+    const invocationPaths = await Promise.all(
+      [
+        initialProject,
+        ...invocation.directories.map((value) =>
+          resolve(initialProject, value),
+        ),
+      ].map(async (path) => ({
+        path,
+        physical: await realpath(path),
+        info: await stat(path, { bigint: true }),
+      })),
+    );
+    let project = initialProject;
+    for (const value of invocation.directories) {
+      const effective = await realpath(resolve(initialProject, value));
+      if (values.has('--project') && effective !== project)
+        throw new Error('PROJECT_OVERRIDE_CONFLICT');
+      project = effective;
+    }
+    const discovery = await discoverTarget({
+      target: 'local',
+      projectRoot: project,
+      project,
+      codexHome: values.get('--codex-home'),
+      codexExecutable: values.get('--codex-executable'),
+    });
+    if (!discovery.ok || !discovery.paths)
+      throw new Error(discovery.diagnostics[0] ?? 'TARGET_UNAVAILABLE');
+    if (/\.(cmd|bat)$/i.test(discovery.paths.executable))
+      throw new Error('NATIVE_CODEX_REQUIRED');
+    const command = {
+      executable: discovery.paths.executable,
+      ...(values.has('--codex-script')
+        ? { prefix: [resolve(values.get('--codex-script')!)] }
+        : {}),
+    };
+    if (preparingResume) {
+      const { prepareLocalResume } = await import('./resume.js');
+      const result = await prepareLocalResume(
+        {
+          stateHome,
+          codexHome: discovery.paths.codexHome,
+          projectPath: project,
+          command,
+          policyArguments: invocation.configArguments,
+        },
+        resumeSelection!,
+      );
+      process.stdout.write(
+        json
+          ? JSON.stringify({ schemaVersion: 1, ok: true, ...result }) + '\n'
+          : `Prepared resume ${result.id}. Run the same resume selection to launch; changed native state requires preparation again.\n`,
+      );
+      return 0;
+    }
+    let resumeProof: import('./resume.js').ResumeSelection | undefined;
+    if (resumeSelection || rawResume) {
+      const { resolveLocalResume } = await import('./resume.js');
+      resumeProof = await resolveLocalResume(
+        discovery.paths.codexHome,
+        project,
+        resumeSelection ?? rawResume!,
+        { stateHome, command },
+      );
+      if (resumeSelection) childArgs = ['resume', resumeProof.id, ...childArgs];
+    }
+    lease = await activateIdentity({
+      stateHome,
+      codexHome: discovery.paths.codexHome,
+      profileId: profileId!,
+      command,
+      projectPath: project,
+      policyArguments: invocation.configArguments,
+      validateResume: resumeProof?.revalidate,
+    });
+    const launch = await lease.prepareLaunch(
+      untracked ? 'untracked' : 'tracked',
+    );
+    if (untracked)
+      error(
+        'UNTRACKED_LAUNCH',
+        'This explicitly untracked launch has only a private intended-launch record; full capture and attribution are not established.',
+      );
+    await lease.revalidateBeforeLaunch();
+    for (const path of invocationPaths) {
+      try {
+        const current = await stat(path.path, { bigint: true });
+        if (
+          (await realpath(path.path)) !== path.physical ||
+          current.dev !== path.info.dev ||
+          current.ino !== path.info.ino
+        )
+          throw new Error('LAUNCH_PATH_CHANGED');
+      } catch {
+        throw new Error('LAUNCH_PATH_CHANGED');
+      }
+    }
+    await resumeProof?.revalidate();
+    const child = spawn(
+      command.executable,
+      [...(command.prefix ?? []), ...childArgs],
+      {
+        cwd: initialProject,
+        env: {
+          ...process.env,
+          CODEX_HOME: discovery.paths.codexHome,
+          TANDEM_LAUNCH_ID: launch.id,
+        },
+        stdio: 'inherit',
+        shell: false,
+      },
+    );
+    const exit = new Promise<number>((resolveExit, reject) => {
+      child.once('error', () => reject(new Error('CHILD_START_FAILED')));
+      child.once('close', (code, signal) =>
+        resolveExit(
+          code ?? (signal === 'SIGINT' ? 130 : signal === 'SIGTERM' ? 143 : 1),
+        ),
+      );
+    });
+    // Observe exit while native registration runs: short-lived children can disappear
+    // before a native reader opens them, but disappearance alone is never success.
+    void exit.then(
+      (code) => {
+        childStatus = code;
+      },
+      () => {},
+    );
+    const interrupt = () => {
+      if (process.platform !== 'win32') child.kill('SIGINT');
+    };
+    const terminate = () => {
+      if (process.platform !== 'win32') child.kill('SIGTERM');
+    };
+    process.on('SIGINT', interrupt);
+    process.on('SIGTERM', terminate);
+    removeSignalHandlers = () => {
+      process.off('SIGINT', interrupt);
+      process.off('SIGTERM', terminate);
+    };
+    if (child.pid) {
+      childStarted = true;
+      const nativeChild =
+        process.platform === 'linux' ? await processIdentity(child.pid) : null;
+      try {
+        await lease.registerProcess(child.pid);
+      } catch (registrationError) {
+        // Native termination can precede Node's close notification. Wait on this
+        // exact child lifecycle only after native proof; never infer its status
+        // from procfs or retry registration for a live or ambiguous process.
+        if (
+          process.platform === 'linux' &&
+          childStatus === undefined &&
+          (child.exitCode !== null ||
+            child.signalCode !== null ||
+            (await processTerminated(child.pid, nativeChild)))
+        )
+          childStatus = await exit;
+        if (childStatus === undefined) throw registrationError;
+        await lease.revalidateBeforeLaunch();
+      }
+    }
+    childStatus = await exit;
+    await lease.syncAfterExit();
+    await lease.release();
+    lease = undefined;
+    return childStatus;
+  } catch (failure) {
+    const code =
+      failure instanceof Error && /^[A-Z][A-Z0-9_]+$/.test(failure.message)
+        ? failure.message
+        : 'LOCAL_LAUNCH_FAILED';
+    error(
+      code,
+      /^RESUME_PREPARATION_(?:REQUIRED|STALE)$/.test(code)
+        ? 'Run codex-tandem resume prepare with the same UUID or --last, target, project and native command, then retry resume.'
+        : /^RESUME_INDEX_/.test(code)
+          ? 'Resume preparation requires the supported Codex 0.163.0 native index with completed backfill. Initialize the existing Codex metadata normally, then run codex-tandem resume prepare with the intended UUID or --last.'
+          : childStarted
+            ? 'Managed launch needs diagnosis; target credentials are preserved.'
+            : 'Local launch was refused; check identity, target paths, policy and scoped processes.',
+    );
+    if (lease && (!childStarted || childStatus !== undefined)) {
+      try {
+        await lease.release();
+      } catch {
+        error(
+          'LEASE_RETAINED',
+          'Ownership could not be proved idle; diagnose the retained guard before switching.',
+        );
+      }
+    } else if (lease)
+      error(
+        'LEASE_RETAINED',
+        'The child may remain active; use scoped process diagnosis before switching.',
+      );
+    return childStatus ?? 2;
+  } finally {
+    // Keep console interrupts observed while credential and ownership cleanup is still pending.
+    removeSignalHandlers?.();
+  }
 }

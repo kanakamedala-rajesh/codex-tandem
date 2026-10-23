@@ -1,6 +1,6 @@
 import { emitKeypressEvents } from 'node:readline';
 /**
- * Choose from nonempty, validated synthetic profiles using raw TTY stdin and an
+ * Choose from nonempty, validated profiles using raw TTY stdin and an
  * alternate-screen stderr display. Returns the selected ID or null on cancellation.
  * Restores terminal mode and pauses stdin on exit; rejects on terminal/I/O failure.
  */
@@ -73,7 +73,7 @@ export async function selectProfile(
               .join('')}`,
         );
         const lines = [
-          'Select synthetic profile'.slice(0, width),
+          'Select profile'.slice(0, width),
           ...details,
           ...choices,
           'Arrows/Enter; Esc cancels'.slice(0, width),
